@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.1
+- Repo-ul s-a mutat la github.com/RazvanR1/Vatra (linkul vechi redirecționează).
+
 ## 0.5.0 – Vatra
 - Proiectul se numește acum **Vatra – the local brain for Home Assistant** (nume, panou, notificări, documentație). Identificatorul intern și datele rămân aceleași: update-ul nu cere reinstalare și nu pierde nimic.
 

@@ -1,7 +1,7 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
-[![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2Fha-home-brain)
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
+[![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
+![Version](https://img.shields.io/badge/version-0.5.1-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
@@ -57,7 +57,7 @@ what keeps it from learning from its own actions.
 1. Click the **Add repository** button above, or in Home Assistant go to
    **Settings → Add-ons → Add-on Store → ⋮ → Repositories** and add:
    ```
-   https://github.com/RazvanR1/ha-home-brain
+   https://github.com/RazvanR1/Vatra
    ```
 2. Install **Vatra**.
 3. In the **Configuration** tab set at least:
@@ -140,6 +140,6 @@ Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
 - **Folosește agenți AI locali** (climă, energie, securitate, server) prin Ollama, doar când s-a schimbat ceva în casă.
 
 **Instalare:** în Settings → Add-ons → Add-on Store → ⋮ → Repositories adaugi
-`https://github.com/RazvanR1/ha-home-brain`, instalezi **Vatra**, completezi `notify_services`,
+`https://github.com/RazvanR1/Vatra`, instalezi **Vatra**, completezi `notify_services`,
 `learning.persons` și, opțional, `assistant.ollama_url`, apoi îl pornești.
 Toate detaliile sunt în tab-ul **Documentation** al add-on-ului.
