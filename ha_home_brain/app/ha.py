@@ -18,7 +18,7 @@ StateListener = Callable[[str, dict | None, dict | None, str], Awaitable[None]]
 EventListener = Callable[[dict], Awaitable[None]]
 
 # De unde vine o schimbare de stare.
-ORIGIN_BRAIN = "brain"            # Home Brain însuși
+ORIGIN_BRAIN = "brain"            # Vatra însuși
 ORIGIN_AUTOMATION = "automation"  # o automatizare / un script din HA
 ORIGIN_USER = "user"              # un om din aplicație / dashboard
 ORIGIN_DEVICE = "device"          # fizic (întrerupător, telecomandă) sau integrare

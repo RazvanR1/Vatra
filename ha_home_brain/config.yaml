@@ -1,7 +1,7 @@
-name: Home Brain
-version: "0.4.4"
+name: Vatra
+version: "0.5.0"
 slug: ha_home_brain
-description: Local brain for your home – learns habits, spots the unusual, local AI agents, approvals from your phone
+description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/ha-home-brain
 arch:
   - amd64
@@ -14,8 +14,8 @@ homeassistant_api: true
 hassio_api: true
 ingress: true
 ingress_port: 8099
-panel_icon: mdi:brain
-panel_title: Home Brain
+panel_icon: mdi:fireplace
+panel_title: Vatra
 options:
   log_level: info
   time_zone: "Europe/Bucharest"

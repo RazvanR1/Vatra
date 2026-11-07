@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.0 – Vatra
+- Proiectul se numește acum **Vatra – the local brain for Home Assistant** (nume, panou, notificări, documentație). Identificatorul intern și datele rămân aceleași: update-ul nu cere reinstalare și nu pierde nimic.
+
 ## 0.4.4
 - README public (engleză + română), licență MIT, teste automate pe GitHub, explicații în tab-ul Configuration.
 

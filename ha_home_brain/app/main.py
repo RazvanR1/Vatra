@@ -186,7 +186,7 @@ class Brain:
         if burst and not quiet:
             await self.notifier.send("Lucruri neobișnuite în casă",
                                      f"{len(new)} observații noi, de ex.: {new[0].message} "
-                                     f"Detalii în panoul Home Brain.", "warning")
+                                     f"Detalii în panoul Vatra.", "warning")
         self.store.set(f"finding_push:{today}", pushed)
         for key in list(self.findings):
             if key not in found:
@@ -251,7 +251,7 @@ async def amain() -> None:
     runner = web.AppRunner(build_app(brain))
     await runner.setup()
     await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("HB_PORT", "8099"))).start()
-    log.info("Home Brain pornit, panou pe portul 8099")
+    log.info("Vatra pornit, panou pe portul 8099")
     await asyncio.gather(
         brain.ha.run_forever(),
         brain.recorder.run_forever(),

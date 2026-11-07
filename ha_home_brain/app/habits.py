@@ -418,8 +418,8 @@ def build_automation(h: Habit, names: dict[str, str], persons: list[str]) -> dic
         {"condition": "state", "entity_id": h.entity_id, "state": h.to_state}]})
     return {
         "id": f"home_brain_{h.id}",
-        "alias": f"Home Brain – {names.get(h.entity_id, h.entity_id)} ({h.to_state})",
-        "description": f"Creat de Home Brain din obiceiul: {h.description} "
+        "alias": f"Vatra – {names.get(h.entity_id, h.entity_id)} ({h.to_state})",
+        "description": f"Creat de Vatra din obiceiul: {h.description} "
                        f"Backtest: {h.backtest.get('hits')}/{h.backtest.get('fired')} corecte.",
         "triggers": triggers, "conditions": conditions, "actions": [action], "mode": "single",
     }

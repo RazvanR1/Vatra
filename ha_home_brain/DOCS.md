@@ -1,4 +1,4 @@
-# Home Brain
+# Vatra – the local brain for Home Assistant
 
 Creierul casei: urmărește ce se întâmplă, învață ce e normal în casa **ta**, îți transformă obiceiurile
 în automatizări native Home Assistant, îți spune când ceva e neobișnuit și lasă agenți AI locali
@@ -7,7 +7,7 @@ să se gândească la întrebările mai grele. Totul rulează local; AI-ul (Olla
 ## Cum funcționează
 
 1. **Observă** – înregistrează schimbările de stare (cu originea lor: om, dispozitiv, automatizare sau
-   Home Brain) și importă la pornire istoricul pe ultimele zile.
+   Vatra) și importă la pornire istoricul pe ultimele zile.
 2. **Învață local, fără AI** – obiceiuri, valori normale pe oră, cât stă fiecare dispozitiv într-o stare.
 3. **Decide** – doar ce e neobișnuit sau nou ajunge la tine sau la agenți.
 4. **Gândește** – agenții (Climă, Energie, Securitate, Server & homelab) analizează periodic casa,

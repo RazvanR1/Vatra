@@ -65,7 +65,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         return J(result)
 
     async def test_notify(_req):
-        await brain.notifier.send("Home Brain", "Notificare de test din Home Brain.", "info")
+        await brain.notifier.send("Vatra", "Notificare de test din Vatra.", "info")
         return J({"ok": True})
 
     # ---------- obiceiuri ----------

@@ -1,12 +1,12 @@
-# 🧠 Home Brain for Home Assistant
+# 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2Fha-home-brain)
-![Version](https://img.shields.io/badge/version-0.4.4-blue)
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
 
-**A local "brain" for your home.** Home Brain watches what happens in Home Assistant, learns what is
+**Vatra** (Romanian for *hearth* – the heart of the home) **is a local brain for your home.** It watches what happens in Home Assistant, learns what is
 *normal* for **your** house, turns your habits into native HA automations (after you approve them),
 tells you when something is unusual, and lets local AI agents look at the harder questions.
 Everything runs on your hardware. The AI part (Ollama) is optional and only used when it adds value.
@@ -21,7 +21,7 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 |---|---|
 | 🧭 **Learns your habits** | Only from what *people* do (app, dashboard, wall switch), never from what automations do. Two kinds: *time* habits ("on weekdays around 22:30 you turn on the bedside lamp") and *sequence* habits ("after the front door opens you turn on the hallway light"). |
 | 🧪 **Backtests before proposing** | Every habit is replayed on your history: on how many days the automation would have done exactly what you did, and on how many it would have done something extra. Habits already covered by one of your automations are skipped. |
-| ✅ **Native automations, with Undo** | When you approve, Home Brain creates a normal Home Assistant automation (`home_brain_…`) that you can read, edit or delete like any other — and undo from the panel. |
+| ✅ **Native automations, with Undo** | When you approve, Vatra creates a normal Home Assistant automation (`home_brain_…`) that you can read, edit or delete like any other — and undo from the panel. |
 | 👀 **Notices what's unusual** | No device lists, no thresholds to set. It learns per-hour baselines and flags: abnormal values for the time of day, sensors that went silent, devices flapping on/off, doors or lights left in a state far longer than usual, house open while nobody is home. |
 | 📱 **Approve from your phone** | Actionable notifications: **Approve / Always / Reject**, **Undo** after something it did on its own, **Seen / Not a problem** for observations. It learns from your answers. |
 | 🛡️ **Safety rails that can't be bypassed** | Locks, alarm, valves, gates and "important" devices (boiler, fridge, server, NAS…) always need approval. Shell commands, Supervisor calls, restarting HA, disabling automations and temperatures outside your limits are blocked outright. |
@@ -39,7 +39,7 @@ Observe ─► Learn locally (no AI) ─► Decide what matters ─► Think (AI
 ```
 
 Every state change is stored with its **origin** — a person, the device itself, one of your automations,
-or Home Brain. That is what lets it learn habits without "learning" your existing automations, and
+or Vatra. That is what lets it learn habits without "learning" your existing automations, and
 what keeps it from learning from its own actions.
 
 ---
@@ -59,7 +59,7 @@ what keeps it from learning from its own actions.
    ```
    https://github.com/RazvanR1/ha-home-brain
    ```
-2. Install **Home Brain**.
+2. Install **Vatra**.
 3. In the **Configuration** tab set at least:
    ```yaml
    notify_services:
@@ -132,7 +132,7 @@ Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
 
 ## 🇷🇴 Pe scurt, în română
 
-**Home Brain** e un add-on pentru Home Assistant care rulează complet local și face patru lucruri:
+**Vatra – the local brain for Home Assistant.** Vatra e un add-on pentru Home Assistant care rulează complet local și face patru lucruri:
 
 - **Învață ce faci tu.** Pornește doar de la acțiunile oamenilor, nu de la cele făcute de automatizări. Fiecare obicei îl testează întâi pe istoric și abia apoi ți-l propune ca automatizare nativă în HA, pe care o poți anula oricând.
 - **Îți spune când ceva e neobișnuit**, fără să-i dai vreo listă de dispozitive. Învață singur ce e normal în casa ta.
@@ -140,6 +140,6 @@ Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
 - **Folosește agenți AI locali** (climă, energie, securitate, server) prin Ollama, doar când s-a schimbat ceva în casă.
 
 **Instalare:** în Settings → Add-ons → Add-on Store → ⋮ → Repositories adaugi
-`https://github.com/RazvanR1/ha-home-brain`, instalezi **Home Brain**, completezi `notify_services`,
+`https://github.com/RazvanR1/ha-home-brain`, instalezi **Vatra**, completezi `notify_services`,
 `learning.persons` și, opțional, `assistant.ollama_url`, apoi îl pornești.
 Toate detaliile sunt în tab-ul **Documentation** al add-on-ului.

@@ -254,7 +254,7 @@ class Agents:
                 continue
             lines = [f"• {i['agent_name']}: {i['title']}" for i in fresh[:5]]
             more = f"\n…și încă {len(fresh) - 5}" if len(fresh) > 5 else ""
-            await self.notifier.send("Home Brain – rezumatul zilei", "\n".join(lines) + more, "info")
+            await self.notifier.send("Vatra – rezumatul zilei", "\n".join(lines) + more, "info")
 
     def insights(self, limit: int = 40) -> list[dict]:
         return self.store.items("insight", limit=limit)

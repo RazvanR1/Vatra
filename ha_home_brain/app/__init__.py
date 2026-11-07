@@ -1,1 +1,1 @@
-"""Home Brain - creierul casei RusHome."""
+"""Vatra – the local brain for Home Assistant."""

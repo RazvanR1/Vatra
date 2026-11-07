@@ -85,7 +85,7 @@ configuration:
         description: Entity patterns to ignore.
   safety:
     name: Safety
-    description: What Home Brain may do on its own. Critical devices always need approval.
+    description: What Vatra may do on its own. Critical devices always need approval.
     fields:
       autonomy:
         name: Autonomy
