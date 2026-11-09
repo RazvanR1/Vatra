@@ -47,6 +47,14 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             },
             "pending": len(brain.approvals.pending()) if hasattr(brain, "approvals") else 0,
             "findings": list(getattr(brain, "findings", {}).values()),
+            "explained": getattr(getattr(brain, "guard", None), "explained", {}),
+            "notifications": {
+                "mode": brain.notifier.mode, "quiet_hours": brain.notifier.quiet,
+                "queued": len(brain.notifier.queue), "deferred": len(brain.notifier.deferred),
+                "sent_today": brain.notifier.store.get(
+                    f"push_count:{brain.notifier._today()}", 0) if brain.notifier.store else 0,
+                "max_per_day": brain.notifier.max_per_day,
+            },
             "agents": getattr(getattr(brain, "agents", None), "status", {}),
             "safety": brain.approvals.summary() if hasattr(brain, "approvals") else {},
             "llm": {"calls": brain.llm.calls, "last_seconds": round(brain.llm.last_seconds, 1)}

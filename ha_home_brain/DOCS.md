@@ -35,6 +35,37 @@ să se gândească la întrebările mai grele. Totul rulează local; AI-ul (Olla
 - Învață din reacțiile tale: **Am văzut** = așteaptă mai mult data viitoare,
   **Nu e problemă** = nu mai semnalează pentru acel dispozitiv.
 
+## Notificări (V2)
+
+Implicit Vatra scrie puțin pe telefon. Tot ce vede apare oricum în panou.
+
+| Ce | Unde ajunge |
+|---|---|
+| Critic (apă, gaz, fum, casă deschisă când nu e nimeni, defecțiune confirmată din `open_away`) | imediat, mereu |
+| Defecțiune confirmată (tot dispozitivul a picat) | grupat, cel mult o dată la `batch_minutes` |
+| Posibilă anomalie / neobișnuit / baterie slabă | panou + rezumatul de seară |
+| „Rezolvat” | doar panou (`send_resolved`) |
+| Cereri de aprobare (obiceiuri, acțiuni) | individual, cu butoane; noaptea așteaptă dimineața |
+
+```yaml
+notifications:
+  mode: smart          # smart | all (comportamentul vechi) | critical_only
+  quiet_hours: "22-7"
+  max_per_day: 4       # mesaje grupate pe zi
+  batch_minutes: 120
+  send_resolved: false
+  cooldown_hours: 12
+```
+
+## Context: ce nu mai e tratat ca defecțiune
+
+- Un senzor „unavailable” cât timp restul dispozitivului funcționează → *posibilă anomalie* (panou).
+- Dispozitiv în repaus: tracker acasă / la încărcat / nemișcat, robot în bază → normal, fără alertă.
+- Senzori de activitate (cartografiere, progres, timp rămas, ciclu) → normal când nu e activitate.
+- Entități care pică des și își revin singure → normal pentru ele.
+- Consum mare cu pompa de căldură / centrala / AC pornite → explicat.
+- Releu care alimentează becuri smart → pornit permanent e normal; lumina o dă `light.*`.
+
 ## Siguranță
 
 - `autonomy`: `shadow` | `copilot` (implicit) | `autonomous`; pe domenii cu `autonomy_overrides`,
@@ -58,7 +89,7 @@ assistant:
   num_ctx: 8192        # același ca integrarea Ollama din HA, ca modelul să nu se reîncarce
 agents:
   agents_interval_hours: 6
-  quiet_hours: "23-7"  # fără notificări non-critice noaptea
+  quiet_hours: "23-7"  # agenții nu rulează analize zgomotoase noaptea
 ```
 
 Paznicul (dispozitive indisponibile, baterii) și Jarvis (chat) funcționează ca înainte.

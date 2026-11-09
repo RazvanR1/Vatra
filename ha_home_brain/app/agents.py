@@ -15,9 +15,18 @@ log = logging.getLogger("home_brain.agents")
 AGENT_PROMPT = """Ești agentul „{name}” din creierul casei RusHome. Răspunzi în română, concret și scurt.
 Despre casă: {site}
 Sarcina ta: {task}
-Primești mai jos datele (entity_id | nume | stare | statistici pe 24 h). Entitățile indisponibile
-NU apar aici: de ele se ocupă paznicul, nu le comenta.
+Primești mai jos datele (entity_id | nume | stare | statistici pe 24 h | stările altor entități ale
+aceluiași dispozitiv). Entitățile indisponibile NU apar aici: de ele se ocupă paznicul, nu le comenta.
 Reguli stricte:
+- „unavailable”/„unknown” sau lipsa actualizărilor NU înseamnă defecțiune: un GPS care stă acasă la
+  încărcat sau un senzor de cartografiere al robotului care nu cartografiază nu au ce raporta.
+- Înainte de orice concluzie verifică entitățile din jur și lista „Funcționează acum”. Un consum mare
+  explicat de pompa de căldură / centrală / AC care funcționează e normal; nu-l raporta.
+- Un releu sau o priză care alimentează becuri smart e mereu pornit(ă); asta NU înseamnă că lumina e
+  aprinsă. Starea luminii o dă doar light.*.
+- Treptele: „info” = doar neobișnuit; „warning” = posibilă anomalie, confirmată de cel puțin încă o
+  entitate; „critical” = defecțiune confirmată sau pericol imediat.
+- Nu propune niciodată homeassistant.update_entity, reload sau reporniri.
 - Folosește DOAR cifrele din date. Nu inventa cauze, nu ghici, nu presupune. Dacă nu ești sigur, nu raporta.
 - Numele unei automatizări sau al unui senzor NU înseamnă că acel lucru s-a întâmplat.
 - Temperaturi de 40-70°C la procesoare/discuri de server sunt normale; nu le raporta decât peste 75°C.
@@ -94,8 +103,10 @@ ACTION_DOMAINS = {"light", "switch", "climate", "fan", "humidifier", "media_play
 
 
 class Agents:
-    def __init__(self, ha, store, llm, approvals, notifier, cfg: dict, tz: tzinfo) -> None:
+    def __init__(self, ha, store, llm, approvals, notifier, cfg: dict, tz: tzinfo, context=None) -> None:
         self.ha = ha
+        self.home = context
+        self.extra_digest = None  # callable -> list[str], completat de Brain
         self.store = store
         self.llm = llm
         self.approvals = approvals
@@ -151,6 +162,12 @@ class Agents:
                 line += f" | 24h: min {mn:.1f} medie {mean:.1f} max {mx:.1f}"
             if changes.get(eid):
                 line += f" | {changes[eid]} schimbări/24h"
+            if self.home is not None:
+                if self.home.is_bulb_feed(eid):
+                    line += " | releu de alimentare becuri smart (pornit ≠ lumină aprinsă)"
+                rel = self.home.related(eid)
+                if rel:
+                    line += f" | același dispozitiv: {rel}"
             if size + len(line) > budget:
                 break
             lines.append(line)
@@ -162,6 +179,9 @@ class Agents:
         fp = hashlib.sha1("|".join(fp_parts).encode()).hexdigest()
         if down and lines:
             lines.append(f"(+ {down} entități indisponibile, urmărite de paznic)")
+        if self.home is not None and agent.key in ("energy", "climate") and lines:
+            loads = self.home.active_loads()
+            lines.append("Funcționează acum: " + ("; ".join(loads) if loads else "niciun consumator mare"))
         return "\n".join(lines), fp
 
     def _quiet_now(self) -> bool:
@@ -212,6 +232,9 @@ class Agents:
             if is_new and self.notify_mode == "critical" and sev == "critical":
                 await self.notifier.send(f"{agent.name}: {item['title']}", item["detail"], sev)
             act = ins.get("action")
+            if isinstance(act, dict) and str(act.get("service")) in ("update_entity", "reload", "restart",
+                                                                     "reload_config_entry"):
+                act = None
             if self.allow_actions and isinstance(act, dict) and act.get("entity_id") in self.ha.states \
                     and str(act.get("domain")) in ACTION_DOMAINS and act.get("service") \
                     and act["entity_id"].split(".")[0] == act.get("domain"):
@@ -250,11 +273,14 @@ class Agents:
             start = datetime(now.year, now.month, now.day, tzinfo=self.tz).timestamp()
             fresh = [i for i in self.insights(100) if i["ts"] >= start and i["severity"] != "info"]
             self.store.set("digest_sent", day)
-            if not fresh:
-                continue
             lines = [f"• {i['agent_name']}: {i['title']}" for i in fresh[:5]]
-            more = f"\n…și încă {len(fresh) - 5}" if len(fresh) > 5 else ""
-            await self.notifier.send("Vatra – rezumatul zilei", "\n".join(lines) + more, "info")
+            if len(fresh) > 5:
+                lines.append(f"…și încă {len(fresh) - 5}")
+            if self.extra_digest:
+                lines += self.extra_digest()
+            if not lines:
+                continue
+            await self.notifier.send("Vatra – rezumatul zilei", "\n".join(lines), "info", key="digest")
 
     def insights(self, limit: int = 40) -> list[dict]:
         return self.store.items("insight", limit=limit)

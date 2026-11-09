@@ -13,6 +13,28 @@ configuration:
   ntfy_url:
     name: ntfy topic URL
     description: Optional. Also send alerts to this ntfy topic.
+  notifications:
+    name: Notifications
+    description: How much Vatra writes to your phone. Everything is always visible in the panel.
+    fields:
+      mode:
+        name: Mode
+        description: "smart = critical at once, the rest grouped; all = everything at once (old behaviour); critical_only = only critical."
+      quiet_hours:
+        name: Quiet hours
+        description: "e.g. 22-7. Nothing but critical alerts is sent in this interval; approvals wait until morning."
+      max_per_day:
+        name: Grouped messages per day
+        description: Maximum non-critical messages per day. Beyond that, alerts stay in the panel.
+      batch_minutes:
+        name: Group interval (minutes)
+        description: Non-critical alerts are collected and sent together at most this often.
+      send_resolved:
+        name: Notify when resolved
+        description: Also send "Resolved" messages (off by default, they only appear in the panel).
+      cooldown_hours:
+        name: Repeat pause (hours)
+        description: A problem that resolved and came back is not re-sent within this time.
   guard:
     name: Guard
     description: Alerts for devices that become unavailable and low batteries.

@@ -17,6 +17,7 @@
   nav button { background:none; border:0; color:var(--muted); padding:8px 12px; border-bottom:2px solid transparent;
                font:inherit; cursor:pointer; white-space:nowrap; border-radius:0; }
   nav button.on { color:var(--text); border-bottom-color:var(--accent); }
+  .tier { border:1px solid currentColor; border-radius:9px; padding:0 6px; font-size:11px; opacity:.7; margin-left:4px; }
   .badge { background:var(--crit); color:#fff; border-radius:9px; padding:0 6px; font-size:12px; margin-left:4px; }
   main { max-width:1040px; margin:0 auto; padding:16px; }
   .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
@@ -89,7 +90,9 @@
 
   <div class="tab" id="t-unusual">
     <section><h2>Neobișnuit acum</h2><div id="findings"></div></section>
+    <section><h2>Indisponibil, dar normal</h2><div id="explained"></div></section>
     <section><h2>Paznic – istoric</h2><div id="history"></div>
+      <small id="ntf"></small>
       <div class="row"><button class="ghost" onclick="post('api/test-notify').then(()=>toast('Trimis.'))">Trimite notificare de test</button></div></section>
   </div>
 
@@ -142,8 +145,14 @@ async function refresh() {
   $("alerts").innerHTML = S.active_alerts.length ? S.active_alerts.map(alertRow).join("") : empty("Totul e în regulă.");
   $("rules").innerHTML = S.automations.map(r => `<div class="item">${esc(r.name)}<small>${r.enabled ? esc(r.last_action) : "oprită (o face deja o automatizare din HA)"}</small></div>`).join("");
   $("history").innerHTML = S.history.length ? S.history.map(alertRow).join("") : empty("Nimic încă.");
-  $("findings").innerHTML = (S.findings||[]).length ? S.findings.map(f => `<div class="item ${esc(f.level)}">${esc(f.title)}<small>${esc(f.message)}</small></div>`).join("")
+  $("findings").innerHTML = (S.findings||[]).length ? S.findings.map(f => `<div class="item ${esc(f.level)}">${esc(f.title)} <span class="tier">${esc(f.tier_label || "")}</span><small>${esc(f.message)}${f.context ? " · " + esc(f.context) : ""}</small></div>`).join("")
     : empty(m.last_learning ? "Nimic neobișnuit." : "Încă învăț ce e normal în casă…");
+  const ex = Object.entries(S.explained || {});
+  $("explained").innerHTML = ex.length ? ex.map(([e, why]) => `<div class="item">${esc(e)}<small>${esc(why)}</small></div>`).join("") : empty("Nimic.");
+  const N = S.notifications || {};
+  if (N.mode) $("ntf").textContent = `Notificări: ${N.mode}, liniște ${N.quiet_hours}, azi ${N.sent_today}/${N.max_per_day} mesaje grupate, ${N.queued} în așteptare.`;
+  if (!refresh.opened && S.pending > 0 && location.hash !== "#home") { refresh.opened = true; document.querySelector('[data-t="approvals"]')?.click(); }
+  refresh.opened = true;
   if (!S.assistant.enabled) $("q").placeholder = "Asistentul nu e configurat (ollama_url)";
   if (document.querySelector("#t-home.on")) get("api/insights").then(r => $("recent-ins").innerHTML = r.length ? r.slice(0,5).map(insRow).join("") : empty("Agenții n-au rulat încă."));
 }

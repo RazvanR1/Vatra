@@ -171,6 +171,7 @@ async def setup(monkeypatch):
     opts = json.loads(json.dumps(OPTS))
     opts["assistant"]["ollama_url"] = base
     brain = Brain(opts)
+    brain.notifier.quiet = "0-0"  # testele nu depind de ora la care rulează
     task = asyncio.create_task(brain.ha.run_forever())
     await asyncio.wait_for(brain.ha.connected.wait(), 3)
     yield fake, brain
@@ -186,14 +187,19 @@ async def test_guard_alerts_and_resolves(setup):
     keys = set(brain.notifier.active)
     assert keys == {"battery:sensor.usa_baterie", "unavailable:sensor.temp_dormitor"}
     sent = [c for c in fake.calls if c["domain"] == "notify"]
-    assert len(sent) == 2 and sent[0]["service"] == "mobile_app_razvan"
+    # V2: doar defecțiunea confirmată pleacă; bateria de 12% rămâne în panou / rezumat
+    assert len(sent) == 1 and sent[0]["service"] == "mobile_app_razvan"
+    assert "Temp dormitor" in sent[0]["service_data"]["message"]
+    assert sent[0]["service_data"]["data"]["clickAction"] == sent[0]["service_data"]["data"]["url"]
     await brain.guard.run_once()  # fără duplicate
-    assert len([c for c in fake.calls if c["domain"] == "notify"]) == 2
+    assert len([c for c in fake.calls if c["domain"] == "notify"]) == 1
     await fake.push("sensor.temp_dormitor", st("sensor.temp_dormitor", "21.3", friendly_name="Temp dormitor"))
     await wait_for(lambda: brain.ha.state("sensor.temp_dormitor") == "21.3")
     await brain.guard.run_once()
     assert "unavailable:sensor.temp_dormitor" not in brain.notifier.active
-    assert any("Rezolvat" in c["service_data"]["title"] for c in fake.calls if c["domain"] == "notify")
+    # „Rezolvat” apare doar în panou, nu pe telefon
+    assert any("Rezolvat" in a.title for a in brain.notifier.history)
+    assert len([c for c in fake.calls if c["domain"] == "notify"]) == 1
 
 
 def seen_ok(guard, hours_ago=1.5):
@@ -237,7 +243,7 @@ async def test_guard_burst_becomes_summary(setup):
     seen_ok(brain.guard)
     await brain.guard.run_once()
     sent = [c for c in fake.calls if c["domain"] == "notify"]
-    assert len(sent) == 1 and "6 probleme" in sent[0]["service_data"]["message"]
+    assert len(sent) == 1 and "6 dispozitive" in sent[0]["service_data"]["message"]
     assert len(brain.notifier.active) == 6
     # Peste 24h nu mai e în „found”, dar tot e picat -> alerta NU se închide fals.
     for s in brain.ha.states.values():
@@ -407,13 +413,12 @@ async def test_agents_default_no_actions_no_push_and_findings_burst(setup):
     await brain.agents.run_agent(agent, force=True)
     assert brain.approvals.pending() == []  # implicit: fără acțiuni propuse
     assert not [c for c in fake.calls if c["domain"] == "notify"]  # implicit: doar rezumat seara
-    # 6 observații noi deodată -> o singură notificare rezumat
+    # V2: observațiile neobișnuite nu mai ajung pe telefon; stau în panou și în rezumatul de seară
     from app.anomaly import Finding
     brain.detector.base = object()
     brain.detector.check = lambda recent, now=None: [
         Finding(f"silent:sensor.s{i}", "silent", f"sensor.s{i}", "Senzor tăcut", f"s{i} tace") for i in range(6)]
-    brain.agents._quiet_now = lambda: False
     await brain.check_unusual()
-    pushes = [c for c in fake.calls if c["domain"] == "notify"]
-    assert len(pushes) == 1 and "6 observații" in pushes[0]["service_data"]["message"]
+    assert not [c for c in fake.calls if c["domain"] == "notify"]
     assert len(brain.approvals.pending()) == 6
+    assert any("6 observații" in line for line in brain.digest_lines())

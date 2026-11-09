@@ -4,8 +4,10 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import logging
+import time
 from datetime import datetime, timezone
 
+from .context import ANOMALY, FAULT, flaky
 from .notify import Alert
 
 log = logging.getLogger("home_brain.guard")
@@ -26,8 +28,10 @@ def _parse(ts: str | None) -> datetime | None:
 
 
 class Guard:
-    def __init__(self, ha, notifier, cfg: dict, store=None) -> None:
+    def __init__(self, ha, notifier, cfg: dict, store=None, context=None) -> None:
         self.ha = ha
+        self.context = context
+        self.flaky_cache: set[str] = set()   # entități care pică și își revin singure, des
         self.notifier = notifier
         self.store = store
         # Când am văzut ultima oară fiecare entitate funcționând. Nu ne bazăm pe last_changed din HA,
@@ -47,6 +51,26 @@ class Guard:
         self.ignore = [p for p in cfg.get("ignore", []) if p]
         self.interval = int(cfg.get("interval_seconds", 60))
         self.findings: dict[str, Alert] = {}
+        self.explained: dict[str, str] = {}  # ce e indisponibil dar normal, și de ce (pentru panou)
+
+    def learn_patterns(self, transitions: list[tuple]) -> None:
+        """Din istoricul de 30 de zile: ce entități trec des prin „unavailable” și își revin singure."""
+        eids = {t[1] for t in transitions if t[3] in ("unavailable", "unknown")}
+        self.flaky_cache = {e for e in eids if flaky(transitions, e)}
+
+    def classify_down(self, eid: str) -> tuple[str | None, str]:
+        """(treaptă, explicație). Treaptă None = e normal, nu alertăm deloc."""
+        if eid in self.flaky_cache:
+            return None, "pică des și își revine singur – comportament obișnuit"
+        if self.context is None:
+            return FAULT, ""
+        why = self.context.expected_down(eid)
+        if why:
+            return None, why
+        alive = self.context.device_alive(eid)
+        if alive:
+            return ANOMALY, "restul dispozitivului funcționează"
+        return FAULT, ""
 
     def ignored(self, entity_id: str) -> bool:
         return any(fnmatch.fnmatch(entity_id, p) for p in self.ignore)
@@ -90,16 +114,26 @@ class Guard:
                 if since and recent_ok:
                     age = (now - since).total_seconds()
                     if self.unavailable_minutes * 60 <= age <= self.max_hours * 3600:
-                        found[f"unavailable:{eid}"] = Alert(
-                            key=f"unavailable:{eid}", title="Dispozitiv indisponibil",
-                            message=f"{name} e {state} de {int(age // 60)} minute.")
+                        tier, why = self.classify_down(eid)
+                        if tier is None:
+                            self.explained[eid] = why
+                        else:
+                            self.explained.pop(eid, None)
+                            found[f"unavailable:{eid}"] = Alert(
+                                key=f"unavailable:{eid}",
+                                title="Dispozitiv indisponibil" if tier == FAULT else "Senzor fără valoare",
+                                message=f"{name} e {state} de {int(age // 60)} minute"
+                                        + (f" ({why})." if why else "."),
+                                tier=tier)
+            elif eid in self.explained:
+                self.explained.pop(eid, None)
 
             level = self.battery_level(eid, st)
             if level is not None and level <= self.battery_threshold:
                 found[f"battery:{eid}"] = Alert(
                     key=f"battery:{eid}", title="Baterie slabă",
                     message=f"{name}: baterie {level:.0f}%.",
-                    level="critical" if level <= 5 else "warning")
+                    level="warning", tier=FAULT if level <= 5 else ANOMALY)
         return found
 
     def fixed(self, key: str) -> bool:
@@ -109,7 +143,7 @@ class Guard:
         if st is None:
             return True  # entitatea a fost ștearsă
         if kind == "unavailable":
-            return st.get("state") not in self.bad_states
+            return st.get("state") not in self.bad_states or self.classify_down(eid)[0] is None
         if kind == "battery":
             level = self.battery_level(eid, st)
             return level is None or level > self.battery_threshold
@@ -118,17 +152,22 @@ class Guard:
     async def run_once(self) -> None:
         found = self.check()
         new = [a for k, a in found.items() if k not in self.notifier.active]
-        if len(new) > SUMMARY_AFTER:
-            for alert in new:
-                await self.notifier.raise_alert(alert, send=False)
+        # Doar defecțiunile confirmate ajung pe telefon (și acelea grupate de Notifier);
+        # „posibilele anomalii” rămân în panou.
+        push = [a for a in new if a.tier in (FAULT, "")]
+        for alert in new:
+            await self.notifier.raise_alert(alert, send=False)
+        if len(push) > SUMMARY_AFTER:
             names = ", ".join(self.ha.attr(a.key.partition(":")[2], "friendly_name",
-                                           a.key.partition(":")[2]) for a in new[:8])
-            more = f" și încă {len(new) - 8}" if len(new) > 8 else ""
-            await self.notifier.send("Mai multe probleme în casă",
-                                     f"{len(new)} probleme noi: {names}{more}.", "warning")
+                                           a.key.partition(":")[2]) for a in push[:8])
+            more = f" și încă {len(push) - 8}" if len(push) > 8 else ""
+            await self.notifier.notify("Mai multe dispozitive picate",
+                                       f"{len(push)} dispozitive: {names}{more}.", "warning", key="guard_burst")
         else:
-            for alert in new:
-                await self.notifier.raise_alert(alert)
+            for alert in push:
+                if time.time() - self.notifier.recently_resolved.get(alert.key, 0) < self.notifier.cooldown:
+                    continue  # tocmai s-a rezolvat și a picat iar: nu insistăm
+                await self.notifier.notify(alert.title, alert.message, alert.level, key=alert.key)
         for key in list(self.notifier.active):
             if key.split(":", 1)[0] in {"unavailable", "battery"} and key not in found \
                     and self.fixed(key):

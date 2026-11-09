@@ -84,7 +84,10 @@ minutes instead of weeks. Habits keep improving as more days accumulate.
 | `learning.persons` | `[]` | Used for "only when someone is home" conditions and presence-aware checks. |
 | `learning.max_proposals_per_day` | `2` | How many new habit proposals may reach your phone per day. |
 | `unusual.open_away` | `false` | Alert when doors/windows are open and nobody is home (off by default in case you already have such an automation). |
-| `unusual.max_push_per_day` | `5` | Cap on "unusual" notifications per day; more than 3 at once become one summary. |
+| `notifications.mode` | `smart` | `smart`: critical at once, the rest grouped; `all`: everything at once; `critical_only`. |
+| `notifications.quiet_hours` | `22-7` | Only critical alerts at night; approvals wait until morning. |
+| `notifications.max_per_day` | `4` | Grouped non-critical messages per day; the rest stay in the panel. |
+| `unusual.max_push_per_day` | `5` | Cap on critical / confirmed-fault observations pushed per day. |
 | `safety.autonomy` | `copilot` | `shadow` (only log what it would do), `copilot` (ask), `autonomous` (do safe things, offer Undo). Per domain: `autonomy_overrides: ["light:autonomous"]`. |
 | `safety.min/max_temperature` | `16` / `26` | Hard limits for any temperature it may set. |
 | `agents.notify` | `digest` | `none`, `digest` (one summary at `digest_hour`), or `critical`. |

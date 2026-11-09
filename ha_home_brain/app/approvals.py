@@ -16,7 +16,8 @@ BLOCKED = {"shell_command", "python_script", "pyscript", "hassio", "rest_command
            "system_log", "logger", "backup", "update"}
 BLOCKED_SERVICES = {("homeassistant", "stop"), ("homeassistant", "restart"),
                     ("homeassistant", "reload_all"), ("automation", "turn_off"),
-                    ("automation", "reload")}
+                    ("automation", "reload"), ("homeassistant", "update_entity"),
+                    ("homeassistant", "reload_config_entry")}
 CRITICAL_SERVICES = {("lock", "unlock"), ("lock", "open"), ("valve", "open_valve"),
                      ("alarm_control_panel", "alarm_disarm"), ("cover", "open_cover")}
 CRITICAL_WORDS = ("centrala", "central_heating", "boiler", "gaz", "gas", "pompa", "robinet",
@@ -79,7 +80,8 @@ class Approvals:
         self.handlers[kind] = handler
 
     async def ask(self, kind: str, item_id: str, title: str, message: str, payload: dict,
-                  buttons: list[tuple[str, str]] | None = None, notify: bool = True) -> str:
+                  buttons: list[tuple[str, str]] | None = None, notify: bool = True,
+                  level: str = "info") -> str:
         rid = _sid(kind, item_id)
         existing = self.store.item("approval", rid)
         if existing and existing["status"] in ("pending", "rejected", "done"):
@@ -89,13 +91,17 @@ class Approvals:
                                               "message": message, "payload": payload,
                                               "buttons": buttons}, status="pending")
         if notify:
-            await self._push(rid, title, message, buttons)
+            await self._push(rid, title, message, buttons, level)
         return rid
 
-    async def _push(self, rid: str, title: str, message: str, buttons: list[tuple[str, str]]) -> None:
+    async def _push(self, rid: str, title: str, message: str, buttons: list[tuple[str, str]],
+                    level: str = "info") -> None:
         extra = {"tag": f"hb_{rid}", "actions": [{"action": f"HB_{b.upper()}_{rid}", "title": t}
                                                  for b, t in buttons]} if self.actionable else None
-        await self.notifier.send(title, message, "info", data=extra)
+        if level == "critical":
+            await self.notifier.send(title, message, "critical", data=extra, key=rid)
+        else:  # cererile normale nu pleacă noaptea; așteaptă dimineața
+            await self.notifier.request(title, message, extra, key=rid)
 
     async def _on_action(self, event: dict) -> None:
         action = (event.get("data") or {}).get("action", "")

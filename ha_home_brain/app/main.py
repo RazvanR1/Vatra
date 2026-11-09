@@ -17,11 +17,12 @@ from .anomaly import Baselines, Detector
 from .approvals import Approvals
 from .assistant import Assistant
 from .automations import Automations
+from .context import FAULT, TIER_LABEL, HomeContext
 from .guard import Guard
 from .habits import Habit, HabitMiner, automation_index, build_automation, mark_covered
 from .ha import HAClient
 from .llm import LLM
-from .notify import Alert, Notifier
+from .notify import Notifier
 from .recorder import Recorder
 from .store import Store
 from .web import build_app
@@ -36,8 +37,12 @@ class Brain:
         self.tz = ZoneInfo(opts.get("time_zone") or os.environ.get("TZ") or "Europe/Bucharest")
         self.ha = HAClient()
         self.store = store or Store()
-        self.notifier = Notifier(self.ha, opts.get("notify_services", []), opts.get("ntfy_url", ""))
-        self.guard = Guard(self.ha, self.notifier, opts.get("guard", {}), self.store)
+        ncfg = dict(opts.get("notifications") or {})
+        ncfg.setdefault("quiet_hours", (opts.get("agents") or {}).get("quiet_hours", "22-7"))
+        self.notifier = Notifier(self.ha, opts.get("notify_services", []), opts.get("ntfy_url", ""),
+                                 cfg=ncfg, tz=self.tz, store=self.store)
+        self.context = HomeContext(self.ha)
+        self.guard = Guard(self.ha, self.notifier, opts.get("guard", {}), self.store, self.context)
         self.automations = Automations(self.ha, self.notifier, opts)
         self.recorder = Recorder(self.ha, self.store, opts.get("learning", {}))
         learn = opts.get("learning", {})
@@ -48,7 +53,7 @@ class Brain:
         self.miner = HabitMiner(self.tz, self.persons,
                                 min_support=int(learn.get("min_support_days", 4)),
                                 min_confidence=float(learn.get("min_confidence", 0.6)))
-        self.detector = Detector(self.ha, opts.get("unusual", {}), self.tz, self.persons)
+        self.detector = Detector(self.ha, opts.get("unusual", {}), self.tz, self.persons, self.context)
         self.max_finding_push = int(opts.get("unusual", {}).get("max_push_per_day", 5))
         self.detector.muted = set(self.store.get("muted", []))
         self.detector.dwell_factor = self.store.get("dwell_factor", {})
@@ -56,7 +61,8 @@ class Brain:
         self.approvals = Approvals(self.ha, self.store, self.notifier, opts.get("safety", {}))
         site = opts.get("site_context", "")
         self.agents = Agents(self.ha, self.store, self.llm, self.approvals, self.notifier,
-                             {**opts.get("agents", {}), "site_context": site}, self.tz)
+                             {**opts.get("agents", {}), "site_context": site}, self.tz, self.context)
+        self.agents.extra_digest = self.digest_lines
         self.assistant = Assistant(self.ha, self.llm, opts.get("assistant", {}), self.approvals,
                                    site, self.brain_summary)
         self.approvals.on("action", self.approvals.handle_action)
@@ -68,6 +74,12 @@ class Brain:
         self._migrate()
 
     def _migrate(self) -> None:
+        if not self.store.get("migrated_200"):
+            # V2: observațiile vechi au fost trimise fără context; pornim curat.
+            for a in self.store.items("approval", "pending", limit=1000):
+                if a["kind"] == "finding":
+                    self.store.set_status("approval", a["id"], "resolved")
+            self.store.set("migrated_200", True)
         if self.store.get("migrated_042"):
             return
         for a in self.store.items("approval", "pending", limit=1000):
@@ -85,6 +97,8 @@ class Brain:
     async def learn(self) -> list[Habit]:
         since = time.time() - 30 * 86400
         transitions = self.store.transitions(since)
+        await self.context.refresh()
+        self.guard.learn_patterns(transitions)
         habits = self.miner.mine(transitions, self.names())
         try:
             index = automation_index(await self.ha.automation_configs())
@@ -166,27 +180,26 @@ class Brain:
 
     # ---------- neobișnuit ----------
     async def check_unusual(self) -> None:
+        """Observațiile apar în panou. Pe telefon ajung doar cele critice sau defecțiunile confirmate;
+        restul intră în rezumatul de seară."""
         recent = self.store.transitions(time.time() - 1800)
         found = {f.key: f for f in self.detector.check(recent)}
         now = time.time()
-        quiet = self.agents._quiet_now()
         new = [f for k, f in found.items()
                if k not in self.findings and self.store.get(f"snooze:{k}", 0) <= now]
         today = datetime.now(self.tz).date().isoformat()
         pushed = self.store.get(f"finding_push:{today}", 0)
-        burst = len(new) > 3
         for f in new:
-            self.findings[f.key] = f.to_dict()
-            push = (f.level == "critical" or not quiet) and not burst and pushed < self.max_finding_push
+            d = f.to_dict()
+            d["tier_label"] = TIER_LABEL.get(f.tier, f.tier)
+            self.findings[f.key] = d
+            push = (f.level == "critical" or f.tier == FAULT) and pushed < self.max_finding_push
             pushed += 1 if push else 0
-            await self.approvals.ask("finding", f"{f.key}:{int(now // 86400)}", f.title, f.message,
-                                     {"key": f.key, "kind": f.kind, "entity_id": f.entity_id},
+            await self.approvals.ask("finding", f"{f.key}:{int(now // 86400)}", f.title,
+                                     f.message + (f" {f.context}" if f.context else ""),
+                                     {"key": f.key, "kind": f.kind, "entity_id": f.entity_id, "tier": f.tier},
                                      buttons=[("seen", "Am văzut"), ("mute", "Nu e problemă")],
-                                     notify=push)
-        if burst and not quiet:
-            await self.notifier.send("Lucruri neobișnuite în casă",
-                                     f"{len(new)} observații noi, de ex.: {new[0].message} "
-                                     f"Detalii în panoul Vatra.", "warning")
+                                     notify=push, level=f.level)
         self.store.set(f"finding_push:{today}", pushed)
         for key in list(self.findings):
             if key not in found:
@@ -194,6 +207,17 @@ class Brain:
                 for a in self.approvals.pending():
                     if a["kind"] == "finding" and a["payload"].get("key") == key:
                         self.store.set_status("approval", a["id"], "resolved")
+
+    def digest_lines(self) -> list[str]:
+        """Ce intră în rezumatul de seară, pe lângă observațiile agenților."""
+        lines = []
+        anomalies = [a for a in self.notifier.active.values() if a.tier and a.tier != FAULT]
+        if anomalies:
+            lines.append(f"• Paznic: {len(anomalies)} de verificat (ex. {anomalies[0].message})")
+        if self.findings:
+            first = next(iter(self.findings.values()))
+            lines.append(f"• Neobișnuit: {len(self.findings)} observații (ex. {first['message']})")
+        return lines
 
     async def _decide_finding(self, item: dict, decision: str) -> str:
         p = item["payload"]
@@ -240,6 +264,9 @@ class Brain:
 
     async def guard_bridge(self) -> None:
         """Alertele paznicului apar și în panou (ca istoric); cele noi le trimite el însuși."""
+        await self.ha.connected.wait()
+        await self.context.refresh()
+        await self.notifier.resolve_panel_url()
         await self.guard.run_forever()
 
 
@@ -261,6 +288,7 @@ async def amain() -> None:
         brain.unusual_loop(),
         brain.agents.run_forever(),
         brain.agents.digest_loop(),
+        brain.notifier.run_forever(),
     )
 
 

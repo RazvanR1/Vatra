@@ -68,7 +68,7 @@ class PresenceCamera(Rule):
         self.last_action = ("Nimeni acasă: camere pornite" if want_on
                             else "Cineva acasă: camere oprite")
         if self._last is not None and self._last != home:
-            await self.notifier.send("Camere", self.last_action, "info")
+            await self.notifier.notify("Camere", self.last_action, "info")
         self._last = home
 
 

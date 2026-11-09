@@ -8,6 +8,7 @@ from collections import defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime, tzinfo
 
+from .context import ANOMALY, UNUSUAL
 from .recorder import is_discrete_tracked, is_numeric_tracked
 
 OPEN_CLASSES = {"door", "window", "opening", "garage_door"}
@@ -28,6 +29,8 @@ class Finding:
     title: str
     message: str
     level: str = "warning"
+    tier: str = UNUSUAL   # unusual | anomaly | fault – vezi context.py
+    context: str = ""     # ce am verificat în jur (explicație pentru panou)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -117,8 +120,9 @@ class Baselines:
 
 
 class Detector:
-    def __init__(self, ha, cfg: dict, tz: tzinfo, persons: list[str]) -> None:
+    def __init__(self, ha, cfg: dict, tz: tzinfo, persons: list[str], context=None) -> None:
         self.ha = ha
+        self.context = context
         self.tz = tz
         self.persons = persons
         self.ignore = [p for p in cfg.get("ignore", []) if p]
@@ -177,12 +181,21 @@ class Detector:
         lo_all, hi_all = self.base.overall.get(eid, (mn, mx))
         if abs(v - mean) / spread < 5 or (lo_all - floor <= v <= hi_all + floor):
             return None
+        loads = self.context.active_loads() if self.context and dc in ("power", "energy", "current") else []
+        if loads and v > mean:
+            # Consum mare, dar funcționează un consumator mare (pompă de căldură, centrală...):
+            # e explicat, cât timp nu depășește clar tot ce s-a văzut vreodată.
+            if v <= hi_all * 1.5 + floor:
+                return None
         unit = st.get("attributes", {}).get("unit_of_measurement", "")
         name = st.get("attributes", {}).get("friendly_name", eid)
         sens = "mare" if v > mean else "mică"
+        far = v > hi_all + 3 * spread or v < lo_all - 3 * spread
         return Finding(f"range:{eid}", "range", eid, "Valoare neobișnuită",
                        f"{name} arată {v:g}{unit}, neobișnuit de {sens} pentru ora asta "
-                       f"(de obicei {mean:.1f}{unit}, între {lo_all:g} și {hi_all:g}).")
+                       f"(de obicei {mean:.1f}{unit}, între {lo_all:g} și {hi_all:g}).",
+                       tier=ANOMALY if far else UNUSUAL,
+                       context=("Funcționează acum: " + "; ".join(loads)) if loads else "")
 
     def _silent(self, eid: str, st: dict, now: float) -> Finding | None:
         # Doar senzorii care se schimbă practic în fiecare oră; bateriile și ce raportează
@@ -198,10 +211,13 @@ class Detector:
         limit = max(6 * 3600, 10 * 3600 / rate)
         if now - last < limit:
             return None
+        if self.context is not None and self.context.expected_down(eid):
+            return None  # ex. GPS-ul trotinetei: e acasă, la încărcat, nu are ce raporta
         name = st.get("attributes", {}).get("friendly_name", eid)
         return Finding(f"silent:{eid}", "silent", eid, "Senzor tăcut",
                        f"{name} n-a mai raportat de {fmt_dur(now - last)} "
-                       f"(de obicei de ~{rate:.0f} ori pe oră).")
+                       f"(de obicei de ~{rate:.0f} ori pe oră).",
+                       tier=ANOMALY if self.context and self.context.device_alive(eid) is False else UNUSUAL)
 
     def _dwell(self, eid: str, st: dict, now: float) -> Finding | None:
         domain = eid.split(".", 1)[0]
@@ -213,6 +229,8 @@ class Detector:
                 return None
             key = dc
         elif LONG_STATES.get(domain) == state:
+            if self.context is not None and self.context.is_bulb_feed(eid):
+                return None  # releu care ține becurile smart alimentate: „pornit” e starea lui normală
             key = domain
         else:
             return None
@@ -260,4 +278,5 @@ class Detector:
         if not opened:
             return None
         return Finding("open_away:house", "open_away", "house", "Casă deschisă, nimeni acasă",
-                       "Nu e nimeni acasă, dar e deschis: " + ", ".join(opened) + ".", "critical")
+                       "Nu e nimeni acasă, dar e deschis: " + ", ".join(opened) + ".", "critical",
+                       tier="fault")
