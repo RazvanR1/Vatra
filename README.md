@@ -5,6 +5,7 @@
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
+[![Installs](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FRazvanR1%2FVatra%2Fstats%2Fbadge-installs.json)](https://analytics.home-assistant.io/addons)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/razvanr1)
 
 **Vatra** (Romanian for *hearth* – the heart of the home) **is a local brain for your home.** It watches what happens in Home Assistant, learns what is
