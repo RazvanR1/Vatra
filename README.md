@@ -1,10 +1,11 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
-![Version](https://img.shields.io/badge/version-0.5.1-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/razvanr1)
 
 **Vatra** (Romanian for *hearth* – the heart of the home) **is a local brain for your home.** It watches what happens in Home Assistant, learns what is
 *normal* for **your** house, turns your habits into native HA automations (after you approve them),
@@ -128,7 +129,12 @@ Code map: `ha.py` (HA client, origin tracking) · `recorder.py` + `store.py` (me
 `approvals.py` (notifications, guardrails, Undo) · `agents.py` + `llm.py` (AI agents) ·
 `assistant.py` (Jarvis) · `guard.py` · `web.py` + `static/index.html` (panel).
 
-Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
+
+## Support
+
+Vatra is free and open source, built in my spare time. If it helps your home, you can buy me a coffee ☕ – it keeps the project going.
+
+<a href="https://buymeacoffee.com/razvanr1"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=razvanr1&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="45"></a>
 
 ## License
 
@@ -150,3 +156,5 @@ Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
 `learning.persons` și, opțional, `assistant.ollama_url`, apoi îl pornești.
 Vatra vorbește română automat dacă Home Assistant e în română (opțiunea `language`).
 Documentația completă în română: [DOCS.ro.md](ha_home_brain/DOCS.ro.md).
+
+Dacă Vatra îți e de folos, mă poți susține cu o cafea: [buymeacoffee.com/razvanr1](https://buymeacoffee.com/razvanr1) ☕
