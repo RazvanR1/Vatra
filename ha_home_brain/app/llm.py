@@ -7,6 +7,7 @@ import logging
 import time
 
 import aiohttp
+from .i18n import t
 
 log = logging.getLogger("home_brain.llm")
 
@@ -28,7 +29,7 @@ class LLM:
     async def chat_json(self, messages: list[dict], timeout: float = 180) -> tuple[dict | None, str]:
         """Întoarce (json, text brut). json e None dacă modelul n-a respectat formatul."""
         if not self.enabled:
-            return None, "Modelul AI nu e configurat."
+            return None, t("llm.not_configured")
         payload = {"model": self.model, "messages": messages, "stream": False, "format": "json",
                    "think": False, "keep_alive": -1, "options": {"num_ctx": self.num_ctx}}
         async with self.lock:

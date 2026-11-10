@@ -1,0 +1,170 @@
+configuration:
+  language:
+    name: Limba
+    description: "Limba notificărilor, a panoului (implicit) și a AI-ului. auto = la fel ca Home Assistant (română dacă HA e în română, altfel engleză)."
+  log_level:
+    name: Nivel de log
+  time_zone:
+    name: Fus orar
+    description: Fusul orar IANA folosit pentru obiceiuri și orele de liniște, ex. Europe/Bucharest.
+  site_context:
+    name: Despre casa ta
+    description: Câteva propoziții despre casă (cine locuiește, program, încălzire). Le primesc agenții AI și Jarvis.
+  notify_services:
+    name: Servicii de notificare
+    description: Unde pleacă alertele și cererile de aprobare, ex. notify.mobile_app_telefon. Butoanele merg cu serviciile mobile_app.
+  ntfy_url:
+    name: URL topic ntfy
+    description: Opțional. Trimite alertele și pe acest topic ntfy.
+  notifications:
+    name: Notificări
+    description: Cât scrie Vatra pe telefon. Totul se vede oricum în panou.
+    fields:
+      mode:
+        name: Mod
+        description: "smart = criticele imediat, restul grupate; all = tot imediat (comportamentul vechi); critical_only = doar critice."
+      quiet_hours:
+        name: Ore de liniște
+        description: "ex. 22-7. În acest interval pleacă doar alertele critice; aprobările așteaptă dimineața."
+      max_per_day:
+        name: Mesaje grupate pe zi
+        description: Maximum de mesaje non-critice pe zi. Peste atât, alertele rămân în panou.
+      batch_minutes:
+        name: Interval de grupare (minute)
+        description: Alertele non-critice se strâng și pleacă împreună cel mult atât de des.
+      send_resolved:
+        name: Anunță rezolvările
+        description: Trimite și mesajele „Rezolvat” (oprit implicit; apar doar în panou).
+      cooldown_hours:
+        name: Pauză la repetare (ore)
+        description: O problemă rezolvată care revine nu se retrimite în acest interval.
+  guard:
+    name: Paznic
+    description: Alerte pentru dispozitive care devin indisponibile și baterii slabe.
+    fields:
+      unavailable_minutes:
+        name: Indisponibil de (minute)
+        description: Alertă după ce un dispozitiv e indisponibil atât timp.
+      max_unavailable_hours:
+        name: Ignoră după (ore)
+        description: Dispozitivele picate de mai mult timp sunt considerate cunoscute/scoase și nu dau alertă.
+      bad_states:
+        name: Stări problematice
+        description: Stări tratate ca problemă (adaugă "unknown" dacă vrei).
+      battery_threshold:
+        name: Baterie slabă (%)
+      interval_seconds:
+        name: Interval de verificare (secunde)
+      ignore:
+        name: Ignoră
+        description: Modele de entități de ignorat, ex. sensor.*_linkquality
+  learning:
+    name: Învățarea obiceiurilor
+    description: Învață obiceiuri din ce fac oamenii și propune automatizări native.
+    fields:
+      enabled:
+        name: Activat
+      persons:
+        name: Persoane
+        description: Entități person.*, folosite pentru „doar când e cineva acasă” și prezență.
+      history_import_days:
+        name: Istoric de importat (zile)
+        description: Importat o singură dată la prima pornire, ca învățarea să înceapă imediat.
+      min_support_days:
+        name: Zile minime
+        description: Un obicei trebuie să apară în cel puțin atâtea zile.
+      min_confidence:
+        name: Încredere minimă
+        description: Partea din zile în care trebuie să apară obiceiul (0.6 = 60 %).
+      propose_automations:
+        name: Propune automatizări
+        description: Trimite obiceiurile puternice pe telefon ca propuneri de automatizare.
+      max_proposals_per_day:
+        name: Propuneri pe zi
+  unusual:
+    name: Activitate neobișnuită
+    description: Învață ce e normal și semnalează ce nu e. Nu are nevoie de liste de dispozitive.
+    fields:
+      range:
+        name: Valori anormale
+        description: Valori mult în afara a ce e normal pentru ora respectivă.
+      silent:
+        name: Senzori tăcuți
+        description: Senzori care de obicei se schimbă în fiecare oră și brusc se opresc.
+      flapping:
+        name: Aprinderi repetate
+        description: Dispozitive care pornesc/se opresc mult mai des decât de obicei.
+      dwell:
+        name: Lăsate prea mult
+        description: Uși, lumini, dispozitive lăsate într-o stare mult mai mult decât de obicei.
+      open_away:
+        name: Deschis când nu e nimeni
+        description: Uși/ferestre deschise când nu e nimeni acasă.
+      min_days:
+        name: Zile minime de date
+      max_push_per_day:
+        name: Notificări pe zi
+        description: Plafon pentru observațiile critice / defecțiunile confirmate trimise pe zi.
+      ignore:
+        name: Ignoră
+        description: Modele de entități de ignorat.
+  safety:
+    name: Siguranță
+    description: Ce are voie Vatra să facă singură. Dispozitivele critice cer mereu aprobare.
+    fields:
+      autonomy:
+        name: Autonomie
+        description: shadow = doar notează, copilot = întreabă întâi, autonomous = face lucrurile sigure și oferă Anulare.
+      autonomy_overrides:
+        name: Autonomie pe domenii
+        description: ex. light:autonomous
+      min_temperature:
+        name: Temperatură minimă
+      max_temperature:
+        name: Temperatură maximă
+      actionable_notifications:
+        name: Butoane în notificări
+  agents:
+    name: Agenți AI
+    description: Agenți locali (Ollama) pentru climă, energie, securitate și server. Rulează doar când s-a schimbat ceva.
+    fields:
+      agents:
+        name: Agenți
+      agents_interval_hours:
+        name: Interval (ore)
+      quiet_hours:
+        name: Ore de liniște
+        description: Agenții nu rulează analize zgomotoase în acest interval, ex. 23-7.
+      notify:
+        name: Notificări
+        description: none, digest (un rezumat pe zi) sau critical.
+      digest_hour:
+        name: Ora rezumatului
+      allow_actions:
+        name: Permite acțiuni
+        description: Agenții pot propune acțiuni pe dispozitive (mereu prin aprobare).
+  presence_camera:
+    name: Regulă – camere doar când nu e nimeni
+    description: Regulă fixă opțională. Las-o goală dacă ai deja o automatizare pentru asta.
+  heating_ac_lock:
+    name: Regulă – centrala oprită cât încălzește AC-ul
+    description: Regulă fixă opțională. Las-o goală dacă ai deja o automatizare pentru asta.
+  follow_thermostat:
+    name: Regulă – robinetele urmează termostatul
+    description: Regulă fixă opțională. Las-o goală dacă ai deja o automatizare pentru asta.
+  assistant:
+    name: Model AI (Ollama) și Jarvis
+    fields:
+      ollama_url:
+        name: URL Ollama
+        description: ex. http://192.168.1.50:11434. Lasă gol ca să oprești funcțiile AI.
+      model:
+        name: Model
+        description: ex. qwen3.5:9b
+      allowed_domains:
+        name: Domenii pe care le poate controla Jarvis
+      max_entities:
+        name: Maximum de entități în context
+      num_ctx:
+        name: Mărimea contextului
+        description: Ține-o egală cu integrarea Ollama din HA, ca modelul să nu se reîncarce.

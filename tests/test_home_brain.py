@@ -61,6 +61,8 @@ class FakeHA:
                 res = {}
             elif msg["type"] == "automation/config":
                 res = {"config": {}}
+            elif msg["type"] == "get_config":
+                res = {"language": getattr(self, "language", "ro"), "time_zone": "Europe/Bucharest"}
             else:
                 res = None
             await ws.send_json({"id": msg["id"], "type": "result", "success": True, "result": res})
@@ -102,6 +104,7 @@ class FakeHA:
 
 
 OPTS = {
+    "language": "ro",
     "notify_services": ["notify.mobile_app_razvan"],
     "guard": {"unavailable_minutes": 30, "battery_threshold": 20, "ignore": ["sensor.ignored_*"]},
     "presence_camera": {"persons": ["person.razvan", "person.hajni"],
@@ -422,3 +425,16 @@ async def test_agents_default_no_actions_no_push_and_findings_burst(setup):
     assert not [c for c in fake.calls if c["domain"] == "notify"]
     assert len(brain.approvals.pending()) == 6
     assert any("6 observații" in line for line in brain.digest_lines())
+
+
+async def test_language_auto_follows_home_assistant(setup):
+    from app import i18n
+    fake, brain = setup
+    brain.language_option = "auto"
+    fake.language = "en"
+    assert await brain.sync_language() == "en"
+    from app.i18n import t
+    assert t("guard.unavailable") == "Device unavailable"
+    fake.language = "ro"
+    assert await brain.sync_language() == "ro" and i18n.lang() == "ro"
+    assert brain.store.get("ha_language") == "ro"

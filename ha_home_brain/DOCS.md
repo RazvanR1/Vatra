@@ -1,99 +1,109 @@
 # Vatra – the local brain for Home Assistant
 
-Creierul casei: urmărește ce se întâmplă, învață ce e normal în casa **ta**, îți transformă obiceiurile
-în automatizări native Home Assistant, îți spune când ceva e neobișnuit și lasă agenți AI locali
-să se gândească la întrebările mai grele. Totul rulează local; AI-ul (Ollama) e folosit doar când merită.
+> 🇷🇴 Documentație în română: [DOCS.ro.md](https://github.com/RazvanR1/Vatra/blob/main/ha_home_brain/DOCS.ro.md)
 
-## Cum funcționează
+Vatra watches what happens in your home, learns what is normal in **your** home, turns your habits
+into native Home Assistant automations, tells you when something is unusual and lets local AI agents
+think about the harder questions. Everything runs locally; the AI (Ollama) is used only when it's worth it.
 
-1. **Observă** – înregistrează schimbările de stare (cu originea lor: om, dispozitiv, automatizare sau
-   Vatra) și importă la pornire istoricul pe ultimele zile.
-2. **Învață local, fără AI** – obiceiuri, valori normale pe oră, cât stă fiecare dispozitiv într-o stare.
-3. **Decide** – doar ce e neobișnuit sau nou ajunge la tine sau la agenți.
-4. **Gândește** – agenții (Climă, Energie, Securitate, Server & homelab) analizează periodic casa,
-   doar dacă s-a schimbat ceva de la ultima analiză.
-5. **Acționează sau întreabă** – reguli de siguranță fixe, apoi: doar notează (Shadow), te întreabă
-   (Co-pilot) sau face singur, cu buton de Anulare (Autonom).
+## How it works
 
-## Obiceiuri → automatizări
+1. **Observes** – records state changes (with their origin: person, device, automation or Vatra) and
+   imports the last days of history at first start.
+2. **Learns locally, without AI** – habits, normal values per hour, how long each device stays in a state.
+3. **Decides** – only what is unusual or new reaches you or the agents.
+4. **Thinks** – the agents (Climate, Energy, Security, Server & homelab) analyse the home periodically,
+   only if something changed since the last analysis.
+5. **Acts or asks** – fixed safety rules first, then: only logs (Shadow), asks you (Co-pilot) or acts
+   on its own with an Undo button (Autonomous).
 
-- Se învață **doar din ce faci tu** (din aplicație sau de la întrerupător), nu din ce fac automatizările.
-- Două tipuri: de oră („zilele lucrătoare pe la 22:30 aprinzi lampa”) și de secvență
-  („după ce se deschide ușa, aprinzi lumina de la intrare”).
-- Fiecare obicei e **testat pe istoric** (backtest): în câte zile ar fi făcut automatizarea exact ce ai
-  făcut tu și în câte ar fi făcut ceva în plus.
-- Citește automatizările tale existente și nu propune ce ai deja.
-- Obiceiurile puternice ți le trimite pe telefon (cel mult `max_proposals_per_day` pe zi) cu
-  **Creează** / **Nu e obicei**. Restul le găsești în tab-ul *Obiceiuri*.
-- Automatizările create au id-ul `home_brain_…` și se pot anula din *Jurnal*.
+## Language
 
-## Neobișnuit (fără listă de dispozitive)
+`language: auto` (default) follows Home Assistant: Romanian if HA is in Romanian, English otherwise.
+Set `en` or `ro` to force one. This decides notifications, the evening digest, approval buttons and
+the language of the AI agents. The panel starts in the same language and has an **EN/RO** switch,
+remembered per browser/phone. Jarvis answers in the language you write to it.
 
-- valori anormale pentru ora respectivă (ex. temperatură), senzori care au tăcut,
-  dispozitive care se aprind și se sting întruna, uși/lumini care stau prea mult așa,
-  casă deschisă când nu e nimeni acasă (`open_away`, oprit implicit dacă ai deja automatizare).
-- Învață din reacțiile tale: **Am văzut** = așteaptă mai mult data viitoare,
-  **Nu e problemă** = nu mai semnalează pentru acel dispozitiv.
+## Habits → automations
 
-## Notificări (V2)
+- Learned **only from what you do** (app or wall switch), never from what automations do.
+- Two kinds: time habits ("on weekdays around 22:30 you turn on the lamp") and sequence habits
+  ("after the door opens, you turn on the hallway light").
+- Every habit is **backtested on history**: on how many days the automation would have done exactly
+  what you did, and on how many it would have done something extra.
+- It reads your existing automations and doesn't propose what you already have.
+- Strong habits are sent to your phone (at most `max_proposals_per_day`) with **Create** /
+  **Not a habit**. The rest are in the *Habits* tab.
+- Created automations have the id `home_brain_…` and can be undone from the *Log*.
 
-Implicit Vatra scrie puțin pe telefon. Tot ce vede apare oricum în panou.
+## Unusual (no device lists)
 
-| Ce | Unde ajunge |
+- values abnormal for the time of day, sensors that went silent, devices flapping on/off,
+  doors/lights left in a state too long, house open while nobody is home (`open_away`, off by default
+  if you already have an automation for it).
+- Learns from your answers: **Seen** = wait longer next time, **Not a problem** = stop flagging it
+  for that device.
+
+## Notifications
+
+By default Vatra writes very little to your phone. Everything it sees is in the panel anyway.
+
+| What | Where it goes |
 |---|---|
-| Critic (apă, gaz, fum, casă deschisă când nu e nimeni, defecțiune confirmată din `open_away`) | imediat, mereu |
-| Defecțiune confirmată (tot dispozitivul a picat) | grupat, cel mult o dată la `batch_minutes` |
-| Posibilă anomalie / neobișnuit / baterie slabă | panou + rezumatul de seară |
-| „Rezolvat” | doar panou (`send_resolved`) |
-| Cereri de aprobare (obiceiuri, acțiuni) | individual, cu butoane; noaptea așteaptă dimineața |
+| Critical (water, gas, smoke, house open while nobody is home) | immediately, always |
+| Confirmed fault (the whole device is down) | grouped, at most once every `batch_minutes` |
+| Possible anomaly / unusual / low battery | panel + evening digest |
+| "Resolved" | panel only (`send_resolved`) |
+| Approval requests (habits, actions) | one by one, with buttons; at night they wait until morning |
 
 ```yaml
 notifications:
-  mode: smart          # smart | all (comportamentul vechi) | critical_only
+  mode: smart          # smart | all (old behaviour) | critical_only
   quiet_hours: "22-7"
-  max_per_day: 4       # mesaje grupate pe zi
+  max_per_day: 4       # grouped messages per day
   batch_minutes: 120
   send_resolved: false
   cooldown_hours: 12
 ```
 
-## Context: ce nu mai e tratat ca defecțiune
+Tapping a notification opens the Vatra panel; if requests are waiting, it opens on *Approvals*.
 
-- Un senzor „unavailable” cât timp restul dispozitivului funcționează → *posibilă anomalie* (panou).
-- Dispozitiv în repaus: tracker acasă / la încărcat / nemișcat, robot în bază → normal, fără alertă.
-- Senzori de activitate (cartografiere, progres, timp rămas, ciclu) → normal când nu e activitate.
-- Entități care pică des și își revin singure → normal pentru ele.
-- Consum mare cu pompa de căldură / centrala / AC pornite → explicat.
-- Releu care alimentează becuri smart → pornit permanent e normal; lumina o dă `light.*`.
+## Context: what is not treated as a fault
 
-## Siguranță
+- One sensor "unavailable" while the rest of the device works → *possible anomaly* (panel only).
+- Device at rest: tracker at home / charging / not moving, robot vacuum docked → normal, no alert.
+- Activity sensors (mapping, progress, time remaining, cycle) → normal when there is no activity.
+- Entities that often drop out and recover on their own → normal for them.
+- High consumption while the heat pump / boiler / AC runs → explained.
+- Relay powering smart bulbs → always on is normal; only `light.*` tells if the light is lit.
 
-- `autonomy`: `shadow` | `copilot` (implicit) | `autonomous`; pe domenii cu `autonomy_overrides`,
-  de ex. `light:autonomous`.
-- **Mereu cu aprobare**: lacăte, alarmă, robinete/valve, porți, și orice dispozitiv important
-  (centrală, frigider, server, NAS…).
-- **Niciodată**: comenzi shell, scripturi Python, Supervisor, oprire/repornire HA, dezactivare automatizări,
-  temperaturi în afara `min_temperature`–`max_temperature`.
-- Notificările au butoane (**Aprobă / Mereu / Respinge**, **Anulează** după o acțiune făcută singur).
+## Safety
 
-## Opțiuni importante
+- `autonomy`: `shadow` | `copilot` (default) | `autonomous`; per domain with `autonomy_overrides`,
+  e.g. `light:autonomous`.
+- **Always with approval**: locks, alarm, valves, gates, and any important device
+  (boiler, fridge, server, NAS…).
+- **Never**: shell commands, Python scripts, Supervisor, stopping/restarting HA, disabling automations,
+  `homeassistant.update_entity`, temperatures outside `min_temperature`–`max_temperature`.
+- Notifications have buttons (**Approve / Always / Reject**, **Undo** after something done on its own).
+
+## Important options
 
 ```yaml
-site_context: "Apartament în Cluj. Locuim Razvan și Hajni, lucrăm L–V 8:00–16:30."
-notify_services: [notify.mobile_app_telefon]
+language: auto
+site_context: "Flat in Cluj. Two adults, both working Mon–Fri 8:00–16:30. Heat pump + gas boiler."
+notify_services: [notify.mobile_app_phone]
 learning:
-  persons: [person.razvan, person.hajni]   # pentru „doar când e cineva acasă”
+  persons: [person.alex, person.sam]   # for "only when someone is home"
 assistant:
   ollama_url: "http://IP:11434"
   model: "qwen3.5:9b"
-  num_ctx: 8192        # același ca integrarea Ollama din HA, ca modelul să nu se reîncarce
+  num_ctx: 8192        # same as the Ollama integration in HA, so the model isn't reloaded
 agents:
   agents_interval_hours: 6
-  quiet_hours: "23-7"  # agenții nu rulează analize zgomotoase noaptea
+  quiet_hours: "23-7"  # agents don't run noisy analyses at night
 ```
 
-Paznicul (dispozitive indisponibile, baterii) și Jarvis (chat) funcționează ca înainte.
+## Security
 
-## Securitate
-
-Panoul răspunde doar cererilor venite prin ingress-ul Home Assistant. Datele stau în `/data/brain.db`.
+The panel only answers requests that come through Home Assistant ingress. Data is stored in `/data/brain.db`.

@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from .ha import ORIGIN_AUTOMATION, ORIGIN_DEVICE, ORIGIN_USER
+from .i18n import t as tr
 
 log = logging.getLogger("home_brain.recorder")
 
@@ -86,7 +87,7 @@ class Recorder:
         self.ha = ha
         self.store = store
         self.import_days = int(cfg.get("history_import_days", 10))
-        self.import_status = "neînceput"
+        self.import_status = "not_started"
         # Originea se stabilește cu o mică întârziere: HA poate trimite schimbarea de stare
         # înaintea răspunsului la comanda noastră, deci contextul nostru nu e încă cunoscut.
         self._pending: list[tuple] = []
@@ -127,12 +128,12 @@ class Recorder:
     async def import_history(self) -> None:
         """Importă o singură dată ultimele N zile (logbook pentru origine, history pentru valori)."""
         if self.store.get("history_imported"):
-            self.import_status = "făcut"
+            self.import_status = "done"
             return
         disc, num = self.tracked()
         end = datetime.now(timezone.utc)
         start = end - timedelta(days=self.import_days)
-        self.import_status = "în curs"
+        self.import_status = "running"
         added = 0
         day = start
         while day < end:
@@ -166,9 +167,8 @@ class Recorder:
             await asyncio.sleep(0)
         self.store.flush()
         self.store.set("history_imported", True)
-        self.import_status = "făcut"
-        self.store.log("memorie", f"Am importat istoricul pe {self.import_days} zile "
-                                  f"({added} schimbări, {len(num)} senzori numerici).")
+        self.import_status = "done"
+        self.store.log("memorie", tr("rec.imported", days=self.import_days, n=added, num=len(num)))
 
     def _rows_from_logbook(self, entries: list[dict]) -> list[tuple]:
         rows, last = [], {}
@@ -188,8 +188,8 @@ class Recorder:
         try:
             await self.import_history()
         except Exception:  # noqa: BLE001
-            log.exception("Importul istoricului a eșuat")
-            self.import_status = "eșuat"
+            log.exception("History import failed")
+            self.import_status = "failed"
         n = 0
         while True:
             await asyncio.sleep(5)

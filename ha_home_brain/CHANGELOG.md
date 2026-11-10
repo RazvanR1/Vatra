@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.1.0 – English 🇬🇧 / Română 🇷🇴
+**EN:** Vatra now speaks English and Romanian.
+- New option `language`: `auto` (default) follows the Home Assistant language – Romanian if HA is in
+  Romanian, English otherwise; or force `en` / `ro`.
+- Notifications, evening digest, approval buttons, guard messages, habit descriptions and the AI agents'
+  instructions are translated. Jarvis answers in the language you write to it.
+- The panel starts in the add-on language and has an **EN/RO** switch, remembered per browser/phone.
+- Configuration screen translated (HA shows it in your language).
+- Add-on documentation is now in English; Romanian moved to `DOCS.ro.md`.
+- Add-on logs are in English. The personal "RusHome" name was removed from the AI prompts.
+
+**RO:** Vatra vorbește acum engleză și română.
+- Opțiune nouă `language`: `auto` (implicit) urmează limba Home Assistant – română dacă HA e în română,
+  altfel engleză; sau forțezi `en` / `ro`.
+- Notificările, rezumatul de seară, butoanele de aprobare, mesajele paznicului, descrierile obiceiurilor
+  și instrucțiunile agenților AI sunt traduse. Jarvis răspunde în limba în care îi scrii.
+- Panoul pornește în limba add-on-ului și are comutator **EN/RO**, ținut minte pe fiecare browser/telefon.
+- Ecranul de configurare e tradus (HA îl arată în limba ta).
+- Documentația add-on-ului e acum în engleză; cea în română e în `DOCS.ro.md`.
+- Logurile add-on-ului sunt în engleză. Numele personal „RusHome” a fost scos din instrucțiunile AI.
+
 ## 2.0.0 – V2: context înainte de alarmă, notificări mai puține
 Construită din feedback-ul de pe casa reală.
 

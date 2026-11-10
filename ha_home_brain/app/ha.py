@@ -157,7 +157,7 @@ class HAClient:
             except asyncio.CancelledError:
                 raise
             except Exception as err:  # noqa: BLE001
-                log.warning("Conexiune HA pierdută: %s (reîncerc în %ss)", err, delay)
+                log.warning("HA connection lost: %s (retrying in %ss)", err, delay)
             self.connected.clear()
             for fut in self._pending.values():
                 if not fut.done():
@@ -179,7 +179,7 @@ class HAClient:
                 await ws.send_json({"type": "auth", "access_token": self.token})
                 res = await ws.receive_json()
                 if res.get("type") != "auth_ok":
-                    raise PermissionError(f"Autentificare HA eșuată: {res}")
+                    raise PermissionError(f"HA authentication failed: {res}")
             reader = asyncio.create_task(self._reader(ws))
             try:
                 states = await self._request({"type": "get_states"})
@@ -187,7 +187,7 @@ class HAClient:
                 self._sub_types.clear()
                 for et in ("state_changed", *EXTRA_EVENTS):
                     await self._subscribe(et)
-                log.info("Conectat la Home Assistant (%d entități)", len(self.states))
+                log.info("Connected to Home Assistant (%d entities)", len(self.states))
                 self.connected.set()
                 await reader
             finally:
@@ -204,7 +204,7 @@ class HAClient:
 
     async def _request(self, msg: dict, timeout: float = 30) -> Any:
         if self._ws is None:
-            raise ConnectionError("HA nu e conectat")
+            raise ConnectionError("HA is not connected")
         msg_id = next(self._ids)
         fut: asyncio.Future = asyncio.get_running_loop().create_future()
         self._pending[msg_id] = fut
@@ -257,4 +257,4 @@ class HAClient:
         try:
             await coro
         except Exception:  # noqa: BLE001
-            log.exception("Eroare într-un listener")
+            log.exception("Error in a listener")

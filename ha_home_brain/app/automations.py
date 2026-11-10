@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from .i18n import t
 
 log = logging.getLogger("home_brain.automations")
 
@@ -10,7 +11,11 @@ HOME = "home"
 
 
 class Rule:
-    name = "regulă"
+    name_key = "rule"
+
+    @property
+    def name(self) -> str:
+        return t(self.name_key)
 
     def __init__(self, ha, notifier) -> None:
         self.ha = ha
@@ -33,7 +38,7 @@ class Rule:
 
 class PresenceCamera(Rule):
     """Camerele (Frigate) pornite doar când nu e nimeni acasă."""
-    name = "Camere doar când nu e nimeni acasă"
+    name_key = "rule.cameras"
 
     def __init__(self, ha, notifier, cfg: dict) -> None:
         super().__init__(ha, notifier)
@@ -65,16 +70,15 @@ class PresenceCamera(Rule):
             return
         service = "turn_on" if want_on else "turn_off"
         await self.ha.call_service("homeassistant", service, target={"entity_id": wrong})
-        self.last_action = ("Nimeni acasă: camere pornite" if want_on
-                            else "Cineva acasă: camere oprite")
+        self.last_action = t("rule.cameras_on") if want_on else t("rule.cameras_off")
         if self._last is not None and self._last != home:
-            await self.notifier.notify("Camere", self.last_action, "info")
+            await self.notifier.notify(t("rule.cameras_title"), self.last_action, "info")
         self._last = home
 
 
 class HeatingAcLock(Rule):
     """Centrala nu pornește cât timp AC-ul încălzește; revine apoi la modul anterior."""
-    name = "Centrală oprită cât încălzește AC-ul"
+    name_key = "rule.boiler"
 
     def __init__(self, ha, notifier, cfg: dict) -> None:
         super().__init__(ha, notifier)
@@ -101,17 +105,17 @@ class HeatingAcLock(Rule):
                 self.saved_mode = boiler_mode
                 await self.ha.call_service("climate", "set_hvac_mode", {"hvac_mode": "off"},
                                            target={"entity_id": self.boiler})
-                self.last_action = f"AC încălzește: centrala oprită (era {boiler_mode})"
+                self.last_action = t("rule.boiler_off", prev=boiler_mode)
         elif self.saved_mode and boiler_mode == "off":
             mode, self.saved_mode = self.saved_mode, None
             await self.ha.call_service("climate", "set_hvac_mode", {"hvac_mode": mode},
                                        target={"entity_id": self.boiler})
-            self.last_action = f"AC nu mai încălzește: centrala revine pe {mode}"
+            self.last_action = t("rule.boiler_back", mode=mode)
 
 
 class FollowThermostat(Rule):
     """Robinetele termostatate urmează temperatura setată pe termostatul centralei."""
-    name = "Robinete urmează termostatul"
+    name_key = "rule.valves"
 
     def __init__(self, ha, notifier, cfg: dict) -> None:
         super().__init__(ha, notifier)
@@ -136,7 +140,7 @@ class FollowThermostat(Rule):
             if current is None or abs(float(current) - float(target)) >= 0.25:
                 await self.ha.call_service("climate", "set_temperature", {"temperature": target},
                                            target={"entity_id": f})
-                self.last_action = f"{f} setat la {target}°C"
+                self.last_action = t("rule.valves_set", names=f, temp=target)
 
 
 class Automations:
@@ -160,7 +164,7 @@ class Automations:
             try:
                 await rule.evaluate()
             except Exception:  # noqa: BLE001
-                log.exception("Eroare în regula %s", rule.name)
+                log.exception("Error in rule %s", rule.name)
 
     async def run_forever(self) -> None:
         while True:

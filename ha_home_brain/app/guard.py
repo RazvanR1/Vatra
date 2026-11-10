@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timezone
 
 from .context import ANOMALY, FAULT, flaky
+from .i18n import t
 from .notify import Alert
 
 log = logging.getLogger("home_brain.guard")
@@ -40,8 +41,8 @@ class Guard:
         if store:
             for key in store.get("guard_active", []) or []:
                 notifier.active.setdefault(key, Alert(
-                    key=key, message="", title={"unavailable": "Dispozitiv indisponibil",
-                                                "battery": "Baterie slabă"}.get(key.split(":")[0], "Alertă")))
+                    key=key, message="", title={"unavailable": t("guard.unavailable"),
+                                                "battery": t("guard.battery")}.get(key.split(":")[0], t("guard.alert"))))
         self.unavailable_minutes = int(cfg.get("unavailable_minutes", 30))
         # Ce e picat de mai mult de atât e „cunoscut” (dispozitiv scos, container șters) -> nu alertăm.
         self.max_hours = float(cfg.get("max_unavailable_hours", 24))
@@ -61,7 +62,7 @@ class Guard:
     def classify_down(self, eid: str) -> tuple[str | None, str]:
         """(treaptă, explicație). Treaptă None = e normal, nu alertăm deloc."""
         if eid in self.flaky_cache:
-            return None, "pică des și își revine singur – comportament obișnuit"
+            return None, t("ctx.flaky")
         if self.context is None:
             return FAULT, ""
         why = self.context.expected_down(eid)
@@ -69,7 +70,7 @@ class Guard:
             return None, why
         alive = self.context.device_alive(eid)
         if alive:
-            return ANOMALY, "restul dispozitivului funcționează"
+            return ANOMALY, t("ctx.device_alive")
         return FAULT, ""
 
     def ignored(self, entity_id: str) -> bool:
@@ -121,8 +122,8 @@ class Guard:
                             self.explained.pop(eid, None)
                             found[f"unavailable:{eid}"] = Alert(
                                 key=f"unavailable:{eid}",
-                                title="Dispozitiv indisponibil" if tier == FAULT else "Senzor fără valoare",
-                                message=f"{name} e {state} de {int(age // 60)} minute"
+                                title=t("guard.unavailable") if tier == FAULT else t("guard.no_value"),
+                                message=t("guard.down_msg", name=name, state=state, minutes=int(age // 60))
                                         + (f" ({why})." if why else "."),
                                 tier=tier)
             elif eid in self.explained:
@@ -131,8 +132,8 @@ class Guard:
             level = self.battery_level(eid, st)
             if level is not None and level <= self.battery_threshold:
                 found[f"battery:{eid}"] = Alert(
-                    key=f"battery:{eid}", title="Baterie slabă",
-                    message=f"{name}: baterie {level:.0f}%.",
+                    key=f"battery:{eid}", title=t("guard.battery"),
+                    message=t("guard.battery_msg", name=name, level=f"{level:.0f}"),
                     level="warning", tier=FAULT if level <= 5 else ANOMALY)
         return found
 
@@ -160,9 +161,10 @@ class Guard:
         if len(push) > SUMMARY_AFTER:
             names = ", ".join(self.ha.attr(a.key.partition(":")[2], "friendly_name",
                                            a.key.partition(":")[2]) for a in push[:8])
-            more = f" și încă {len(push) - 8}" if len(push) > 8 else ""
-            await self.notifier.notify("Mai multe dispozitive picate",
-                                       f"{len(push)} dispozitive: {names}{more}.", "warning", key="guard_burst")
+            more = t("guard.and_more", n=len(push) - 8) if len(push) > 8 else ""
+            await self.notifier.notify(t("guard.burst_title"),
+                                       t("guard.burst_msg", count=len(push), names=names, more=more),
+                                       "warning", key="guard_burst")
         else:
             for alert in push:
                 if time.time() - self.notifier.recently_resolved.get(alert.key, 0) < self.notifier.cooldown:
@@ -173,7 +175,7 @@ class Guard:
                     and self.fixed(key):
                 eid = key.split(":", 1)[1]
                 name = self.ha.attr(eid, "friendly_name", eid)
-                await self.notifier.resolve(key, f"{name} e din nou în regulă.")
+                await self.notifier.resolve(key, t("guard.ok_again", name=name))
         self.findings = found
         if self.store is not None:
             self.store.set("guard_last_ok", self.last_ok)
@@ -187,5 +189,5 @@ class Guard:
             try:
                 await self.run_once()
             except Exception:  # noqa: BLE001
-                log.exception("Eroare la verificarea paznicului")
+                log.exception("Guard check failed")
             await asyncio.sleep(self.interval)

@@ -17,7 +17,9 @@ from .anomaly import Baselines, Detector
 from .approvals import Approvals
 from .assistant import Assistant
 from .automations import Automations
-from .context import FAULT, TIER_LABEL, HomeContext
+from .context import FAULT, HomeContext, tier_label
+from . import i18n
+from .i18n import t
 from .guard import Guard
 from .habits import Habit, HabitMiner, automation_index, build_automation, mark_covered
 from .ha import HAClient
@@ -37,6 +39,9 @@ class Brain:
         self.tz = ZoneInfo(opts.get("time_zone") or os.environ.get("TZ") or "Europe/Bucharest")
         self.ha = HAClient()
         self.store = store or Store()
+        # Limba: explicit din opțiuni, sau (auto) ultima limbă văzută în HA, până ne conectăm.
+        self.language_option = (opts.get("language") or "auto").lower()
+        i18n.resolve(self.language_option, self.store.get("ha_language"))
         ncfg = dict(opts.get("notifications") or {})
         ncfg.setdefault("quiet_hours", (opts.get("agents") or {}).get("quiet_hours", "22-7"))
         self.notifier = Notifier(self.ha, opts.get("notify_services", []), opts.get("ntfy_url", ""),
@@ -103,7 +108,7 @@ class Brain:
         try:
             index = automation_index(await self.ha.automation_configs())
         except Exception as err:  # noqa: BLE001
-            log.warning("Nu am putut citi automatizările: %s", err)
+            log.warning("Could not read automations: %s", err)
             index = []
         mark_covered(habits, index)
         for h in habits:
@@ -115,9 +120,8 @@ class Brain:
         self.detector.base = Baselines(self.tz).build(
             self.store.samples(int(since // 3600)), transitions)
         self.last_learning = time.time()
-        self.store.log("învățare", f"{len(habits)} obiceiuri găsite "
-                                   f"({sum(1 for h in habits if h.covered_by)} deja automatizate) "
-                                   f"din {len(transitions)} schimbări.")
+        self.store.log("învățare", t("main.learned", n=len(habits),
+                                     covered=sum(1 for h in habits if h.covered_by), tr=len(transitions)))
         if self.auto_propose:
             await self._propose_strong(habits)
         return habits
@@ -144,31 +148,31 @@ class Brain:
             return None
         bt = item.get("backtest", {})
         rid = await self.approvals.ask(
-            "automation", habit_id, "Obicei nou găsit",
-            f"{item['description']} Testat pe istoric: {bt.get('hits')} din {bt.get('fired')} zile corect. "
-            f"Fac o automatizare?", {"habit_id": habit_id},
-            buttons=[("ok", "Creează"), ("no", "Nu e obicei")], notify=notify)
+            "automation", habit_id, t("main.habit_title"),
+            t("main.habit_msg", desc=item['description'], hits=bt.get('hits'), fired=bt.get('fired')),
+            {"habit_id": habit_id},
+            buttons=[("ok", t("btn.create")), ("no", t("btn.not_habit"))], notify=notify)
         self.store.set_status("habit", habit_id, "proposed")
         return rid
 
     async def create_automation(self, habit_id: str) -> str:
         item = self.store.item("habit", habit_id)
         if not item:
-            return "Obiceiul nu mai există."
+            return t("main.habit_gone")
         fields = {k: item[k] for k in Habit.__dataclass_fields__ if k in item}
         h = Habit(**fields)
         auto = build_automation(h, self.names(), self.persons)
         await self.ha.save_automation(auto["id"], auto)
         self.store.set_status("habit", habit_id, "created")
         self.store.put_item("done", f"auto_{habit_id}", {
-            "source": "Învățare", "domain": "automation", "service": "create", "entity_id": "",
+            "source": t("main.learning"), "domain": "automation", "service": "create", "entity_id": "",
             "name": auto["alias"], "automation_id": auto["id"], "reason": h.description}, status="done")
-        self.store.log("automatizare", f"Am creat „{auto['alias']}”.")
-        return f"Am creat automatizarea „{auto['alias']}”."
+        self.store.log("automatizare", t("main.created_log", alias=auto['alias']))
+        return t("main.created", alias=auto['alias'])
 
     async def reject_habit(self, habit_id: str) -> str:
         self.store.set_status("habit", habit_id, "rejected")
-        return "Am notat: nu e obicei, nu-l mai propun."
+        return t("main.not_habit")
 
     async def _decide_habit(self, item: dict, decision: str) -> str:
         hid = item["payload"]["habit_id"]
@@ -191,14 +195,14 @@ class Brain:
         pushed = self.store.get(f"finding_push:{today}", 0)
         for f in new:
             d = f.to_dict()
-            d["tier_label"] = TIER_LABEL.get(f.tier, f.tier)
+            d["tier_label"] = tier_label(f.tier)
             self.findings[f.key] = d
             push = (f.level == "critical" or f.tier == FAULT) and pushed < self.max_finding_push
             pushed += 1 if push else 0
             await self.approvals.ask("finding", f"{f.key}:{int(now // 86400)}", f.title,
                                      f.message + (f" {f.context}" if f.context else ""),
                                      {"key": f.key, "kind": f.kind, "entity_id": f.entity_id, "tier": f.tier},
-                                     buttons=[("seen", "Am văzut"), ("mute", "Nu e problemă")],
+                                     buttons=[("seen", t("btn.seen")), ("mute", t("btn.mute"))],
                                      notify=push, level=f.level)
         self.store.set(f"finding_push:{today}", pushed)
         for key in list(self.findings):
@@ -208,15 +212,29 @@ class Brain:
                     if a["kind"] == "finding" and a["payload"].get("key") == key:
                         self.store.set_status("approval", a["id"], "resolved")
 
+    async def sync_language(self) -> str:
+        """Pe `auto`, Vatra vorbește limba Home Assistant-ului (ro → română, orice altceva → engleză)."""
+        ha_lang = None
+        try:
+            cfg = await self.ha.ws({"type": "get_config"})
+            ha_lang = (cfg or {}).get("language")
+        except Exception as err:  # noqa: BLE001
+            log.debug("Could not read HA language: %s", err)
+        if ha_lang:
+            self.store.set("ha_language", ha_lang)
+        lang = i18n.resolve(self.language_option, ha_lang or self.store.get("ha_language"))
+        log.info("Language: %s (option %s, HA %s)", lang, self.language_option, ha_lang)
+        return lang
+
     def digest_lines(self) -> list[str]:
         """Ce intră în rezumatul de seară, pe lângă observațiile agenților."""
         lines = []
         anomalies = [a for a in self.notifier.active.values() if a.tier and a.tier != FAULT]
         if anomalies:
-            lines.append(f"• Paznic: {len(anomalies)} de verificat (ex. {anomalies[0].message})")
+            lines.append(t("digest.guard", n=len(anomalies), example=anomalies[0].message))
         if self.findings:
             first = next(iter(self.findings.values()))
-            lines.append(f"• Neobișnuit: {len(self.findings)} observații (ex. {first['message']})")
+            lines.append(t("digest.unusual", n=len(self.findings), example=first['message']))
         return lines
 
     async def _decide_finding(self, item: dict, decision: str) -> str:
@@ -225,32 +243,32 @@ class Brain:
         if decision == "mute":
             self.detector.muted.add(f"{eid}:{kind}")
             self.store.set("muted", sorted(self.detector.muted))
-            return "Nu mai semnalez asta pentru acest dispozitiv."
+            return t("main.muted")
         self.store.set(f"snooze:{key}", time.time() + 86400)
         if kind == "dwell":
             self.detector.dwell_factor[eid] = self.detector.dwell_factor.get(eid, 1.0) * 2
             self.store.set("dwell_factor", self.detector.dwell_factor)
-            return "Am înțeles; data viitoare aștept de două ori mai mult."
-        return "Am înțeles; nu mai insist azi."
+            return t("main.dwell_more")
+        return t("main.snoozed")
 
     # ---------- rezumat pentru Jarvis ----------
     def brain_summary(self) -> str:
         lines = [f"- {f['message']}" for f in list(self.findings.values())[:5]]
         lines += [f"- {i['agent_name']}: {i['title']}" for i in self.agents.insights(5)]
-        lines += [f"- obicei: {h['description']}" for h in self.store.items("habit", ("new", "proposed", "created"), 5)]
+        lines += [f"- {t('main.habit')}: {h['description']}" for h in self.store.items("habit", ("new", "proposed", "created"), 5)]
         return "\n".join(lines)
 
     # ---------- bucle ----------
     async def learning_loop(self) -> None:
         await self.ha.connected.wait()
-        while self.recorder.import_status in ("neînceput", "în curs"):
+        while self.recorder.import_status in ("not_started", "running"):
             await asyncio.sleep(10)
         while True:
             if self.learning_enabled:
                 try:
                     await self.learn()
                 except Exception:  # noqa: BLE001
-                    log.exception("Învățarea a eșuat")
+                    log.exception("Learning failed")
             await asyncio.sleep(6 * 3600)
 
     async def unusual_loop(self) -> None:
@@ -260,11 +278,12 @@ class Brain:
                 try:
                     await self.check_unusual()
                 except Exception:  # noqa: BLE001
-                    log.exception("Detectorul a eșuat")
+                    log.exception("Detector failed")
 
     async def guard_bridge(self) -> None:
         """Alertele paznicului apar și în panou (ca istoric); cele noi le trimite el însuși."""
         await self.ha.connected.wait()
+        await self.sync_language()
         await self.context.refresh()
         await self.notifier.resolve_panel_url()
         await self.guard.run_forever()
@@ -278,7 +297,7 @@ async def amain() -> None:
     runner = web.AppRunner(build_app(brain))
     await runner.setup()
     await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("HB_PORT", "8099"))).start()
-    log.info("Vatra pornit, panou pe portul 8099")
+    log.info("Vatra started, panel on port 8099")
     await asyncio.gather(
         brain.ha.run_forever(),
         brain.recorder.run_forever(),

@@ -1,4 +1,7 @@
 configuration:
+  language:
+    name: Language
+    description: "Language of notifications, the panel default and the AI. auto = same as Home Assistant (Romanian if HA is in Romanian, English otherwise)."
   log_level:
     name: Log level
   time_zone:
@@ -101,7 +104,7 @@ configuration:
         name: Minimum days of data
       max_push_per_day:
         name: Notifications per day
-        description: More than 3 at once become a single summary.
+        description: Cap on critical / confirmed-fault observations pushed per day.
       ignore:
         name: Ignore
         description: Entity patterns to ignore.
@@ -131,7 +134,7 @@ configuration:
         name: Interval (hours)
       quiet_hours:
         name: Quiet hours
-        description: No non-critical notifications in this range, e.g. 23-7.
+        description: Agents don't run noisy analyses in this range, e.g. 23-7.
       notify:
         name: Notifications
         description: none, digest (one summary per day) or critical.

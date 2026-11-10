@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, tzinfo
 
 from .context import ANOMALY, UNUSUAL
+from .i18n import t
 from .recorder import is_discrete_tracked, is_numeric_tracked
 
 OPEN_CLASSES = {"door", "window", "opening", "garage_door"}
@@ -38,11 +39,11 @@ class Finding:
 
 def fmt_dur(sec: float) -> str:
     if sec < 3600:
-        return f"{int(sec // 60)} min"
+        return t("dur.min", n=int(sec // 60))
     if sec < 86400:
         h, m = divmod(int(sec // 60), 60)
-        return f"{h} h {m} min" if m else f"{h} h"
-    return f"{sec / 86400:.1f} zile"
+        return t("dur.hm", h=h, m=m) if m else t("dur.h", n=h)
+    return t("dur.days", n=f"{sec / 86400:.1f}")
 
 
 def _pct(vals: list[float], p: float) -> float:
@@ -189,13 +190,13 @@ class Detector:
                 return None
         unit = st.get("attributes", {}).get("unit_of_measurement", "")
         name = st.get("attributes", {}).get("friendly_name", eid)
-        sens = "mare" if v > mean else "mică"
+        sens = t("an.high") if v > mean else t("an.low")
         far = v > hi_all + 3 * spread or v < lo_all - 3 * spread
-        return Finding(f"range:{eid}", "range", eid, "Valoare neobișnuită",
-                       f"{name} arată {v:g}{unit}, neobișnuit de {sens} pentru ora asta "
-                       f"(de obicei {mean:.1f}{unit}, între {lo_all:g} și {hi_all:g}).",
+        return Finding(f"range:{eid}", "range", eid, t("an.range_title"),
+                       t("an.range_msg", name=name, value=f"{v:g}", unit=unit, dir=sens,
+                         mean=f"{mean:.1f}", lo=f"{lo_all:g}", hi=f"{hi_all:g}"),
                        tier=ANOMALY if far else UNUSUAL,
-                       context=("Funcționează acum: " + "; ".join(loads)) if loads else "")
+                       context=t("ctx.running_now", loads="; ".join(loads)) if loads else "")
 
     def _silent(self, eid: str, st: dict, now: float) -> Finding | None:
         # Doar senzorii care se schimbă practic în fiecare oră; bateriile și ce raportează
@@ -214,9 +215,8 @@ class Detector:
         if self.context is not None and self.context.expected_down(eid):
             return None  # ex. GPS-ul trotinetei: e acasă, la încărcat, nu are ce raporta
         name = st.get("attributes", {}).get("friendly_name", eid)
-        return Finding(f"silent:{eid}", "silent", eid, "Senzor tăcut",
-                       f"{name} n-a mai raportat de {fmt_dur(now - last)} "
-                       f"(de obicei de ~{rate:.0f} ori pe oră).",
+        return Finding(f"silent:{eid}", "silent", eid, t("an.silent_title"),
+                       t("an.silent_msg", name=name, dur=fmt_dur(now - last), rate=f"{rate:.0f}"),
                        tier=ANOMALY if self.context and self.context.device_alive(eid) is False else UNUSUAL)
 
     def _dwell(self, eid: str, st: dict, now: float) -> Finding | None:
@@ -245,9 +245,10 @@ class Detector:
         if dur < limit:
             return None
         name = a.get("friendly_name", eid)
-        what = "deschis(ă)" if domain == "binary_sensor" else ("pornit(ă)" if state == "on" else state)
-        return Finding(f"dwell:{eid}", "dwell", eid, "Stă prea mult așa",
-                       f"{name} e {what} de {fmt_dur(dur)}; de obicei cel mult {fmt_dur(_pct(hist, 0.95))}.")
+        what = t("an.open") if domain == "binary_sensor" else (t("an.on") if state == "on" else state)
+        return Finding(f"dwell:{eid}", "dwell", eid, t("an.dwell_title"),
+                       t("an.dwell_msg", name=name, state=what, dur=fmt_dur(dur),
+                         limit=fmt_dur(_pct(hist, 0.95))))
 
     def _flapping(self, recent: list[tuple], now: float) -> list[Finding]:
         counts: dict[str, int] = defaultdict(int)
@@ -260,9 +261,8 @@ class Detector:
                 continue
             usual = self.base.max_burst.get(eid, 0)
             if c >= max(10, usual * 2):
-                out.append(Finding(f"flapping:{eid}", "flapping", eid, "Se aprinde și se stinge întruna",
-                                   f"{self.ha.name(eid)} și-a schimbat starea de {c} ori în 15 min "
-                                   f"(maxim obișnuit: {usual})."))
+                out.append(Finding(f"flapping:{eid}", "flapping", eid, t("an.flap_title"),
+                                   t("an.flap_msg", name=self.ha.name(eid), n=c, max=usual)))
         return out
 
     def _open_away(self, now: float) -> Finding | None:
@@ -277,6 +277,6 @@ class Detector:
                     opened.append(st.get("attributes", {}).get("friendly_name", eid))
         if not opened:
             return None
-        return Finding("open_away:house", "open_away", "house", "Casă deschisă, nimeni acasă",
-                       "Nu e nimeni acasă, dar e deschis: " + ", ".join(opened) + ".", "critical",
+        return Finding("open_away:house", "open_away", "house", t("an.away_title"),
+                       t("an.away_msg", items=", ".join(opened)), "critical",
                        tier="fault")

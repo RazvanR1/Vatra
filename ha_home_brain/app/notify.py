@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 
 import aiohttp
 
+from .i18n import t
+
 log = logging.getLogger("home_brain.notify")
 
 
@@ -97,7 +99,7 @@ class Notifier:
         if not send:
             return
         if time.time() - self.recently_resolved.get(alert.key, 0) < self.cooldown and alert.level != "critical":
-            log.info("Cooldown, nu retrimit: %s", alert.key)
+            log.info("Cooldown, not re-sending: %s", alert.key)
             return
         await self.notify(alert.title, alert.message, alert.level, key=alert.key)
 
@@ -109,7 +111,7 @@ class Notifier:
         self.recently_resolved[key] = time.time()
         self.queue = [a for a in self.queue if a.key != key]  # nu mai anunțăm ce s-a rezolvat deja
         if message:
-            ok = Alert(key=key, title=f"Rezolvat: {alert.title}", message=message, level="info")
+            ok = Alert(key=key, title=t("resolved", title=alert.title), message=message, level="info")
             ok.resolved = True
             self.history.appendleft(ok)
             if self.send_resolved:
@@ -121,7 +123,7 @@ class Notifier:
             await self.send(title, message, level, key=key)
             return True
         if self.mode == "critical_only" or level == "info":
-            log.info("Doar în panou [%s] %s: %s", level, title, message)
+            log.info("Panel only [%s] %s: %s", level, title, message)
             return False
         self.queue.append(Alert(key=key or title, title=title, message=message, level=level))
         await self.flush()
@@ -148,7 +150,7 @@ class Notifier:
         items, self.queue = self.queue, []
         self.last_batch = time.time()
         if self._budget_left() <= 0 and not force:
-            log.info("Plafonul zilnic atins; %d mesaje rămân doar în panou", len(items))
+            log.info("Daily cap reached; %d messages stay in the panel", len(items))
             return
         self._spend()
         if len(items) == 1:
@@ -156,8 +158,8 @@ class Notifier:
             await self.send(a.title, a.message, a.level, key=a.key)
             return
         lines = [f"• {a.title}: {a.message}" for a in items[:5]]
-        more = f"\n…și încă {len(items) - 5} în panou" if len(items) > 5 else ""
-        await self.send(f"Vatra: {len(items)} lucruri de verificat", "\n".join(lines) + more,
+        more = "\n" + t("notify.batch_more", n=len(items) - 5) if len(items) > 5 else ""
+        await self.send(t("notify.batch_title", n=len(items)), "\n".join(lines) + more,
                         "warning", key="batch")
 
     async def run_forever(self) -> None:
@@ -166,7 +168,7 @@ class Notifier:
             try:
                 await self.flush()
             except Exception:  # noqa: BLE001
-                log.exception("Eroare la trimiterea notificărilor grupate")
+                log.exception("Failed to send grouped notifications")
 
     # ---------- link către panou ----------
     async def resolve_panel_url(self) -> str:
@@ -184,7 +186,7 @@ class Notifier:
                         if r.status == 200:
                             slug = ((await r.json()).get("data") or {}).get("slug")
             except Exception as err:  # noqa: BLE001
-                log.debug("Nu am putut afla slug-ul add-on-ului: %s", err)
+                log.debug("Could not read the add-on slug: %s", err)
         if not slug and os.path.exists("/data/options.json") and "-" in os.environ.get("HOSTNAME", ""):
             slug = os.environ["HOSTNAME"].replace("-", "_")
         self.panel_url = f"/{slug}" if slug else "/lovelace"
@@ -196,10 +198,10 @@ class Notifier:
         if key:
             data["tag"] = f"vatra_{key}"[:64]
         if level == "critical":
-            data.update({"channel": "Vatra – urgent", "importance": "high", "priority": "high", "ttl": 0,
+            data.update({"channel": t("notify.channel_urgent"), "importance": "high", "priority": "high", "ttl": 0,
                          "push": {"interruption-level": "time-sensitive"}})
         else:
-            data.update({"channel": "Vatra", "importance": "low" if level == "info" else "default",
+            data.update({"channel": t("notify.channel"), "importance": "low" if level == "info" else "default",
                          "push": {"interruption-level": "passive" if level == "info" else "active"}})
         if extra:
             data.update(extra)
@@ -221,7 +223,7 @@ class Notifier:
             try:
                 await self.ha.call_service(domain, name, payload)
             except Exception as err:  # noqa: BLE001
-                log.warning("Nu am putut trimite prin %s: %s", svc, err)
+                log.warning("Could not send via %s: %s", svc, err)
         if self.ntfy_url:
             prio = {"info": "low", "warning": "default", "critical": "urgent"}.get(level, "default")
             try:
@@ -230,5 +232,5 @@ class Notifier:
                                  headers={"Title": title.encode("utf-8").decode("latin-1", "ignore"),
                                           "Priority": prio, "Tags": "house"})
             except Exception as err:  # noqa: BLE001
-                log.warning("Nu am putut trimite pe ntfy: %s", err)
+                log.warning("Could not send via ntfy: %s", err)
         log.info("[%s] %s: %s", level, title, message)

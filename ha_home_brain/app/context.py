@@ -6,6 +6,8 @@ import logging
 import re
 from collections import defaultdict
 
+from .i18n import t
+
 log = logging.getLogger("home_brain.context")
 
 DOWN = ("unavailable", "unknown", None)
@@ -14,7 +16,8 @@ DOWN = ("unavailable", "unknown", None)
 UNUSUAL = "unusual"   # statistic neobișnuit, dar explicabil / fără efect
 ANOMALY = "anomaly"   # posibilă problemă, de verificat în panou
 FAULT = "fault"       # defecțiune confirmată: tot dispozitivul a picat, de prea mult timp
-TIER_LABEL = {UNUSUAL: "neobișnuit", ANOMALY: "posibilă anomalie", FAULT: "defecțiune confirmată"}
+def tier_label(tier: str) -> str:
+    return t(f"tier.{tier}") if tier in (UNUSUAL, ANOMALY, FAULT) else tier
 
 # Senzori care au sens doar cât dispozitivul lucrează (cartografiere, curățare, progres, ETA...).
 TASK_WORDS = re.compile(
@@ -48,7 +51,7 @@ class HomeContext:
         try:
             entries = await self.ha.ws({"type": "config/entity_registry/list"})
         except Exception as err:  # noqa: BLE001
-            log.warning("Nu am putut citi registrul de entități: %s", err)
+            log.warning("Could not read the entity registry: %s", err)
             return
         self.load(entries or [])
 
@@ -84,16 +87,16 @@ class HomeContext:
             d = e.split(".", 1)[0]
             dc = a.get("device_class")
             if d == "vacuum" and state in REST_VACUUM:
-                return f"{self.ha.name(e)} e în bază ({state})"
+                return t("ctx.docked", name=self.ha.name(e), state=state)
             if d == "device_tracker" and state == "home":
-                return f"{self.ha.name(e)} e acasă"
+                return t("ctx.home", name=self.ha.name(e))
             if d == "binary_sensor" and state == "on" and (dc == "battery_charging" or CHARGING_WORDS.search(e)):
-                return f"{self.ha.name(e)} se încarcă"
+                return t("ctx.charging", name=self.ha.name(e))
             if d == "binary_sensor" and state == "off" and dc in ("moving", "motion", "running"):
-                return f"{self.ha.name(e)} stă pe loc"
+                return t("ctx.still", name=self.ha.name(e))
             if d == "sensor" and isinstance(state, str) and CHARGING_WORDS.search(e) \
                     and state.lower() in ("charging", "se încarcă", "on", "true", "full", "charged"):
-                return f"{self.ha.name(e)}: {state}"
+                return t("ctx.state", name=self.ha.name(e), state=state)
         return None
 
     def expected_down(self, eid: str) -> str | None:
@@ -105,7 +108,7 @@ class HomeContext:
         if rest and self.device_alive(eid):
             return rest
         if TASK_WORDS.search(eid) and self.device_alive(eid):
-            return "dispozitivul funcționează; senzorul are valoare doar în timpul unei activități"
+            return t("ctx.task_sensor")
         return None
 
     # ---------- energie ----------
@@ -123,10 +126,10 @@ class HomeContext:
                 out.append(f"{name}: {state}")
             elif d == "binary_sensor" and state == "on" and (
                     a.get("device_class") in RUNNING_CLASSES and HEAVY_WORDS.search(e + " " + str(name))):
-                out.append(f"{name}: funcționează")
+                out.append(t("ctx.running", name=name))
             elif d in ("switch", "fan") and state == "on" and HEAVY_WORDS.search(e + " " + str(name)) \
                     and not BULB_FEED_WORDS.search(e):
-                out.append(f"{name}: pornit")
+                out.append(t("ctx.on", name=name))
             elif d == "sensor" and a.get("device_class") == "power" and HEAVY_WORDS.search(e + " " + str(name)):
                 try:
                     if float(state) > 300:

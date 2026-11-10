@@ -15,16 +15,22 @@ from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timedelta, tzinfo
 
 from .ha import ORIGIN_DEVICE, ORIGIN_USER
+from .i18n import t as tr
 
 HUMAN = {ORIGIN_USER, ORIGIN_DEVICE}
 NON_STATES = {"unavailable", "unknown", "", "none", None}
 TRIGGER_DOMAINS = {"binary_sensor", "person", "light", "switch", "input_boolean", "device_tracker"}
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri"]
 WEEKEND = ["sat", "sun"]
-ZILE = {"weekday": "în zilele lucrătoare", "weekend": "în weekend", "all": "zilnic"}
-STARE = {"on": "pornești", "off": "oprești", "open": "deschizi", "closed": "închizi",
-         "cleaning": "pornești", "docked": "trimiți la bază", "heat": "pui pe încălzire",
-         "cool": "pui pe răcire"}
+VERB_STATES = ("on", "off", "open", "closed", "cleaning", "docked", "heat", "cool")
+
+
+def _days(dc: str) -> str:
+    return tr(f"hab.days.{dc}")
+
+
+def _verb(state: str) -> str:
+    return tr(f"hab.verb.{state}") if state in VERB_STATES else tr("hab.verb.set", state=state)
 
 
 def service_for(domain: str, state: str) -> tuple[str, dict] | None:
@@ -240,9 +246,8 @@ class HabitMiner:
                 h.backtest = self.backtest_time(h, obs, tl)
                 if h.backtest["precision"] < self.min_precision:
                     continue
-                verb = STARE.get(state, f"pui pe {state}")
-                h.description = (f"{ZILE[dc].capitalize()} pe la {fmt_minute(center)} {verb} "
-                                 f"{names.get(eid, eid)} ({support} din {len(obs)} zile).")
+                h.description = tr("hab.time_desc", days=_days(dc).capitalize(), time=fmt_minute(center),
+                                   verb=_verb(state), name=names.get(eid, eid), n=support, total=len(obs))
                 out.append(h)
         # „zilnic” doar dacă e mai bun decât lucrătoare + weekend separat
         keep = []
@@ -316,9 +321,8 @@ class HabitMiner:
             h.backtest = self.backtest_sequence(h, trig, tl)
             if h.backtest["precision"] < self.min_precision:
                 continue
-            verb = STARE.get(bs, f"pui pe {bs}")
-            h.description = (f"După ce {names.get(ae, ae)} devine „{as_}”, {verb} {names.get(be, be)} "
-                             f"în ~{int(lag)} s ({len(occ)} din {trig_count[(ae, as_)]} ori).")
+            h.description = tr("hab.seq_desc", a=names.get(ae, ae), state=as_, verb=_verb(bs),
+                               b=names.get(be, be), lag=int(lag), n=len(occ), total=trig_count[(ae, as_)])
             out.append(h)
         return out
 
@@ -419,7 +423,7 @@ def build_automation(h: Habit, names: dict[str, str], persons: list[str]) -> dic
     return {
         "id": f"home_brain_{h.id}",
         "alias": f"Vatra – {names.get(h.entity_id, h.entity_id)} ({h.to_state})",
-        "description": f"Creat de Vatra din obiceiul: {h.description} "
-                       f"Backtest: {h.backtest.get('hits')}/{h.backtest.get('fired')} corecte.",
+        "description": tr("hab.auto_desc", desc=h.description, hits=h.backtest.get('hits'),
+                          fired=h.backtest.get('fired')),
         "triggers": triggers, "conditions": conditions, "actions": [action], "mode": "single",
     }

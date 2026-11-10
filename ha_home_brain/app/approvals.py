@@ -7,6 +7,7 @@ import time
 from typing import Any, Awaitable, Callable
 
 from .habits import service_for
+from .i18n import t
 
 log = logging.getLogger("home_brain.approvals")
 
@@ -46,19 +47,19 @@ class Guardrails:
         """Întoarce (decizie, motiv): blocked | approve | allowed."""
         data = data or {}
         if domain in BLOCKED or (domain, service) in BLOCKED_SERVICES:
-            return "blocked", f"{domain}.{service} nu e permis niciodată"
+            return "blocked", t("safe.never", svc=f"{domain}.{service}")
         if entity_id and entity_id.split(".", 1)[0] != domain and domain not in ("homeassistant",):
-            return "blocked", "entitatea nu corespunde domeniului serviciului"
+            return "blocked", t("safe.domain")
         for key in ("temperature", "target_temp_high", "target_temp_low"):
             if key in data:
                 try:
-                    t = float(data[key])
+                    temp = float(data[key])
                 except (TypeError, ValueError):
-                    return "blocked", "temperatură invalidă"
-                if not self.min_temp <= t <= self.max_temp:
-                    return "blocked", f"temperatura {t} e în afara limitelor {self.min_temp}–{self.max_temp}°C"
+                    return "blocked", t("safe.temp_invalid")
+                if not self.min_temp <= temp <= self.max_temp:
+                    return "blocked", t("safe.temp_range", temp=temp, lo=self.min_temp, hi=self.max_temp)
         if (domain, service) in CRITICAL_SERVICES or domain in ("lock", "alarm_control_panel", "valve"):
-            return "approve", "acțiune critică: cere mereu aprobare"
+            return "approve", t("safe.critical")
         if any(w in entity_id.lower() for w in CRITICAL_WORDS):
             return "approve", "dispozitiv important: cere mereu aprobare"
         return "allowed", ""
@@ -86,7 +87,7 @@ class Approvals:
         existing = self.store.item("approval", rid)
         if existing and existing["status"] in ("pending", "rejected", "done"):
             return rid
-        buttons = buttons or [("ok", "Aprobă"), ("always", "Mereu"), ("no", "Respinge")]
+        buttons = buttons or [("ok", t("btn.approve")), ("always", t("btn.always")), ("no", t("btn.reject"))]
         self.store.put_item("approval", rid, {"kind": kind, "item_id": item_id, "title": title,
                                               "message": message, "payload": payload,
                                               "buttons": buttons}, status="pending")
@@ -113,11 +114,11 @@ class Approvals:
     async def decide(self, rid: str, decision: str) -> str:
         item = self.store.item("approval", rid)
         if not item:
-            return "Cererea nu mai există."
+            return t("ap.gone")
         if decision != "undo" and item["status"] != "pending":
-            return "Deja decis."
+            return t("ap.already")
         handler = self.handlers.get(item["kind"])
-        msg = await handler(item, decision) if handler else "Nimic de făcut."
+        msg = await handler(item, decision) if handler else t("ap.nothing")
         status = {"ok": "done", "always": "done", "no": "rejected", "undo": "undone",
                   "seen": "done", "mute": "rejected"}.get(decision, "done")
         self.store.set_status("approval", rid, status)
@@ -151,7 +152,7 @@ class Approvals:
                    "source": source, "reason": reason}
         name = self.ha.name(entity_id)
         if mode == SHADOW:
-            self.store.log("umbră", f"{source} ar fi făcut {service} pe {name}: {reason}")
+            self.store.log("umbră", t("ap.shadow_log", src=source, svc=service, target=name, reason=reason))
             return {"status": "shadow"}
         if decision == "allowed" and (mode == AUTONOMOUS or allowed_always):
             return await self.execute(payload, notify_undo=True)
@@ -168,45 +169,46 @@ class Approvals:
         did = _sid("done", eid, time.time())
         self.store.put_item("done", did, {**payload, "before": before, "name": self.ha.name(eid)},
                             status="done")
-        self.store.log("acțiune", f"{payload['source']}: {payload['service']} pe {self.ha.name(eid)}")
+        self.store.log("acțiune", t("ap.action_log", src=payload['source'], svc=payload['service'],
+                                    target=self.ha.name(eid)))
         if notify_undo:
-            await self._push(f"undo{did}", f"Am făcut: {payload['service'].replace('_', ' ')} "
-                                           f"{self.ha.name(eid)}", payload.get("reason", ""),
-                             [("undo", "Anulează")])
+            await self._push(f"undo{did}", t("ap.done_title", what=f"{payload['service'].replace('_', ' ')} "
+                                                               f"{self.ha.name(eid)}"),
+                             payload.get("reason", ""), [("undo", t("btn.undo"))])
             self.store.put_item("approval", f"undo{did}", {"kind": "undo", "item_id": did,
-                                                           "title": "Anulează", "message": "",
+                                                           "title": t("btn.undo"), "message": "",
                                                            "payload": {}, "buttons": []}, status="pending")
         return {"status": "done", "id": did}
 
     async def undo(self, did: str) -> str:
         done = self.store.item("done", did)
         if not done or done["status"] != "done":
-            return "Nu am ce anula."
+            return t("ap.no_undo")
         if done.get("automation_id"):
             await self.ha.delete_automation(done["automation_id"])
             self.store.set_status("done", did, "undone")
-            return "Automatizarea a fost ștearsă."
+            return t("ap.auto_deleted")
         before = done.get("before")
         svc = service_for(done["domain"], before) if before else None
         if not svc:
-            return f"Nu știu cum să readuc {done['name']} la „{before}”."
+            return t("ap.cant_restore", name=done['name'], state=before)
         service, data = svc
         d, s = service.split(".")
         await self.ha.call_service(d, s, data or None, target={"entity_id": done["entity_id"]})
         self.store.set_status("done", did, "undone")
-        return f"{done['name']} a revenit la „{before}”."
+        return t("ap.restored", name=done['name'], state=before)
 
     async def handle_action(self, item: dict, decision: str) -> str:
         p = item["payload"]
         sig = self._signature(p["domain"], p["service"], p["entity_id"])
         if decision == "no":
             self.store.set("rejected_signatures", sorted(set(self.store.get("rejected_signatures", [])) | {sig}))
-            return "Respins; nu mai propun asta."
+            return t("ap.rejected")
         if decision == "always":
             if self.guard.evaluate(p["domain"], p["service"], p["entity_id"], p["data"])[0] == "allowed":
                 self.store.set("allowed_signatures", sorted(set(self.store.get("allowed_signatures", [])) | {sig}))
         res = await self.execute(p)
-        return "Făcut." if res["status"] == "done" else str(res)
+        return t("ap.done") if res["status"] == "done" else str(res)
 
     async def handle_undo(self, item: dict, decision: str) -> str:
         return await self.undo(item["item_id"]) if decision == "undo" else "—"

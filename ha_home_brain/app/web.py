@@ -7,6 +7,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 from aiohttp import web
+from . import i18n
+from .i18n import t
 
 log = logging.getLogger("home_brain.web")
 STATIC = Path(__file__).parent / "static"
@@ -47,6 +49,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             },
             "pending": len(brain.approvals.pending()) if hasattr(brain, "approvals") else 0,
             "findings": list(getattr(brain, "findings", {}).values()),
+            "language": i18n.lang(),
             "explained": getattr(getattr(brain, "guard", None), "explained", {}),
             "notifications": {
                 "mode": brain.notifier.mode, "quiet_hours": brain.notifier.quiet,
@@ -65,7 +68,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         body = await req.json()
         question = str(body.get("message", "")).strip()
         if not question:
-            return J({"reply": "Scrie o întrebare.", "actions": []})
+            return J({"reply": t("web.ask"), "actions": []})
         result = await brain.assistant.ask(question, chat_history)
         chat_history.extend([{"role": "user", "content": question},
                              {"role": "assistant", "content": result.get("reply", "")}])
@@ -73,7 +76,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         return J(result)
 
     async def test_notify(_req):
-        await brain.notifier.send("Vatra", "Notificare de test din Vatra.", "info")
+        await brain.notifier.send("Vatra", t("web.test"), "info")
         return J({"ok": True})
 
     # ---------- obiceiuri ----------
@@ -84,19 +87,19 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         hid, act = req.match_info["id"], req.match_info["action"]
         if act == "propose":
             await brain.propose(hid, notify=True)
-            return J({"message": "Am trimis propunerea pe telefon și în Aprobări."})
+            return J({"message": t("web.proposed")})
         if act == "create":
             return J({"message": await brain.create_automation(hid)})
         if act == "reject":
             return J({"message": await brain.reject_habit(hid)})
         if act == "restore":
             brain.store.set_status("habit", hid, "new")
-            return J({"message": "Repus în listă."})
+            return J({"message": t("web.restored")})
         raise web.HTTPBadRequest()
 
     async def relearn(_req):
         hs = await brain.learn()
-        return J({"message": f"Am reînvățat: {len(hs)} obiceiuri."})
+        return J({"message": t("web.relearned", n=len(hs))})
 
     # ---------- aprobări, acțiuni ----------
     async def approvals(_req):
@@ -122,7 +125,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         if not agent:
             raise web.HTTPNotFound()
         out = await brain.agents.run_agent(agent, force=True)
-        return J({"message": f"{agent.name}: {len(out)} observații.", "insights": out})
+        return J({"message": t("web.agent_ran", name=agent.name, n=len(out)), "insights": out})
 
     async def activity(_req):
         return J(brain.store.activity(150))

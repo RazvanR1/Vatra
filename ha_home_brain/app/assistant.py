@@ -4,6 +4,8 @@ from __future__ import annotations
 import fnmatch
 import logging
 
+from .i18n import t
+
 log = logging.getLogger("home_brain.assistant")
 
 CONTROL_DOMAINS = ("light", "switch", "climate", "cover", "fan", "media_player", "lock",
@@ -15,22 +17,12 @@ BINARY_CLASSES = {"door", "window", "motion", "occupancy", "presence", "gas", "m
 NOISE = ["switch.*_container", "sensor.*_volume_size", "*_image*", "*_restart_count",
          "*_memory_*", "*_cpu_*", "*_out_of_memory"]
 
-SYSTEM_PROMPT = """Ești Jarvis, asistentul casei RusHome. Răspunzi scurt, în română.
-Despre casă: {site}
-Primești starea curentă a casei (entity_id | nume | stare) și, dacă există, ce a observat creierul casei.
-Răspunde din ele, direct. Dacă utilizatorul cere o acțiune, pune-o în "actions".
-Răspunde DOAR cu JSON de forma:
-{{"reply": "text pentru utilizator",
- "actions": [{{"domain": "light", "service": "turn_on", "entity_id": "light.x", "data": {{}}}}]}}
-Folosește doar entity_id din starea casei. Fără acțiuni -> "actions": []."""
-
-
 class Assistant:
     def __init__(self, ha, llm, cfg: dict, approvals=None, site: str = "", extra_context=None) -> None:
         self.ha = ha
         self.llm = llm
         self.approvals = approvals
-        self.site = site or "o casă obișnuită"
+        self.site = site
         self.extra_context = extra_context  # funcție -> text (obiceiuri, alerte, observații)
         self.allowed = set(cfg.get("allowed_domains") or ["light", "switch", "climate", "cover",
                                                           "fan", "media_player", "scene", "script"])
@@ -79,21 +71,21 @@ class Assistant:
 
     async def ask(self, question: str, history: list[dict] | None = None) -> dict:
         if not self.enabled:
-            return {"reply": "Asistentul nu e configurat (lipsește ollama_url).", "actions": []}
-        ctx = "Starea casei:\n" + self.house_context()
+            return {"reply": t("jarvis.off"), "actions": []}
+        ctx = t("jarvis.state") + "\n" + self.house_context()
         if self.extra_context:
             more = self.extra_context()
             if more:
-                ctx += "\n\nCe a observat creierul casei:\n" + more[:1500]
-        messages = [{"role": "system", "content": SYSTEM_PROMPT.format(site=self.site) + "\n\n" + ctx},
+                ctx += "\n\n" + t("jarvis.observed") + "\n" + more[:1500]
+        messages = [{"role": "system", "content": t("jarvis.prompt", site=self.site or t("agent.default_site")) + "\n\n" + ctx},
                     *(history or [])[-6:], {"role": "user", "content": question}]
         try:
             data, raw = await self.llm.chat_json(messages, timeout=120)
         except Exception as err:  # noqa: BLE001
-            log.warning("Ollama indisponibil: %s", err)
-            return {"reply": f"Nu pot contacta modelul AI: {err}", "actions": []}
+            log.warning("Ollama unavailable: %s", err)
+            return {"reply": t("jarvis.no_model", err=err), "actions": []}
         if data is None:
-            return {"reply": raw.strip() or "(fără răspuns de la model)", "actions": []}
+            return {"reply": raw.strip() or t("jarvis.empty"), "actions": []}
         return await self._handle(data, raw)
 
     async def _handle(self, data: dict, raw: str = "") -> dict:
@@ -109,11 +101,11 @@ class Assistant:
             data_ = act.get("data") if isinstance(act.get("data"), dict) else {}
             if self.approvals is not None:
                 res = await self.approvals.request_action("Jarvis", domain, service, eid, data_,
-                                                          "Cerut în chat", user_initiated=True)
+                                                          t("jarvis.asked"), user_initiated=True)
                 if res["status"] == "done":
                     done.append(f"{domain}.{service} → {eid}")
                 elif res["status"] == "pending":
-                    refused.append(f"{eid}: am trimis cerere de aprobare pe telefon")
+                    refused.append(t("jarvis.pending", eid=eid))
                 else:
                     refused.append(f"{eid}: {res.get('reason', res['status'])}")
                 continue
@@ -123,5 +115,5 @@ class Assistant:
             except Exception as err:  # noqa: BLE001
                 refused.append(f"{eid}: {err}")
         if not reply:
-            reply = "Gata." if done else f"(răspuns neașteptat de la model: {raw[:300]})"
+            reply = t("jarvis.done") if done else t("jarvis.unexpected", raw=raw[:300])
         return {"reply": reply, "actions": done, "refused": refused}

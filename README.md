@@ -29,6 +29,7 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 | 💬 **Jarvis chat** | Ask about the house or give commands in the panel; it also knows what the brain has observed. Commands go through the same safety rails. |
 | 🚨 **Guard** | Devices that become unavailable, low batteries — one alert per problem, a summary when many things fail at once, and a "resolved" message when it's fixed. Not fooled by HA restarts. |
 | 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis and Log (with Undo). |
+| 🌍 **English and Romanian** | Follows your Home Assistant language automatically; the panel has an EN/RO switch. Adding a language is one column in one file. |
 
 ### How it thinks
 
@@ -79,6 +80,7 @@ minutes instead of weeks. Habits keep improving as more days accumulate.
 
 | Option | Default | What it does |
 |---|---|---|
+| `language` | `auto` | `auto` follows Home Assistant (Romanian if HA is in Romanian, English otherwise), or force `en` / `ro`. |
 | `site_context` | — | A few sentences about your home (who lives there, schedule, heating…). Given to the AI agents and Jarvis. |
 | `notify_services` | `[]` | Where alerts and approval requests go. Buttons work with `mobile_app_*`. |
 | `learning.persons` | `[]` | Used for "only when someone is home" conditions and presence-aware checks. |
@@ -104,7 +106,8 @@ The full list with explanations is in the add-on's **Documentation** tab ([DOCS.
 
 ## Current limitations
 
-- **The UI, notifications and AI prompts are in Romanian.** English is planned; PRs welcome.
+- Languages: English and Romanian. Want another one? Add a column in `app/i18n.py`, the panel
+  dictionary in `app/static/index.html` and `translations/<lang>.yaml` — PRs welcome.
 - Small local models can misread data. That is why agents only make observations by default and
   everything that touches a device goes through approval.
 - Habit learning needs a few days of history with consistent behaviour (default: ≥ 4 days, ≥ 60 %).
@@ -145,4 +148,5 @@ Inspired by [gabipintea/ha-ai-brain](https://github.com/gabipintea/ha-ai-brain).
 **Instalare:** în Settings → Add-ons → Add-on Store → ⋮ → Repositories adaugi
 `https://github.com/RazvanR1/Vatra`, instalezi **Vatra**, completezi `notify_services`,
 `learning.persons` și, opțional, `assistant.ollama_url`, apoi îl pornești.
-Toate detaliile sunt în tab-ul **Documentation** al add-on-ului.
+Vatra vorbește română automat dacă Home Assistant e în română (opțiunea `language`).
+Documentația completă în română: [DOCS.ro.md](ha_home_brain/DOCS.ro.md).

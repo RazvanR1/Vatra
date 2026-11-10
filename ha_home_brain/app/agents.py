@@ -10,48 +10,27 @@ import re
 import time
 from datetime import datetime, tzinfo
 
+from .i18n import t
+
 log = logging.getLogger("home_brain.agents")
-
-AGENT_PROMPT = """Ești agentul „{name}” din creierul casei RusHome. Răspunzi în română, concret și scurt.
-Despre casă: {site}
-Sarcina ta: {task}
-Primești mai jos datele (entity_id | nume | stare | statistici pe 24 h | stările altor entități ale
-aceluiași dispozitiv). Entitățile indisponibile NU apar aici: de ele se ocupă paznicul, nu le comenta.
-Reguli stricte:
-- „unavailable”/„unknown” sau lipsa actualizărilor NU înseamnă defecțiune: un GPS care stă acasă la
-  încărcat sau un senzor de cartografiere al robotului care nu cartografiază nu au ce raporta.
-- Înainte de orice concluzie verifică entitățile din jur și lista „Funcționează acum”. Un consum mare
-  explicat de pompa de căldură / centrală / AC care funcționează e normal; nu-l raporta.
-- Un releu sau o priză care alimentează becuri smart e mereu pornit(ă); asta NU înseamnă că lumina e
-  aprinsă. Starea luminii o dă doar light.*.
-- Treptele: „info” = doar neobișnuit; „warning” = posibilă anomalie, confirmată de cel puțin încă o
-  entitate; „critical” = defecțiune confirmată sau pericol imediat.
-- Nu propune niciodată homeassistant.update_entity, reload sau reporniri.
-- Folosește DOAR cifrele din date. Nu inventa cauze, nu ghici, nu presupune. Dacă nu ești sigur, nu raporta.
-- Numele unei automatizări sau al unui senzor NU înseamnă că acel lucru s-a întâmplat.
-- Temperaturi de 40-70°C la procesoare/discuri de server sunt normale; nu le raporta decât peste 75°C.
-- „critical” DOAR pentru pericol imediat: apă, gaz, fum, casă deschisă când nu e nimeni, server oprit.
-- Cel mult 3 observații, doar ce chiar contează. Dacă totul e normal, întoarce lista goală (asta e bine).
-{actions}
-Răspunde DOAR cu JSON:
-{{"insights": [{{"title": "...", "detail": "...", "severity": "info|warning|critical",
-  "action": null | {{"domain": "...", "service": "...", "entity_id": "...", "data": {{}}}}}}]}}"""
-
 
 class Agent:
     key = ""
-    name = ""
-    task = ""
+
+    @property
+    def name(self) -> str:
+        return t(f"agent.{self.key}.name")
+
+    @property
+    def task(self) -> str:
+        return t(f"agent.{self.key}.task")
 
     def select(self, eid: str, st: dict) -> bool:
         raise NotImplementedError
 
 
 class ClimateAgent(Agent):
-    key, name = "climate", "Climă"
-    task = ("confort și încălzire: temperaturi și umiditate pe camere, termostat, AC, ferestre deschise "
-            "cu încălzirea pornită, risc de condens/mucegai (umiditate mare + temperatură scăzută), "
-            "încălzire care nu încălzește.")
+    key = "climate"
 
     def select(self, eid, st):
         d, dc = eid.split(".")[0], st.get("attributes", {}).get("device_class")
@@ -60,9 +39,7 @@ class ClimateAgent(Agent):
 
 
 class EnergyAgent(Agent):
-    key, name = "energy", "Energie"
-    task = ("consum de energie: ce consumă mult, ce a rămas pornit degeaba, centrala (priza cu măsurare), "
-            "consum anormal față de ziua obișnuită, idei concrete de economie.")
+    key = "energy"
 
     def select(self, eid, st):
         dc = st.get("attributes", {}).get("device_class")
@@ -74,9 +51,7 @@ NO_CONTEXT_DOMAINS = ("automation.", "script.", "input_", "scene.", "button.", "
 
 
 class SecurityAgent(Agent):
-    key, name = "security", "Securitate"
-    task = ("siguranța casei: cine e acasă, uși, mișcare, camere, alarmă, scurgeri de apă/gaz/fum, "
-            "activitate când nu e nimeni acasă, dispozitive de securitate care nu funcționează.")
+    key = "security"
 
     def select(self, eid, st):
         d, dc = eid.split(".")[0], st.get("attributes", {}).get("device_class")
@@ -86,9 +61,7 @@ class SecurityAgent(Agent):
 
 
 class ServerAgent(Agent):
-    key, name = "server", "Server & homelab"
-    task = ("sănătatea homelab-ului: Proxmox, TrueNAS (pool-uri, discuri), containere Docker oprite, "
-            "spațiu pe disc aproape plin (peste 85%), temperaturi de disc peste 55°C, actualizări disponibile.")
+    key = "server"
     pattern = re.compile(r"proxmox|pve|truenas|portainer|docker|scrutiny|uptime|netdata|"
                          r"_container$|pool|disk|smart|^update\.", re.I)
 
@@ -112,7 +85,7 @@ class Agents:
         self.approvals = approvals
         self.notifier = notifier
         self.tz = tz
-        self.site = cfg.get("site_context") or "o casă obișnuită"
+        self.site = cfg.get("site_context") or ""
         self.interval = float(cfg.get("agents_interval_hours", 6)) * 3600
         enabled = set(cfg.get("agents") or [a.key for a in ALL_AGENTS])
         self.agents = [a for a in ALL_AGENTS if a.key in enabled]
@@ -120,7 +93,7 @@ class Agents:
         self.allow_actions = bool(cfg.get("allow_actions", False))
         self.notify_mode = cfg.get("notify", "digest")  # none | digest | critical
         self.digest_hour = int(cfg.get("digest_hour", 19))
-        self.status: dict[str, dict] = {a.key: {"last_run": None, "skipped": "încă nu a rulat"}
+        self.status: dict[str, dict] = {a.key: {"last_run": None, "skipped": "not_run"}
                                         for a in self.agents}
 
     # ---------- date ----------
@@ -155,19 +128,19 @@ class Agents:
             unit = a.get("unit_of_measurement", "")
             line = f"{eid} | {a.get('friendly_name', eid)} | {st.get('state')}{unit}"
             if eid.startswith("climate."):
-                line += f" (setat {a.get('temperature')}, actual {a.get('current_temperature')}, " \
-                        f"acțiune {a.get('hvac_action')})"
+                line += " " + t("agent.climate_line", set=a.get('temperature'),
+                                      cur=a.get('current_temperature'), action=a.get('hvac_action'))
             if eid in stats:
                 mn, mean, mx = stats[eid]
-                line += f" | 24h: min {mn:.1f} medie {mean:.1f} max {mx:.1f}"
+                line += " | " + t("agent.stats", mn=f"{mn:.1f}", mean=f"{mean:.1f}", mx=f"{mx:.1f}")
             if changes.get(eid):
-                line += f" | {changes[eid]} schimbări/24h"
+                line += " | " + t("agent.changes", n=changes[eid])
             if self.home is not None:
                 if self.home.is_bulb_feed(eid):
-                    line += " | releu de alimentare becuri smart (pornit ≠ lumină aprinsă)"
+                    line += " | " + t("ctx.bulb_feed")
                 rel = self.home.related(eid)
                 if rel:
-                    line += f" | același dispozitiv: {rel}"
+                    line += " | " + t("ctx.same_device", rel=rel)
             if size + len(line) > budget:
                 break
             lines.append(line)
@@ -178,10 +151,10 @@ class Agents:
                 fp_parts.append(f"{eid}={st.get('state')}")
         fp = hashlib.sha1("|".join(fp_parts).encode()).hexdigest()
         if down and lines:
-            lines.append(f"(+ {down} entități indisponibile, urmărite de paznic)")
+            lines.append(t("agent.down", n=down))
         if self.home is not None and agent.key in ("energy", "climate") and lines:
             loads = self.home.active_loads()
-            lines.append("Funcționează acum: " + ("; ".join(loads) if loads else "niciun consumator mare"))
+            lines.append(t("ctx.running_now", loads="; ".join(loads) if loads else t("ctx.no_heavy_loads")))
         return "\n".join(lines), fp
 
     def _quiet_now(self) -> bool:
@@ -197,24 +170,24 @@ class Agents:
         ctx, fp = self.context(agent)
         st = self.status[agent.key]
         if not ctx:
-            st.update(skipped="nu are date", last_run=time.time())
+            st.update(skipped="no_data", last_run=time.time())
             return []
         if not force and self.store.get(f"agent_fp:{agent.key}") == fp:
-            st.update(skipped="nimic nou de la ultima analiză", last_run=time.time())
+            st.update(skipped="no_change", last_run=time.time())
             return []
         anomalies = [i for i in self.store.items("approval", "pending") if i["kind"] == "finding"]
         extra = ""
         if anomalies:
-            extra = "\nObservații locale deschise:\n" + "\n".join(f"- {i['message']}" for i in anomalies[:5])
-        actions_rule = ("Poți propune o acțiune doar pe entity_id din date; va fi aprobată de om."
-                        if self.allow_actions else 'Nu propune acțiuni: pune mereu "action": null.')
-        messages = [{"role": "system", "content": AGENT_PROMPT.format(name=agent.name, site=self.site,
-                                                                     task=agent.task, actions=actions_rule)},
+            extra = "\n" + t("agent.open_findings") + "\n" + "\n".join(f"- {i['message']}" for i in anomalies[:5])
+        actions_rule = t("agent.actions_yes") if self.allow_actions else t("agent.actions_no")
+        messages = [{"role": "system", "content": t("agent.prompt", name=agent.name,
+                                                    site=self.site or t("agent.default_site"),
+                                                    task=agent.task, actions=actions_rule)},
                     {"role": "user", "content": f"Ora: {datetime.now(self.tz):%A %H:%M}\nDate:\n{ctx}{extra}"}]
         try:
             data, raw = await self.llm.chat_json(messages)
         except Exception as err:  # noqa: BLE001
-            st.update(skipped=f"eroare AI: {err}", last_run=time.time())
+            st.update(skipped=f"AI: {err}", last_run=time.time())
             return []
         self.store.set(f"agent_fp:{agent.key}", fp)
         insights = (data or {}).get("insights") or []
@@ -243,7 +216,8 @@ class Agents:
                                                     act.get("data") if isinstance(act.get("data"), dict) else {},
                                                     item["title"])
         st.update(skipped=None, last_run=time.time(), insights=len(out), seconds=round(self.llm.last_seconds, 1))
-        self.store.log("agent", f"{agent.name}: {len(out)} observații" + ("" if data else f" (răspuns brut: {raw[:120]})"))
+        self.store.log("agent", t("web.agent_ran", name=agent.name, n=len(out))
+                       + ("" if data else f" (raw: {raw[:120]})"))
         return out
 
     async def run_forever(self) -> None:
@@ -256,7 +230,7 @@ class Agents:
                 try:
                     await self.run_agent(agent)
                 except Exception:  # noqa: BLE001
-                    log.exception("Agentul %s a eșuat", agent.name)
+                    log.exception("Agent %s failed", agent.name)
                 await asyncio.sleep(5)
             await asyncio.sleep(self.interval)
 
@@ -275,12 +249,12 @@ class Agents:
             self.store.set("digest_sent", day)
             lines = [f"• {i['agent_name']}: {i['title']}" for i in fresh[:5]]
             if len(fresh) > 5:
-                lines.append(f"…și încă {len(fresh) - 5}")
+                lines.append(t("digest.more", n=len(fresh) - 5))
             if self.extra_digest:
                 lines += self.extra_digest()
             if not lines:
                 continue
-            await self.notifier.send("Vatra – rezumatul zilei", "\n".join(lines), "info", key="digest")
+            await self.notifier.send(t("digest.title"), "\n".join(lines), "info", key="digest")
 
     def insights(self, limit: int = 40) -> list[dict]:
         return self.store.items("insight", limit=limit)
