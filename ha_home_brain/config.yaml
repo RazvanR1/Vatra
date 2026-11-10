@@ -3,6 +3,7 @@ version: "2.2.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
+image: "ghcr.io/razvanr1/{arch}-vatra"
 arch:
   - amd64
   - aarch64
