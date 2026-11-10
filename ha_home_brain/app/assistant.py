@@ -82,7 +82,7 @@ class Assistant:
         try:
             data, raw = await self.llm.chat_json(messages, timeout=120)
         except Exception as err:  # noqa: BLE001
-            log.warning("Ollama unavailable: %s", err)
+            log.warning("AI server unavailable: %s", err)
             return {"reply": t("jarvis.no_model", err=err), "actions": []}
         if data is None:
             return {"reply": raw.strip() or t("jarvis.empty"), "actions": []}

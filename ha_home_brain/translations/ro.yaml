@@ -153,11 +153,20 @@ configuration:
     name: Regulă – robinetele urmează termostatul
     description: Regulă fixă opțională. Las-o goală dacă ai deja o automatizare pentru asta.
   assistant:
-    name: Model AI (Ollama) și Jarvis
+    name: Model AI (Ollama sau compatibil OpenAI) și Jarvis
     fields:
+      backend:
+        name: Tipul serverului AI
+        description: "ollama: API-ul nativ Ollama. openai: orice server compatibil OpenAI (LM Studio, llama.cpp, vLLM, LocalAI…)."
       ollama_url:
         name: URL Ollama
         description: ex. http://192.168.1.50:11434. Lasă gol ca să oprești funcțiile AI.
+      openai_url:
+        name: URL compatibil OpenAI
+        description: Folosit când tipul e openai, ex. http://192.168.1.50:1234/v1 (LM Studio) sau http://IP:8080/v1 (llama.cpp).
+      api_key:
+        name: Cheie API
+        description: Doar dacă serverul tău cere una. Majoritatea serverelor locale nu cer.
       model:
         name: Model
         description: ex. qwen3.5:9b

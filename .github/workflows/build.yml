@@ -1,0 +1,103 @@
+name: Build images
+
+# Construiește imaginea add-on-ului pentru amd64 și aarch64 și o publică pe ghcr.io,
+# ca Home Assistant să o descarce gata făcută în loc s-o construiască pe mașina fiecăruia.
+# - push pe main care schimbă add-on-ul → publică versiunea din config.yaml (o dată pe versiune)
+# - pull request → doar verifică build-ul, nu publică
+# - manual (Run workflow) → publică versiunea curentă
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ha_home_brain/**"
+      - ".github/workflows/build.yml"
+  pull_request:
+    paths:
+      - "ha_home_brain/**"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ADDON_DIR: ha_home_brain
+  IMAGE_NAME: vatra
+
+jobs:
+  init:
+    name: Read add-on info
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      publish: ${{ steps.info.outputs.publish }}
+      registry: ${{ steps.info.outputs.registry }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Version and architectures
+        id: info
+        run: |
+          version=$(yq -r '.version' "${ADDON_DIR}/config.yaml")
+          archs=$(yq -o=json -I=0 '.arch' "${ADDON_DIR}/config.yaml")
+          owner=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "archs=${archs}" >> "$GITHUB_OUTPUT"
+          echo "registry=ghcr.io/${owner}" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Vatra ${version} for ${archs}"
+
+      - name: Build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.09.0
+        with:
+          architectures: ${{ steps.info.outputs.archs }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-prefix: ${{ steps.info.outputs.registry }}
+
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: init
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write   # semnare Cosign
+      packages: write   # publicare pe ghcr.io
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Base image from build.yaml
+        id: base
+        run: echo "from=$(yq -r ".build_from.${{ matrix.arch }}" "${ADDON_DIR}/build.yaml")" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        uses: home-assistant/builder/actions/build-image@2026.09.0
+        with:
+          arch: ${{ matrix.arch }}
+          context: ./${{ env.ADDON_DIR }}
+          image: ${{ matrix.image }}
+          build-args: |
+            BUILD_FROM=${{ steps.base.outputs.from }}
+          image-tags: |
+            ${{ needs.init.outputs.version }}
+            latest
+          labels: |
+            io.hass.type=addon
+            io.hass.name=Vatra
+            io.hass.description=Vatra – the local brain for Home Assistant
+            io.hass.url=https://github.com/${{ github.repository }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          push: ${{ needs.init.outputs.publish }}
+          skip-existing: ${{ needs.init.outputs.publish == 'true' && needs.init.outputs.version || '' }}
+          version: ${{ needs.init.outputs.version }}

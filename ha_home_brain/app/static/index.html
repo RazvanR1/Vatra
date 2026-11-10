@@ -7,7 +7,7 @@
 <style>
   :root { --bg:#111418; --card:#1a1f25; --line:#2a313a; --text:#e6e9ee; --muted:#8b95a3;
           --ok:#3fb27f; --warn:#e0a63a; --crit:#e5534b; --accent:#4c9aff; --chip:#232a33; }
-  * { box-sizing:border-box; }
+  * { box-sizing:border-box; } [hidden] { display:none !important; }
   body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
          background:var(--bg); color:var(--text); }
   header { position:sticky; top:0; z-index:2; background:var(--bg); border-bottom:1px solid var(--line); }
@@ -51,12 +51,23 @@
   #toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#2b3440; padding:10px 16px;
            border-radius:10px; display:none; max-width:90%; }
   .tab { display:none; } .tab.on { display:block; }
+  .setup label.opt { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--line); }
+  .setup label.opt:first-of-type { border-top:0; }
+  .setup label.opt span { flex:1; } .setup label.opt small { color:var(--muted); }
+  input[type=checkbox] { flex:0 0 auto; width:18px; height:18px; padding:0; accent-color:var(--accent); }
+  select, textarea { padding:9px; border-radius:8px; border:1px solid var(--line); background:#0d1014; color:var(--text); font:inherit; }
+  textarea { width:100%; min-height:80px; resize:vertical; }
+  .field { display:flex; flex-direction:column; gap:5px; margin:10px 0; } .field > span { color:var(--muted); font-size:13px; }
+  .found { cursor:pointer; } .found:hover { color:var(--text); }
+  .notice { border:1px solid var(--accent); border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  #overlay { position:fixed; inset:0; background:rgba(10,12,15,.85); display:none; align-items:center; justify-content:center; z-index:5; font-size:17px; }
+  @media (max-width:640px) { #sub { display:none; } #meta { font-size:12px; } }
   #lang { background:transparent; border:1px solid var(--line); color:var(--muted); padding:3px 8px; font-size:12px; }
 </style>
 </head>
 <body>
 <header>
-  <div class="bar"><span id="conn" class="dot"></span><h1>🔥 Vatra</h1><span class="muted" style="font-size:13px">the local brain for Home Assistant</span><span id="meta"></span>
+  <div class="bar"><span id="conn" class="dot"></span><h1>🔥 Vatra</h1><span id="sub" class="muted" style="font-size:13px">the local brain for Home Assistant</span><span id="meta"></span>
     <button id="lang" title="Language / Limba">EN</button></div>
   <nav id="nav">
     <button data-t="home" class="on" data-i18n="nav.home"></button>
@@ -66,10 +77,13 @@
     <button data-t="agents" data-i18n="nav.agents"></button>
     <button data-t="jarvis">Jarvis</button>
     <button data-t="log" data-i18n="nav.log"></button>
+    <button data-t="setup" data-i18n="nav.setup"></button>
   </nav>
 </header>
 <main>
   <div class="tab on" id="t-home">
+    <div class="notice" id="setup-notice" hidden><span style="flex:1" data-i18n="su.notice"></span>
+      <button onclick="document.querySelector('[data-t=setup]').click()" data-i18n="su.open"></button></div>
     <section><h2 data-i18n="h.summary"></h2><div class="stats" id="stats"></div></section>
     <div class="grid">
       <section><h2 data-i18n="h.alerts"></h2><div id="alerts"></div></section>
@@ -112,7 +126,38 @@
     <section><h2 data-i18n="h.done"></h2><div id="done"></div></section>
     <section><h2 data-i18n="nav.log"></h2><div id="activity"></div></section>
   </div>
+  <div class="tab setup" id="t-setup">
+    <section><h2 data-i18n="su.title"></h2><p class="muted" style="margin:0" data-i18n="su.intro"></p>
+      <p class="muted" id="su-nosave" hidden data-i18n="su.nosave"></p></section>
+    <div class="grid">
+      <section><h2>1 · <span data-i18n="su.phones"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.phones_p"></p>
+        <div id="su-notify"></div>
+        <div class="row"><input id="su-notify-add" placeholder="notify.mobile_app_…"><button class="ghost" onclick="addNotify()" data-i18n="su.add"></button></div></section>
+      <section><h2>2 · <span data-i18n="su.people"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.people_p"></p>
+        <div id="su-persons"></div></section>
+    </div>
+    <section><h2>3 · <span data-i18n="su.ai"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.ai_p"></p>
+      <div class="row"><button class="ghost" id="su-scan" onclick="discoverAI(this)" data-i18n="su.scan"></button></div>
+      <div id="su-found" class="row"></div>
+      <label class="field"><span data-i18n="su.backend"></span>
+        <select id="su-backend" onchange="aiBackend()"><option value="ollama">Ollama</option>
+          <option value="openai" data-i18n="su.openai"></option></select></label>
+      <label class="field"><span data-i18n="su.url"></span><input id="su-url" placeholder="http://192.168.1.50:11434"></label>
+      <label class="field" id="su-key-f"><span data-i18n="su.key"></span><input id="su-key" type="password" autocomplete="off"></label>
+      <div class="row"><button class="ghost" onclick="testAI(this)" data-i18n="su.test_ai"></button><small id="su-ai-res" class="muted" style="align-self:center"></small></div>
+      <label class="field"><span data-i18n="su.model"></span><input id="su-model" list="su-models" placeholder="qwen3.5:9b"><datalist id="su-models"></datalist></label>
+      <label class="field" id="su-ctx-f"><span data-i18n="su.ctx"></span><input id="su-ctx" type="number" min="2048" step="1024"></label>
+    </section>
+    <section><h2>4 · <span data-i18n="su.home"></span></h2>
+      <label class="field"><span data-i18n="su.home_p"></span><textarea id="su-site"></textarea></label>
+      <label class="field"><span data-i18n="su.lang"></span><select id="su-lang"><option value="auto">Auto (Home Assistant)</option><option value="en">English</option><option value="ro">Română</option></select></label>
+    </section>
+    <section><div class="row" style="margin:0"><button id="su-save" onclick="saveSetup()" data-i18n="su.save"></button>
+      <button class="ghost" onclick="post('api/setup/dismiss').then(()=>{S.needs_setup=false;render();document.querySelector('[data-t=home]').click()})" data-i18n="su.later"></button></div>
+      <small class="muted" style="display:block;margin-top:8px" data-i18n="su.advanced"></small></section>
+  </div>
 </main>
+<div id="overlay"><span data-i18n="su.restarting"></span></div>
 <div id="toast"></div>
 <script>
 // ---------- traduceri (adaugă o limbă: încă o coloană aici și în app/i18n.py) ----------
@@ -126,7 +171,7 @@ const L = {
     "h.unusual":"Unusual right now", "h.explained":"Unavailable, but normal", "h.guard":"Guard – history",
     "h.insights":"Observations", "h.done":"What I did (with Undo)",
     "b.relearn":"Relearn now", "b.test":"Send a test notification", "b.send":"Send", "sent":"Sent.",
-    "q":"Ask something about the home…", "q.off":"The assistant is not configured (ollama_url)",
+    "q":"Ask something about the home…", "q.off":"The assistant is not configured – open Setup",
     "entities":"{n} entities", "disconnected":"disconnected from HA",
     "s.transitions":"changes in memory", "s.days":"days of history", "s.pending":"waiting for approval",
     "s.findings":"unusual things", "s.ai":"AI calls today", "s.import":"history import",
@@ -148,6 +193,27 @@ const L = {
     "undone":"· undone", "b.undo":"Undo", "error":"Error: ",
     "k.decizie":"decision", "k.blocat":"blocked", "k.umbră":"shadow", "k.acțiune":"action", "k.agent":"agent",
     "k.învățare":"learning", "k.automatizare":"automation", "k.memorie":"memory",
+    "nav.setup":"⚙ Setup",
+    "su.notice":"Vatra isn't set up yet – it takes a minute and no YAML.", "su.open":"Open setup",
+    "su.title":"Setup", "su.intro":"Pick what Vatra found in your Home Assistant. You can change everything later here or in the add-on's Configuration tab.",
+    "su.nosave":"Saving works only when Vatra runs as a Home Assistant add-on.",
+    "su.phones":"Phones for notifications", "su.phones_p":"Alerts and Approve / Reject buttons go here (Home Assistant Companion app).",
+    "su.none_phone":"No phone found. Install the Home Assistant Companion app on your phone and log in.",
+    "su.add":"Add", "su.test":"Test",
+    "su.people":"People in the home", "su.people_p":"Used for “only when someone is home” and presence-aware checks.",
+    "su.none_person":"No person.* entities found (Settings → People).",
+    "su.ai":"AI server (optional)", "su.ai_p":"For the AI agents and Jarvis. Everything else works without it.",
+    "su.scan":"Search my network", "su.scanning":"Searching… (a few seconds)", "su.found_none":"Nothing found. Enter the address by hand.",
+    "su.found_models":"{n} models",
+    "su.backend":"Server type", "su.openai":"OpenAI-compatible (LM Studio, llama.cpp, vLLM, LocalAI…)",
+    "su.url":"Server address", "su.key":"API key (only if the server needs one)", "su.key_saved":"saved – leave empty to keep",
+    "su.test_ai":"Test connection", "su.ai_ok":"Connected – {n} models.", "su.ai_bad":"Not reachable: {e}",
+    "su.model":"Model", "su.ctx":"Context size (num_ctx – same as the Ollama integration in HA)",
+    "su.home":"About your home", "su.home_p":"A few sentences for the AI: who lives here, schedule, heating… (optional)",
+    "su.lang":"Language",
+    "su.save":"Save and restart Vatra", "su.later":"Not now",
+    "su.advanced":"Advanced options (guard, learning, safety, agents) stay in Settings → Add-ons → Vatra → Configuration.",
+    "su.restarting":"Vatra is restarting with the new settings…",
   },
   ro: {
     "nav.home":"Acasă", "nav.approvals":"Aprobări", "nav.habits":"Obiceiuri", "nav.unusual":"Neobișnuit",
@@ -158,7 +224,7 @@ const L = {
     "h.unusual":"Neobișnuit acum", "h.explained":"Indisponibil, dar normal", "h.guard":"Paznic – istoric",
     "h.insights":"Observații", "h.done":"Ce am făcut (cu Undo)",
     "b.relearn":"Reînvață acum", "b.test":"Trimite notificare de test", "b.send":"Trimite", "sent":"Trimis.",
-    "q":"Întreabă ceva despre casă…", "q.off":"Asistentul nu e configurat (ollama_url)",
+    "q":"Întreabă ceva despre casă…", "q.off":"Asistentul nu e configurat – deschide Configurare",
     "entities":"{n} entități", "disconnected":"deconectat de la HA",
     "s.transitions":"schimbări în memorie", "s.days":"zile de istoric", "s.pending":"așteaptă aprobare",
     "s.findings":"lucruri neobișnuite", "s.ai":"apeluri AI azi", "s.import":"import istoric",
@@ -180,6 +246,27 @@ const L = {
     "undone":"· anulat", "b.undo":"Anulează", "error":"Eroare: ",
     "k.decizie":"decizie", "k.blocat":"blocat", "k.umbră":"umbră", "k.acțiune":"acțiune", "k.agent":"agent",
     "k.învățare":"învățare", "k.automatizare":"automatizare", "k.memorie":"memorie",
+    "nav.setup":"⚙ Configurare",
+    "su.notice":"Vatra nu e configurat încă – durează un minut și nu ai nevoie de YAML.", "su.open":"Deschide configurarea",
+    "su.title":"Configurare", "su.intro":"Bifează ce a găsit Vatra în Home Assistant. Poți schimba orice mai târziu, aici sau în tab-ul Configuration al add-on-ului.",
+    "su.nosave":"Salvarea merge doar când Vatra rulează ca add-on în Home Assistant.",
+    "su.phones":"Telefoane pentru notificări", "su.phones_p":"Aici ajung alertele și butoanele Aprobă / Respinge (aplicația Home Assistant Companion).",
+    "su.none_phone":"N-am găsit niciun telefon. Instalează aplicația Home Assistant Companion pe telefon și conectează-te.",
+    "su.add":"Adaugă", "su.test":"Test",
+    "su.people":"Cine locuiește în casă", "su.people_p":"Pentru condiția „doar când e cineva acasă” și verificările legate de prezență.",
+    "su.none_person":"N-am găsit entități person.* (Setări → Persoane).",
+    "su.ai":"Server AI (opțional)", "su.ai_p":"Pentru agenții AI și Jarvis. Restul merge și fără.",
+    "su.scan":"Caută în rețea", "su.scanning":"Caut… (câteva secunde)", "su.found_none":"N-am găsit nimic. Scrie adresa de mână.",
+    "su.found_models":"{n} modele",
+    "su.backend":"Tipul serverului", "su.openai":"Compatibil OpenAI (LM Studio, llama.cpp, vLLM, LocalAI…)",
+    "su.url":"Adresa serverului", "su.key":"Cheie API (doar dacă serverul cere)", "su.key_saved":"salvată – lasă gol ca s-o păstrezi",
+    "su.test_ai":"Testează conexiunea", "su.ai_ok":"Conectat – {n} modele.", "su.ai_bad":"Nu răspunde: {e}",
+    "su.model":"Model", "su.ctx":"Mărimea contextului (num_ctx – la fel ca integrarea Ollama din HA)",
+    "su.home":"Despre casa ta", "su.home_p":"Câteva propoziții pentru AI: cine locuiește aici, program, încălzire… (opțional)",
+    "su.lang":"Limba",
+    "su.save":"Salvează și repornește Vatra", "su.later":"Nu acum",
+    "su.advanced":"Opțiunile avansate (paznic, învățare, siguranță, agenți) rămân în Setări → Add-ons → Vatra → Configuration.",
+    "su.restarting":"Vatra repornește cu setările noi…",
   },
 };
 let LANG = null;
@@ -206,7 +293,7 @@ $("lang").onclick = () => { setLang(LANG === "ro" ? "en" : "ro", true); render()
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "t-" + b.dataset.t));
-  ({approvals: loadApprovals, habits: loadHabits, agents: loadAgents, log: loadLog})[b.dataset.t]?.();
+  ({approvals: loadApprovals, habits: loadHabits, agents: loadAgents, log: loadLog, setup: loadSetup})[b.dataset.t]?.();
 });
 
 let S = {};
@@ -234,6 +321,8 @@ function render() {
   $("explained").innerHTML = ex.length ? ex.map(([e, why]) => `<div class="item">${esc(e)}<small>${esc(why)}</small></div>`).join("") : empty(T("nothing"));
   const N = S.notifications || {};
   if (N.mode) $("ntf").textContent = T("ntf", {mode: N.mode, quiet: N.quiet_hours, sent: N.sent_today, max: N.max_per_day, queued: N.queued});
+  $("setup-notice").hidden = !S.needs_setup;
+  if (!refresh.opened && S.needs_setup && location.hash !== "#home") { refresh.opened = true; document.querySelector('[data-t="setup"]')?.click(); }
   if (!refresh.opened && S.pending > 0 && location.hash !== "#home") { refresh.opened = true; document.querySelector('[data-t="approvals"]')?.click(); }
   refresh.opened = true;
   $("q").placeholder = T(S.assistant && !S.assistant.enabled ? "q.off" : "q");
@@ -295,6 +384,79 @@ $("chat").onsubmit = async e => {
   try { const r = await (await fetch("api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({message:q})})).json();
     let t = r.reply; if (r.actions?.length) t += "\n✓ " + r.actions.join("\n✓ "); if (r.refused?.length) t += "\n✗ " + r.refused.join("\n✗ ");
     w.textContent = t; } catch (err) { w.textContent = T("error") + err; }
+};
+
+// ---------- ghid de pornire ----------
+let SU = null;
+const checks = (id, items, sel, key, label, none) => $(id).innerHTML = items.length ? items.map(i => `<label class="opt">
+  <input type="checkbox" value="${esc(i[key])}" ${sel.includes(i[key]) ? "checked" : ""}><span>${esc(i[label])}<small> · ${esc(i[key])}</small></span>
+  ${key === "service" ? `<button class="ghost" type="button" onclick="testNotify('${esc(i[key])}')">${T("su.test")}</button>` : ""}</label>`).join("") : empty(T(none));
+async function loadSetup() {
+  SU = await get("api/setup");
+  const o = SU.options, a = o.assistant || {}, d = SU.detected;
+  $("su-nosave").hidden = SU.can_save;
+  const notify = [...d.notify]; o.notify_services.forEach(s => notify.some(n => n.service === s) || notify.push({service: s, name: s.replace("notify.", "")}));
+  // Primul pornire: bifăm din oficiu telefoanele și persoanele găsite.
+  const fresh = !o.notify_services.length && !o.persons.length;
+  checks("su-notify", notify, fresh ? d.notify.filter(n => n.service !== "notify.persistent_notification").map(n => n.service) : o.notify_services, "service", "name", "su.none_phone");
+  const persons = [...d.persons]; o.persons.forEach(p => persons.some(x => x.entity_id === p) || persons.push({entity_id: p, name: p}));
+  checks("su-persons", persons, fresh ? d.persons.map(p => p.entity_id) : o.persons, "entity_id", "name", "su.none_person");
+  $("su-backend").value = a.backend || "ollama";
+  $("su-url").value = (a.backend === "openai" ? a.openai_url : a.ollama_url) || "";
+  $("su-key").value = ""; $("su-key").placeholder = a.has_key ? T("su.key_saved") : "";
+  $("su-model").value = a.model || ""; $("su-ctx").value = a.num_ctx || 8192;
+  $("su-site").value = o.site_context || ""; $("su-lang").value = o.language || "auto";
+  aiBackend(true);
+}
+window.aiBackend = keep => {
+  const ol = $("su-backend").value === "ollama";
+  $("su-ctx-f").hidden = !ol;
+  $("su-url").placeholder = ol ? "http://192.168.1.50:11434" : "http://192.168.1.50:1234/v1";
+  if (keep !== true && SU) { const a = SU.options.assistant || {}; $("su-url").value = (ol ? a.ollama_url : a.openai_url) || ""; }
+};
+window.addNotify = () => {
+  const v = $("su-notify-add").value.trim(); if (!v) return;
+  const svc = v.startsWith("notify.") ? v : "notify." + v;
+  SU.detected.notify.push({service: svc, name: svc.replace("notify.", "")});
+  SU.options.notify_services = [...collect("su-notify"), svc]; $("su-notify-add").value = "";
+  checks("su-notify", SU.detected.notify, SU.options.notify_services, "service", "name", "su.none_phone");
+};
+window.testNotify = svc => post("api/setup/test-notify", {service: svc});
+const collect = id => [...document.querySelectorAll(`#${id} input:checked`)].map(i => i.value);
+function fillModels(models) { $("su-models").innerHTML = models.map(m => `<option value="${esc(m)}">`).join(""); if (!$("su-model").value && models.length) $("su-model").value = models[0]; }
+window.testAI = async b => {
+  b.disabled = true; $("su-ai-res").textContent = "…";
+  const r = await (await fetch("api/setup/test-ai", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({backend: $("su-backend").value, url: $("su-url").value, api_key: $("su-key").value})})).json();
+  b.disabled = false;
+  $("su-ai-res").textContent = r.ok ? T("su.ai_ok", {n: r.models.length}) : T("su.ai_bad", {e: r.error});
+  if (r.ok) fillModels(r.models);
+};
+window.discoverAI = async b => {
+  b.disabled = true; b.textContent = T("su.scanning"); $("su-found").innerHTML = "";
+  try { const r = await (await fetch("api/setup/discover", {method:"POST"})).json();
+    SU.found = r.found;
+    $("su-found").innerHTML = r.found.length ? r.found.map((f, i) => `<span class="chip found" onclick="pickAI(${i})">${esc(f.backend === "ollama" ? "Ollama" : "OpenAI")} · ${esc(f.url)} · ${T("su.found_models", {n: f.models.length})}</span>`).join("")
+      : `<span class="muted">${T("su.found_none")}</span>`;
+    if (r.found.length === 1) pickAI(0);
+  } finally { b.disabled = false; b.textContent = T("su.scan"); }
+};
+window.pickAI = i => { const f = SU.found[i]; $("su-backend").value = f.backend; aiBackend(true); $("su-url").value = f.url; fillModels(f.models);
+  $("su-ai-res").textContent = T("su.ai_ok", {n: f.models.length}); };
+window.saveSetup = async () => {
+  const ol = $("su-backend").value === "ollama";
+  const ai = {backend: $("su-backend").value, model: $("su-model").value.trim(), num_ctx: $("su-ctx").value};
+  ai[ol ? "ollama_url" : "openai_url"] = $("su-url").value.trim();
+  if ($("su-key").value) ai.api_key = $("su-key").value;
+  const r = await post("api/setup/save", {options: {notify_services: collect("su-notify"), persons: collect("su-persons"),
+    site_context: $("su-site").value, language: $("su-lang").value, assistant: ai}});
+  if (!r.ok) return;
+  $("overlay").style.display = "flex";
+  let down = false; const t0 = Date.now();
+  const poll = setInterval(async () => {
+    try { const h = await fetch("api/health", {cache: "no-store"}); if (!h.ok) throw 0; if (down || Date.now() - t0 > 20000) { clearInterval(poll); location.reload(); } }
+    catch (e) { down = true; }
+  }, 2000);
 };
 refresh(); setInterval(refresh, 15000);
 </script>

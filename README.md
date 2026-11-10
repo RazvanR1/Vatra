@@ -1,7 +1,7 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
@@ -13,6 +13,8 @@ tells you when something is unusual, and lets local AI agents look at the harder
 Everything runs on your hardware. The AI part (Ollama) is optional and only used when it adds value.
 
 > 🇷🇴 [Descriere în română mai jos](#-pe-scurt-în-română)
+
+![Vatra panel – home](docs/screenshots/home.png)
 
 ---
 
@@ -26,11 +28,23 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 | 👀 **Notices what's unusual** | No device lists, no thresholds to set. It learns per-hour baselines and flags: abnormal values for the time of day, sensors that went silent, devices flapping on/off, doors or lights left in a state far longer than usual, house open while nobody is home. |
 | 📱 **Approve from your phone** | Actionable notifications: **Approve / Always / Reject**, **Undo** after something it did on its own, **Seen / Not a problem** for observations. It learns from your answers. |
 | 🛡️ **Safety rails that can't be bypassed** | Locks, alarm, valves, gates and "important" devices (boiler, fridge, server, NAS…) always need approval. Shell commands, Supervisor calls, restarting HA, disabling automations and temperatures outside your limits are blocked outright. |
-| 🤖 **Local AI agents** (optional) | Climate, Energy, Security and Server/homelab agents analyse the house every few hours **only if something changed**, one at a time, on a single Ollama model. Their findings go to the panel and a single evening digest. |
+| 🤖 **Local AI agents** (optional) | Climate, Energy, Security and Server/homelab agents analyse the house every few hours **only if something changed**, one at a time, on a single local model (Ollama or any OpenAI-compatible server). Their findings go to the panel and a single evening digest. |
 | 💬 **Jarvis chat** | Ask about the house or give commands in the panel; it also knows what the brain has observed. Commands go through the same safety rails. |
 | 🚨 **Guard** | Devices that become unavailable, low batteries — one alert per problem, a summary when many things fail at once, and a "resolved" message when it's fixed. Not fooled by HA restarts. |
-| 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis and Log (with Undo). |
+| 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis, Log (with Undo) and a **Setup guide**: it finds your phones, people and AI server by itself – no YAML needed. |
 | 🌍 **English and Romanian** | Follows your Home Assistant language automatically; the panel has an EN/RO switch. Adding a language is one column in one file. |
+
+### Screenshots
+
+| Approvals – also as buttons on your phone | Habits, backtested on your history |
+|---|---|
+| ![Approvals](docs/screenshots/approvals.png) | ![Habits](docs/screenshots/habits.png) |
+| **Unusual – three tiers, with context** | **Local AI agents** |
+| ![Unusual](docs/screenshots/unusual.png) | ![Agents](docs/screenshots/agents.png) |
+| **Setup guide – no YAML** | **On the phone** |
+| ![Setup](docs/screenshots/setup.png) | <img src="docs/screenshots/mobile-approvals.png" width="260" alt="Approvals on a phone"> |
+
+<sub>Demo data. Everything you see runs locally in the add-on.</sub>
 
 ### How it thinks
 
@@ -50,9 +64,9 @@ what keeps it from learning from its own actions.
 
 - Home Assistant **OS** or **Supervised** (it is an add-on / app).
 - The **Home Assistant Companion app** on your phone for actionable notifications (any `notify.mobile_app_*` service).
-- *Optional:* an **[Ollama](https://ollama.com)** server on your network for the AI agents and Jarvis.
-  A 7–9B model works (tested with `qwen3.5:9b` on a 12 GB GPU). Without Ollama, everything except
-  the agents and Jarvis still works.
+- *Optional:* a local AI server for the AI agents and Jarvis – **[Ollama](https://ollama.com)** or any
+  **OpenAI-compatible** server (LM Studio, llama.cpp, vLLM, LocalAI, Jan…). A 7–9B model works
+  (tested with `qwen3.5:9b` on a 12 GB GPU). Without it, everything except the agents and Jarvis still works.
 
 ## Installation
 
@@ -62,17 +76,22 @@ what keeps it from learning from its own actions.
    https://github.com/RazvanR1/Vatra
    ```
 2. Install **Vatra**.
-3. In the **Configuration** tab set at least:
-   ```yaml
-   notify_services:
-     - notify.mobile_app_your_phone
-   learning:
-     persons: [person.you, person.partner]
-   assistant:
-     ollama_url: "http://192.168.1.50:11434"   # optional
-     model: "qwen3.5:9b"
-   ```
-4. Start it and turn on **Show in sidebar**.
+3. Start it, turn on **Show in sidebar** and open **Vatra**.
+4. The **Setup** guide opens by itself: tick your phones and the people in the home, press
+   **Search my network** to find your AI server (optional), then **Save and restart**. That's it.
+
+Prefer YAML? Everything is also in the add-on's **Configuration** tab:
+```yaml
+notify_services:
+  - notify.mobile_app_your_phone
+learning:
+  persons: [person.you, person.partner]
+assistant:
+  backend: ollama                          # or: openai (LM Studio, llama.cpp, vLLM…)
+  ollama_url: "http://192.168.1.50:11434"  # optional
+  # openai_url: "http://192.168.1.50:1234/v1"
+  model: "qwen3.5:9b"
+```
 
 On first start it imports the last 10 days of history, so habits and baselines are available within
 minutes instead of weeks. Habits keep improving as more days accumulate.
@@ -95,14 +114,17 @@ minutes instead of weeks. Habits keep improving as more days accumulate.
 | `safety.min/max_temperature` | `16` / `26` | Hard limits for any temperature it may set. |
 | `agents.notify` | `digest` | `none`, `digest` (one summary at `digest_hour`), or `critical`. |
 | `agents.allow_actions` | `false` | Let agents propose device actions (always via approval). |
-| `assistant.num_ctx` | `8192` | Keep it equal to your Ollama integration in HA so the model isn't reloaded. |
+| `assistant.backend` | `ollama` | `ollama` (native API) or `openai` (any OpenAI-compatible server: LM Studio, llama.cpp, vLLM, LocalAI…). |
+| `assistant.openai_url` / `api_key` | — | Address of the OpenAI-compatible server (e.g. `http://IP:1234/v1`) and a key, only if it needs one. |
+| `assistant.num_ctx` | `8192` | Ollama only: keep it equal to your Ollama integration in HA so the model isn't reloaded. |
 
 The full list with explanations is in the add-on's **Documentation** tab ([DOCS.md](ha_home_brain/DOCS.md)).
 
 ## Privacy
 
 - No cloud, no telemetry. Data stays in the add-on's `/data/brain.db` (SQLite) on your HA machine.
-- The only outbound calls are to your own Ollama server (if configured) and to Home Assistant.
+- The only outbound calls are to your own AI server (if configured) and to Home Assistant.
+  The setup guide's **Search my network** only looks for AI servers on your local network, and only when you press it.
 - The panel only answers requests that come through Home Assistant's ingress.
 
 ## Current limitations
@@ -149,11 +171,12 @@ Vatra is free and open source, built in my spare time. If it helps your home, yo
 - **Învață ce faci tu.** Pornește doar de la acțiunile oamenilor, nu de la cele făcute de automatizări. Fiecare obicei îl testează întâi pe istoric și abia apoi ți-l propune ca automatizare nativă în HA, pe care o poți anula oricând.
 - **Îți spune când ceva e neobișnuit**, fără să-i dai vreo listă de dispozitive. Învață singur ce e normal în casa ta.
 - **Te întreabă pe telefon** înainte să facă ceva, cu butoanele Aprobă / Mereu / Respinge / Anulează. Unele acțiuni nu le poate face nici dacă vrea: are reguli de siguranță fixe.
-- **Folosește agenți AI locali** (climă, energie, securitate, server) prin Ollama, doar când s-a schimbat ceva în casă.
+- **Folosește agenți AI locali** (climă, energie, securitate, server) prin Ollama sau orice server compatibil OpenAI (LM Studio, llama.cpp, vLLM…), doar când s-a schimbat ceva în casă.
 
 **Instalare:** în Settings → Add-ons → Add-on Store → ⋮ → Repositories adaugi
-`https://github.com/RazvanR1/Vatra`, instalezi **Vatra**, completezi `notify_services`,
-`learning.persons` și, opțional, `assistant.ollama_url`, apoi îl pornești.
+`https://github.com/RazvanR1/Vatra`, instalezi **Vatra**, îl pornești și deschizi panoul.
+Ghidul **Configurare** se deschide singur: bifezi telefoanele și persoanele, apeși **Caută în rețea**
+pentru serverul AI (opțional), apoi **Salvează și repornește**. Fără YAML.
 Vatra vorbește română automat dacă Home Assistant e în română (opțiunea `language`).
 Documentația completă în română: [DOCS.ro.md](ha_home_brain/DOCS.ro.md).
 

@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.1.0"
+version: "2.2.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -82,7 +82,10 @@ options:
     leader_climate: ""
     follower_climates: []
   assistant:
+    backend: ollama
     ollama_url: ""
+    openai_url: ""
+    api_key: ""
     model: "llama3.1:8b"
     allowed_domains:
       - light
@@ -167,7 +170,10 @@ schema:
     follower_climates:
       - str
   assistant:
+    backend: list(ollama|openai)
     ollama_url: str?
+    openai_url: str?
+    api_key: password?
     model: str
     allowed_domains:
       - str

@@ -1,6 +1,7 @@
 """Panoul web (ingress) din sidebar-ul Home Assistant."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from dataclasses import asdict
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from aiohttp import web
 from . import i18n
+from . import setup as setup_mod
 from .i18n import t
 
 log = logging.getLogger("home_brain.web")
@@ -60,9 +62,102 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             },
             "agents": getattr(getattr(brain, "agents", None), "status", {}),
             "safety": brain.approvals.summary() if hasattr(brain, "approvals") else {},
-            "llm": {"calls": brain.llm.calls, "last_seconds": round(brain.llm.last_seconds, 1)}
+            "llm": {"calls": brain.llm.calls, "last_seconds": round(brain.llm.last_seconds, 1),
+                    "backend": brain.llm.backend}
             if hasattr(brain, "llm") else {},
+            "needs_setup": setup_mod.needs_setup(getattr(brain, "opts", {}) or {})
+            and not (store.get("setup_dismissed") if store else False),
         })
+
+    # ---------- ghid de pornire ----------
+    def supervisor():
+        sup = getattr(brain, "supervisor", None)
+        return sup if sup is not None else setup_mod.Supervisor()
+
+    async def current_options() -> dict:
+        sup = supervisor()
+        if sup.available:
+            try:
+                return await sup.options()
+            except Exception as err:  # noqa: BLE001
+                log.warning("Could not read add-on options: %s", err)
+        return getattr(brain, "opts", {}) or {}
+
+    async def setup_get(_req):
+        opts = await current_options()
+        ai = dict(opts.get("assistant") or {})
+        has_key = bool(ai.pop("api_key", ""))
+        return J({
+            "can_save": supervisor().available,
+            "options": {"language": opts.get("language", "auto"),
+                        "notify_services": opts.get("notify_services", []),
+                        "persons": (opts.get("learning") or {}).get("persons", []),
+                        "site_context": opts.get("site_context", ""),
+                        "assistant": {**ai, "has_key": has_key}},
+            "detected": await setup_mod.detect(brain.ha),
+        })
+
+    async def setup_test_ai(req):
+        b = await req.json()
+        try:
+            models = await setup_mod.list_models(str(b.get("backend") or "ollama"), str(b.get("url") or ""),
+                                                 str(b.get("api_key") or ""), timeout=8)
+        except Exception as err:  # noqa: BLE001
+            return J({"ok": False, "error": str(err) or type(err).__name__})
+        return J({"ok": True, "models": models})
+
+    async def setup_discover(_req):
+        cidrs: list[str] = []
+        sup = supervisor()
+        if sup.available:
+            try:
+                cidrs = await sup.host_ips()
+            except Exception as err:  # noqa: BLE001
+                log.debug("Could not read host network: %s", err)
+        found = await setup_mod.discover_ai(cidrs, extra_hosts=["homeassistant.local", "host.docker.internal"])
+        return J({"found": found, "scanned": cidrs})
+
+    async def setup_test_notify(req):
+        b = await req.json()
+        svc = str(b.get("service") or "")
+        if not svc.startswith("notify."):
+            raise web.HTTPBadRequest()
+        try:
+            await brain.ha.call_service("notify", svc.split(".", 1)[1],
+                                        {"title": "Vatra", "message": t("web.test")})
+        except Exception as err:  # noqa: BLE001
+            return J({"ok": False, "message": t("error.generic", err=err)})
+        return J({"ok": True, "message": t("setup.test_sent", svc=svc)})
+
+    async def setup_save(req):
+        b = await req.json()
+        patch = setup_mod.clean(b.get("options") or {})
+        sup = supervisor()
+        if not sup.available:
+            return J({"ok": False, "message": t("setup.no_supervisor")})
+        try:
+            merged = setup_mod.merge(await sup.options(), patch)
+            await sup.set_options(merged)
+        except Exception as err:  # noqa: BLE001
+            log.warning("Saving options failed: %s", err)
+            return J({"ok": False, "message": t("error.generic", err=err)})
+        if getattr(brain, "store", None):
+            brain.store.set("setup_dismissed", True)
+            brain.store.log("memorie", t("setup.saved_log"))
+        if b.get("restart", True):
+            asyncio.get_running_loop().call_later(1.0, lambda: asyncio.ensure_future(_restart(sup)))
+        return J({"ok": True, "restarting": bool(b.get("restart", True)), "message": t("setup.saved")})
+
+    async def _restart(sup):
+        try:
+            await sup.restart()
+        except Exception as err:  # noqa: BLE001
+            log.debug("Restart call ended: %s", err)  # conexiunea se poate închide chiar la repornire
+
+    async def setup_dismiss(_req):
+        if getattr(brain, "store", None):
+            brain.store.set("setup_dismissed", True)
+        return J({"ok": True})
 
     async def chat(req):
         body = await req.json()
@@ -139,6 +234,12 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_get("/api/status", status)
     r.add_post("/api/chat", chat)
     r.add_post("/api/test-notify", test_notify)
+    r.add_get("/api/setup", setup_get)
+    r.add_post("/api/setup/test-ai", setup_test_ai)
+    r.add_post("/api/setup/discover", setup_discover)
+    r.add_post("/api/setup/test-notify", setup_test_notify)
+    r.add_post("/api/setup/save", setup_save)
+    r.add_post("/api/setup/dismiss", setup_dismiss)
     if hasattr(brain, "store"):
         r.add_get("/api/habits", habits)
         r.add_post("/api/habits/{id}/{action}", habit_action)

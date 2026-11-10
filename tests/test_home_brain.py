@@ -61,6 +61,9 @@ class FakeHA:
                 res = {}
             elif msg["type"] == "automation/config":
                 res = {"config": {}}
+            elif msg["type"] == "get_services":
+                res = {"notify": {"mobile_app_razvan": {}, "mobile_app_hajni": {}, "persistent_notification": {},
+                                  "send_message": {}}, "light": {"turn_on": {}}}
             elif msg["type"] == "get_config":
                 res = {"language": getattr(self, "language", "ro"), "time_zone": "Europe/Bucharest"}
             else:

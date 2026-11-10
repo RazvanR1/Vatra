@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.2.0 – Setup guide, any local AI server, ready-made images
+**EN:**
+- **Setup guide in the panel (⚙ Setup)** – no YAML needed. It finds your phones (`notify.mobile_app_*`) and
+  people (`person.*`), lets you send a test notification, **searches your network for an AI server**
+  (Ollama on port 11434, LM Studio 1234 / llama.cpp 8080 on the HA machine), fills in the model list, then saves
+  the options and restarts Vatra. Opens by itself the first time. Advanced options stay in the Configuration tab.
+- **OpenAI-compatible AI servers**: new `assistant.backend` (`ollama` / `openai`), `openai_url` and `api_key`.
+  Works with LM Studio, llama.cpp, vLLM, LocalAI, Jan… Ollama stays the default; nothing changes for existing setups.
+- More tolerant reading of the model's JSON (thinking tags, ```json blocks, text around it).
+- **Ready-made images** for amd64 and aarch64 are built on GitHub and published on ghcr.io – installs and
+  updates no longer build on your machine (slow on a Raspberry Pi).
+- Screenshots in the README; the panel header fits on phones.
+
+**RO:**
+- **Ghid de pornire în panou (⚙ Configurare)** – fără YAML. Găsește telefoanele (`notify.mobile_app_*`) și
+  persoanele (`person.*`), trimite o notificare de test, **caută serverul AI în rețea** (Ollama pe portul 11434,
+  LM Studio 1234 / llama.cpp 8080 pe mașina HA), completează lista de modele, apoi salvează opțiunile și
+  repornește Vatra. Se deschide singur prima dată. Opțiunile avansate rămân în tab-ul Configuration.
+- **Servere AI compatibile OpenAI**: opțiuni noi `assistant.backend` (`ollama` / `openai`), `openai_url` și
+  `api_key`. Merge cu LM Studio, llama.cpp, vLLM, LocalAI, Jan… Ollama rămâne implicit; la cine are deja
+  Vatra configurat nu se schimbă nimic.
+- Citire mai tolerantă a JSON-ului de la model (taguri de gândire, blocuri ```json, text în jur).
+- **Imagini gata construite** pentru amd64 și aarch64, făcute pe GitHub și publicate pe ghcr.io – instalarea
+  și update-urile nu mai construiesc nimic pe mașina ta (lent pe un Raspberry Pi).
+- Capturi de ecran în README; antetul panoului încape pe telefon.
+
 ## 2.1.0 – English 🇬🇧 / Română 🇷🇴
 **EN:** Vatra now speaks English and Romanian.
 - New option `language`: `auto` (default) follows the Home Assistant language – Romanian if HA is in

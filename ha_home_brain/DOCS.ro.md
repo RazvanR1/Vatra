@@ -2,7 +2,21 @@
 
 Creierul casei: urmărește ce se întâmplă, învață ce e normal în casa **ta**, îți transformă obiceiurile
 în automatizări native Home Assistant, îți spune când ceva e neobișnuit și lasă agenți AI locali
-să se gândească la întrebările mai grele. Totul rulează local; AI-ul (Ollama) e folosit doar când merită.
+să se gândească la întrebările mai grele. Totul rulează local; AI-ul (Ollama sau orice server compatibil OpenAI) e folosit doar când merită.
+
+## Primii pași
+
+Pornești add-on-ul și deschizi **Vatra** din bara laterală. Prima dată se deschide singur tab-ul **⚙ Configurare**:
+
+1. **Telefoane** – aplicațiile Home Assistant Companion găsite (`notify.mobile_app_*`). Apeși **Test** ca să verifici.
+2. **Persoane** – entitățile `person.*`.
+3. **Server AI** (opțional) – apeși **Caută în rețea**: caută Ollama (portul 11434) în rețeaua locală și
+   LM Studio (1234) / llama.cpp (8080) pe mașina HA. Sau scrii adresa și apeși **Testează conexiunea**;
+   lista de modele se completează singură.
+4. **Despre casa ta** și **Limba**.
+
+**Salvează și repornește Vatra** scrie opțiunile în locul tău (la fel ca tab-ul Configuration) și repornește
+add-on-ul. Opțiunile avansate rămân în tab-ul Configuration.
 
 ## Limba
 
@@ -92,9 +106,12 @@ notify_services: [notify.mobile_app_telefon]
 learning:
   persons: [person.razvan, person.hajni]   # pentru „doar când e cineva acasă”
 assistant:
+  backend: ollama      # sau: openai
   ollama_url: "http://IP:11434"
+  # openai_url: "http://IP:1234/v1"   # LM Studio; llama.cpp: http://IP:8080/v1
+  # api_key: ""                       # doar dacă serverul cere
   model: "qwen3.5:9b"
-  num_ctx: 8192        # același ca integrarea Ollama din HA, ca modelul să nu se reîncarce
+  num_ctx: 8192        # Ollama: același ca integrarea Ollama din HA, ca modelul să nu se reîncarce
 agents:
   agents_interval_hours: 6
   quiet_hours: "23-7"  # agenții nu rulează analize zgomotoase noaptea

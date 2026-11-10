@@ -4,7 +4,21 @@
 
 Vatra watches what happens in your home, learns what is normal in **your** home, turns your habits
 into native Home Assistant automations, tells you when something is unusual and lets local AI agents
-think about the harder questions. Everything runs locally; the AI (Ollama) is used only when it's worth it.
+think about the harder questions. Everything runs locally; the AI (Ollama or any OpenAI-compatible server) is used only when it's worth it.
+
+## Getting started
+
+Start the add-on and open **Vatra** in the sidebar. The **⚙ Setup** tab opens by itself the first time:
+
+1. **Phones** – the Home Assistant Companion apps it found (`notify.mobile_app_*`). Press **Test** to check.
+2. **People** – your `person.*` entities.
+3. **AI server** (optional) – press **Search my network**: it looks for Ollama (port 11434) on your
+   local network, and for LM Studio (1234) / llama.cpp (8080) on the HA machine. Or type the address and press
+   **Test connection**; the model list fills in by itself.
+4. **About your home** and **Language**.
+
+**Save and restart Vatra** writes these options for you (same as the Configuration tab) and restarts the add-on.
+The advanced options stay in the Configuration tab.
 
 ## How it works
 
@@ -96,9 +110,12 @@ notify_services: [notify.mobile_app_phone]
 learning:
   persons: [person.alex, person.sam]   # for "only when someone is home"
 assistant:
+  backend: ollama      # or: openai
   ollama_url: "http://IP:11434"
+  # openai_url: "http://IP:1234/v1"   # LM Studio; llama.cpp: http://IP:8080/v1
+  # api_key: ""                       # only if the server needs one
   model: "qwen3.5:9b"
-  num_ctx: 8192        # same as the Ollama integration in HA, so the model isn't reloaded
+  num_ctx: 8192        # Ollama: same as the Ollama integration in HA, so the model isn't reloaded
 agents:
   agents_interval_hours: 6
   quiet_hours: "23-7"  # agents don't run noisy analyses at night

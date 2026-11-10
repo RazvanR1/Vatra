@@ -26,6 +26,7 @@ from .ha import HAClient
 from .llm import LLM
 from .notify import Notifier
 from .recorder import Recorder
+from .setup import Supervisor
 from .store import Store
 from .web import build_app
 
@@ -63,6 +64,7 @@ class Brain:
         self.detector.muted = set(self.store.get("muted", []))
         self.detector.dwell_factor = self.store.get("dwell_factor", {})
         self.llm = LLM(opts.get("assistant", {}))
+        self.supervisor = Supervisor()
         self.approvals = Approvals(self.ha, self.store, self.notifier, opts.get("safety", {}))
         site = opts.get("site_context", "")
         self.agents = Agents(self.ha, self.store, self.llm, self.approvals, self.notifier,
