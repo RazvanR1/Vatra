@@ -44,6 +44,8 @@ class HomeContext:
         self.ha = ha
         self.entity_device: dict[str, str] = {}
         self.device_entities: dict[str, list[str]] = defaultdict(list)
+        self.entity_platform: dict[str, str] = {}
+        self.device_name: dict[str, str] = {}
 
     # ---------- registru ----------
     async def refresh(self) -> None:
@@ -53,16 +55,37 @@ class HomeContext:
         except Exception as err:  # noqa: BLE001
             log.warning("Could not read the entity registry: %s", err)
             return
-        self.load(entries or [])
+        try:
+            devices = await self.ha.ws({"type": "config/device_registry/list"})
+        except Exception as err:  # noqa: BLE001
+            log.debug("Could not read the device registry: %s", err)
+            devices = []
+        self.load(entries or [], devices or [])
 
-    def load(self, entries: list[dict]) -> None:
+    def load(self, entries: list[dict], devices: list[dict] | None = None) -> None:
         self.entity_device.clear()
+        self.entity_platform.clear()
         self.device_entities = defaultdict(list)
         for e in entries:
             eid, dev = e.get("entity_id"), e.get("device_id")
+            if eid and e.get("platform"):
+                self.entity_platform[eid] = e["platform"]
             if eid and dev:
                 self.entity_device[eid] = dev
                 self.device_entities[dev].append(eid)
+        if devices is not None:
+            self.device_name = {d["id"]: (d.get("name_by_user") or d.get("name") or "")
+                                for d in devices if d.get("id")}
+
+    def group_of(self, eid: str) -> tuple[str, str]:
+        """(cheie, nume) pentru gruparea alertelor: dispozitivul entității, altfel integrarea, altfel ea însăși."""
+        dev = self.entity_device.get(eid)
+        if dev and self.device_name.get(dev):
+            return f"device:{dev}", self.device_name[dev]
+        platform = self.entity_platform.get(eid)
+        if platform:
+            return f"platform:{platform}", platform.replace("_", " ").title()
+        return f"entity:{eid}", self.ha.name(eid)
 
     def siblings(self, eid: str) -> list[str]:
         dev = self.entity_device.get(eid)

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.3.0 – Alerts grouped by device
+**EN:**
+- When several entities of the same device (or integration) go down together, the phone gets **one** message:
+  "Dishwasher Bosch is not responding – 4 entities unavailable: Connected, Remote Start…" instead of a long list.
+- In the panel, alerts of the same device are one row that opens to show each entity, with a link to its history.
+- Summary messages now count entities, not "devices".
+- Issue templates on GitHub (bug, idea, new language), in English and Romanian.
+
+**RO:**
+- Când mai multe entități ale aceluiași dispozitiv (sau aceleiași integrări) pică deodată, pe telefon vine **un singur**
+  mesaj: „Dishwasher Bosch nu răspunde – 4 entități indisponibile: Connected, Remote Start…”, în loc de o listă lungă.
+- În panou, alertele aceluiași dispozitiv sunt un singur rând, care se deschide și arată fiecare entitate, cu link
+  spre istoricul ei.
+- Mesajele rezumat numără acum entități, nu „dispozitive”.
+- Template-uri de issue pe GitHub (problemă, idee, limbă nouă), în engleză și română.
+
 ## 2.2.1 – Alert details fix
 **EN:**
 - Guard alerts (low battery, device unavailable) that were active before a restart showed no details. They now

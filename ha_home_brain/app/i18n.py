@@ -73,8 +73,11 @@ S: dict[str, dict] = {
                          "{name} e {state} de {minutes} minute"),
     "guard.battery_msg": _e("{name}: battery {level}%.", "{name}: baterie {level}%."),
     "guard.burst_title": _e("Several devices down", "Mai multe dispozitive picate"),
-    "guard.burst_msg": _e("{count} devices: {names}{more}.", "{count} dispozitive: {names}{more}."),
+    "guard.burst_msg": _e("{count} entities: {names}{more}.", "{count} entități: {names}{more}."),
     "guard.and_more": _e(" and {n} more", " și încă {n}"),
+    "guard.group_title": _e("{name} is not responding", "{name} nu răspunde"),
+    "guard.group_msg": _e("{count} entities unavailable: {names}{more}.", "{count} entități indisponibile: {names}{more}."),
+    "guard.group_count": _e("{name} ({count} entities)", "{name} ({count} entități)"),
     "guard.ok_again": _e("{name} is fine again.", "{name} e din nou în regulă."),
     "resolved": _e("Resolved: {title}", "Rezolvat: {title}"),
 

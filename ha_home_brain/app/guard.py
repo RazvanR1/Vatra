@@ -137,6 +137,26 @@ class Guard:
                     level="warning", tier=FAULT if level <= 5 else ANOMALY)
         return found
 
+    def group(self, alerts: list) -> dict[str, tuple[str, list]]:
+        """Alertele grupate pe dispozitiv (sau integrare), în ordinea apariției."""
+        out: dict[str, tuple[str, list]] = {}
+        for a in alerts:
+            eid = a.key.partition(":")[2]
+            if self.context is not None and hasattr(self.context, "group_of"):
+                gkey, label = self.context.group_of(eid)
+            else:
+                gkey, label = f"entity:{eid}", self.ha.attr(eid, "friendly_name", eid)
+            out.setdefault(gkey, (label, []))[1].append(a)
+        return out
+
+    def short_name(self, alert, label: str) -> str:
+        """Numele entității fără prefixul dispozitivului („Dishwasher Bosch - Connected” -> „Connected”)."""
+        eid = alert.key.partition(":")[2]
+        name = str(self.ha.attr(eid, "friendly_name", eid))
+        if label and name.lower().startswith(label.lower()):
+            name = name[len(label):].lstrip(" -–:·") or name
+        return name
+
     def describe(self, key: str) -> str:
         """Text pentru o alertă activă care nu mai are mesaj (refăcută după repornire)."""
         kind, _, eid = key.partition(":")
@@ -168,12 +188,21 @@ class Guard:
         push = [a for a in new if a.tier in (FAULT, "")]
         for alert in new:
             await self.notifier.raise_alert(alert, send=False)
-        if len(push) > SUMMARY_AFTER:
-            names = ", ".join(self.ha.attr(a.key.partition(":")[2], "friendly_name",
-                                           a.key.partition(":")[2]) for a in push[:8])
-            more = t("guard.and_more", n=len(push) - 8) if len(push) > 8 else ""
+        groups = self.group(push)
+        if len(groups) == 1 and len(push) > 1:
+            # Mai multe entități ale aceluiași dispozitiv / aceleiași integrări: un singur mesaj, pe nume.
+            (_, (label, alerts)), = groups.items()
+            names = ", ".join(self.short_name(a, label) for a in alerts[:6])
+            more = t("guard.and_more", n=len(alerts) - 6) if len(alerts) > 6 else ""
+            await self.notifier.notify(t("guard.group_title", name=label),
+                                       t("guard.group_msg", count=len(alerts), names=names, more=more),
+                                       "warning", key="guard_burst")
+        elif len(push) > SUMMARY_AFTER or any(len(v[1]) > 1 for v in groups.values()):
+            parts = [t("guard.group_count", name=label, count=len(alerts)) if len(alerts) > 1 else label
+                     for label, alerts in groups.values()]
+            more = t("guard.and_more", n=len(parts) - 8) if len(parts) > 8 else ""
             await self.notifier.notify(t("guard.burst_title"),
-                                       t("guard.burst_msg", count=len(push), names=names, more=more),
+                                       t("guard.burst_msg", count=len(push), names=", ".join(parts[:8]), more=more),
                                        "warning", key="guard_burst")
         else:
             for alert in push:

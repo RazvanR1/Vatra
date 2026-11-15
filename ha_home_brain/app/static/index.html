@@ -59,6 +59,8 @@
   textarea { width:100%; min-height:80px; resize:vertical; }
   .field { display:flex; flex-direction:column; gap:5px; margin:10px 0; } .field > span { color:var(--muted); font-size:13px; }
   .found { cursor:pointer; } .found:hover { color:var(--text); }
+  .item small a { color:var(--muted); text-decoration:underline dotted; } .item small a:hover { color:var(--text); }
+  details.item summary { cursor:pointer; } details.item > .item { margin:8px 0 0 12px; }
   .notice { border:1px solid var(--accent); border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   #overlay { position:fixed; inset:0; background:rgba(10,12,15,.85); display:none; align-items:center; justify-content:center; z-index:5; font-size:17px; }
   @media (max-width:640px) { #sub { display:none; } #meta { font-size:12px; } }
@@ -193,7 +195,7 @@ const L = {
     "undone":"· undone", "b.undo":"Undo", "error":"Error: ",
     "k.decizie":"decision", "k.blocat":"blocked", "k.umbră":"shadow", "k.acțiune":"action", "k.agent":"agent",
     "k.învățare":"learning", "k.automatizare":"automation", "k.memorie":"memory",
-    "nav.setup":"⚙ Setup",
+    "nav.setup":"⚙ Setup", "alerts.group":"{n} entities unavailable",
     "su.notice":"Vatra isn't set up yet – it takes a minute and no YAML.", "su.open":"Open setup",
     "su.title":"Setup", "su.intro":"Pick what Vatra found in your Home Assistant. You can change everything later here or in the add-on's Configuration tab.",
     "su.nosave":"Saving works only when Vatra runs as a Home Assistant add-on.",
@@ -246,7 +248,7 @@ const L = {
     "undone":"· anulat", "b.undo":"Anulează", "error":"Eroare: ",
     "k.decizie":"decizie", "k.blocat":"blocat", "k.umbră":"umbră", "k.acțiune":"acțiune", "k.agent":"agent",
     "k.învățare":"învățare", "k.automatizare":"automatizare", "k.memorie":"memorie",
-    "nav.setup":"⚙ Configurare",
+    "nav.setup":"⚙ Configurare", "alerts.group":"{n} entități indisponibile",
     "su.notice":"Vatra nu e configurat încă – durează un minut și nu ai nevoie de YAML.", "su.open":"Deschide configurarea",
     "su.title":"Configurare", "su.intro":"Bifează ce a găsit Vatra în Home Assistant. Poți schimba orice mai târziu, aici sau în tab-ul Configuration al add-on-ului.",
     "su.nosave":"Salvarea merge doar când Vatra rulează ca add-on în Home Assistant.",
@@ -312,7 +314,7 @@ function render() {
     [S.pending ?? 0, "s.pending"], [(S.findings||[]).length, "s.findings"],
     [S.llm?.calls ?? 0, "s.ai"], [m.import ? T("imp." + m.import) : "—", "s.import"],
   ].map(([v, l]) => `<div><div class="stat">${esc(v)}</div><small>${esc(T(l))}</small></div>`).join("");
-  $("alerts").innerHTML = (S.active_alerts||[]).length ? S.active_alerts.map(alertRow).join("") : empty(T("all_ok"));
+  $("alerts").innerHTML = (S.active_alerts||[]).length ? groupAlerts(S.active_alerts).join("") : empty(T("all_ok"));
   $("rules").innerHTML = (S.automations||[]).map(r => `<div class="item">${esc(r.name)}<small>${r.enabled ? esc(r.last_action) : T("rule_off")}</small></div>`).join("");
   $("history").innerHTML = (S.history||[]).length ? S.history.map(alertRow).join("") : empty(T("nothing_yet"));
   $("findings").innerHTML = (S.findings||[]).length ? S.findings.map(f => `<div class="item ${esc(f.level)}">${esc(f.title)} <span class="tier">${esc(f.tier_label || "")}</span><small>${esc(f.message)}${f.context ? " · " + esc(f.context) : ""}</small></div>`).join("")
@@ -328,6 +330,19 @@ function render() {
   $("q").placeholder = T(S.assistant && !S.assistant.enabled ? "q.off" : "q");
   if (document.querySelector("#t-home.on")) get("api/insights").then(r => $("recent-ins").innerHTML = r.length ? r.slice(0,5).map(insRow).join("") : empty(T("agents_not_run")));
 }
+// Alertele aceluiași dispozitiv / aceleiași integrări: un rând care se deschide.
+const groupAlerts = list => {
+  const g = new Map();
+  list.forEach(a => { const k = a.group || a.key; g.has(k) ? g.get(k).push(a) : g.set(k, [a]); });
+  return [...g.values()].map(items => items.length === 1 ? alertRow(items[0]) :
+    `<details class="item ${esc(items[0].level)}"><summary>${esc(items[0].group_name || items[0].title)} – ${T("alerts.group", {n: items.length})}</summary>${items.map(a => subRow(a, items[0].group_name)).join("")}</details>`);
+};
+// Rând în interiorul unui grup: numele entității fără prefixul dispozitivului.
+const subRow = (a, group) => {
+  let n = a.entity_name || a.title;
+  if (group && n.toLowerCase().startsWith(group.toLowerCase())) n = n.slice(group.length).replace(/^[\s\-–:·]+/, "") || n;
+  return `<div class="item ${esc(a.level)}">${esc(n)}<small>${when(a.time)}${a.entity_id ? ` · <a href="/history?entity_id=${encodeURIComponent(a.entity_id)}" target="_top">${esc(a.entity_id)}</a>` : ""}</small></div>`;
+};
 const alertRow = a => `<div class="item ${esc(a.level)}">${esc(a.title)}${a.entity_name && !(a.message||"").includes(a.entity_name) ? `: ${esc(a.entity_name)}` : ""}<small>${esc(a.message)}${a.message ? " · " : ""}${when(a.time)}${a.entity_id ? ` · <a href="/history?entity_id=${encodeURIComponent(a.entity_id)}" target="_top">${esc(a.entity_id)}</a>` : ""}</small></div>`;
 const insRow = i => `<div class="item ${esc(i.severity)}"><span class="chip">${esc(i.agent_name)}</span> ${esc(i.title)}<small>${esc(i.detail)}</small></div>`;
 

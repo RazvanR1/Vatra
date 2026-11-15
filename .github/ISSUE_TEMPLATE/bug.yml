@@ -1,0 +1,72 @@
+name: 🐞 Bug report / Problemă
+description: Something in Vatra doesn't work as expected. / Ceva nu merge cum ar trebui.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this! You can write in **English or Romanian**.
+        Mulțumesc că raportezi! Poți scrie în **engleză sau română**.
+  - type: input
+    id: version
+    attributes:
+      label: Vatra version / Versiunea Vatra
+      description: Settings → Apps → Vatra (e.g. 2.2.1)
+      placeholder: "2.2.1"
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version / Versiunea Home Assistant
+      description: Settings → About
+      placeholder: "2026.11.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Hardware
+      options:
+        - x86-64 (mini PC, NUC, VM / Proxmox)
+        - Raspberry Pi / ARM (aarch64)
+        - Home Assistant Green / Yellow
+        - Other / Altceva
+    validations:
+      required: true
+  - type: dropdown
+    id: ai
+    attributes:
+      label: AI server / Server AI
+      options:
+        - None / Niciunul
+        - Ollama
+        - OpenAI-compatible (LM Studio, llama.cpp, vLLM, LocalAI…)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Ce s-a întâmplat?
+      description: Steps to reproduce, if you can. / Pașii prin care se poate repeta, dacă îi știi.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect? / Ce te așteptai să se întâmple?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Loguri
+      description: |
+        Settings → Apps → Vatra → **Log**. Paste the lines around the problem. Remove anything private.
+        Setări → Apps → Vatra → **Log**. Lipește rândurile din jurul problemei. Șterge ce e privat.
+      render: shell
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Capturi de ecran
+      description: Optional – drag images here. / Opțional – trage imaginile aici.

@@ -1,0 +1,25 @@
+name: 🌍 New language / Limbă nouă
+description: Help translate Vatra into your language. / Ajută la traducerea Vatra în limba ta.
+labels: [translation]
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language / Limba
+      placeholder: "Deutsch, Magyar, Français…"
+    validations:
+      required: true
+  - type: dropdown
+    id: help
+    attributes:
+      label: Can you help translate? / Poți ajuta la traducere?
+      options:
+        - Yes, I can translate the texts / Da, pot traduce textele
+        - Yes, I can review a translation / Da, pot verifica o traducere
+        - No, just requesting it / Nu, doar o cer
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Observații

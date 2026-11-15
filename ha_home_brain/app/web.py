@@ -40,6 +40,11 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         eid = alert_entity(a.key, brain.ha.states)
         d["entity_id"] = eid
         d["entity_name"] = brain.ha.attr(eid, "friendly_name", eid) if eid else ""
+        ctx = getattr(brain, "context", None)
+        if eid and ctx is not None and hasattr(ctx, "group_of"):
+            d["group"], d["group_name"] = ctx.group_of(eid)
+        else:
+            d["group"], d["group_name"] = (f"entity:{eid}" if eid else a.key), d["entity_name"]
         return d
 
     async def index(_req):

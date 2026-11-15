@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Documentation / Documentație
+    url: https://github.com/RazvanR1/Vatra#readme
+    about: Installation, setup guide and all options. / Instalare, ghid de configurare și toate opțiunile.
+  - name: ☕ Support the project / Susține proiectul
+    url: https://buymeacoffee.com/razvanr1
+    about: Vatra is free – a coffee keeps it going. / Vatra e gratuit – o cafea îl ține în viață.

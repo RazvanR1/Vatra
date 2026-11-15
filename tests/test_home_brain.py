@@ -249,7 +249,7 @@ async def test_guard_burst_becomes_summary(setup):
     seen_ok(brain.guard)
     await brain.guard.run_once()
     sent = [c for c in fake.calls if c["domain"] == "notify"]
-    assert len(sent) == 1 and "6 dispozitive" in sent[0]["service_data"]["message"]
+    assert len(sent) == 1 and "6 entități" in sent[0]["service_data"]["message"]
     assert len(brain.notifier.active) == 6
     # Peste 24h nu mai e în „found”, dar tot e picat -> alerta NU se închide fals.
     for s in brain.ha.states.values():
@@ -470,3 +470,24 @@ async def test_restored_alerts_get_details_and_ignored_ones_close(setup):
     assert not [c for c in fake.calls if c["domain"] == "notify"]  # fără notificări duplicate
     assert alert_entity("battery:sensor.tableta_baterie", brain.ha.states) == "sensor.tableta_baterie"
     assert alert_entity("guard_burst", brain.ha.states) == ""
+
+
+async def test_guard_groups_alerts_by_device(setup):
+    """Toți senzorii unui dispozitiv picați deodată -> un singur mesaj „<dispozitiv> nu răspunde”."""
+    fake, brain = setup
+    brain.ha.states.clear()
+    names = ["Connected", "Remote Start", "Remote Control", "Smart Start Enabled"]
+    entries = []
+    for i, n in enumerate(names):
+        eid = f"binary_sensor.bosch_{i}"
+        brain.ha.states[eid] = {"entity_id": eid, "state": "unavailable",
+                                "attributes": {"friendly_name": f"Dishwasher Bosch - {n}"}, "last_changed": _ago(1)}
+        entries.append({"entity_id": eid, "device_id": "dev_bosch", "platform": "home_connect"})
+    brain.guard.context.load(entries, [{"id": "dev_bosch", "name": "Dishwasher Bosch"}])
+    seen_ok(brain.guard)
+    await brain.guard.run_once()
+    sent = [c["service_data"] for c in fake.calls if c["domain"] == "notify"]
+    assert len(sent) == 1
+    assert sent[0]["title"] == "Dishwasher Bosch nu răspunde"
+    assert sent[0]["message"].startswith("4 entități indisponibile: Connected, Remote Start")
+    assert len(brain.notifier.active) == 4  # fiecare entitate rămâne urmărită separat

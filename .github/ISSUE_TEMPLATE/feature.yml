@@ -1,0 +1,21 @@
+name: 💡 Idea / Idee
+description: Suggest a new feature or an improvement. / Propune o funcție nouă sau o îmbunătățire.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like Vatra to do? / Ce ai vrea să facă Vatra?
+      description: Describe the situation in your home, not only the solution. / Descrie situația din casa ta, nu doar soluția.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example / Exemplu
+      description: e.g. "When the washing machine finishes and nobody is home, …" / ex. „Când termină mașina de spălat și nu e nimeni acasă, …”
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you handle it today? / Cum rezolvi acum?
+      description: An automation, another add-on, nothing… / O automatizare, alt add-on, nimic…
