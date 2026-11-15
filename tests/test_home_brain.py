@@ -441,3 +441,32 @@ async def test_language_auto_follows_home_assistant(setup):
     fake.language = "ro"
     assert await brain.sync_language() == "ro" and i18n.lang() == "ro"
     assert brain.store.get("ha_language") == "ro"
+
+
+async def test_restored_alerts_get_details_and_ignored_ones_close(setup):
+    """Issue #1: după repornire, alertele active aveau mesaj gol; entitățile ignorate ulterior rămâneau active."""
+    fake, brain = setup
+    from app.guard import Guard
+    from app.notify import Notifier
+    from app.store import Store
+    from app.web import alert_entity
+    store = Store(":memory:")
+    brain.ha.states.clear()
+    brain.ha.states["sensor.tableta_baterie"] = {
+        "entity_id": "sensor.tableta_baterie", "state": "12",
+        "attributes": {"friendly_name": "Tabletă bucătărie", "device_class": "battery"}, "last_changed": _ago(5)}
+    brain.ha.states["sensor.scrub_baterie"] = {
+        "entity_id": "sensor.scrub_baterie", "state": "8",
+        "attributes": {"friendly_name": "Robot", "device_class": "battery"}, "last_changed": _ago(5)}
+    # memoria de dinainte de repornire: doar cheile
+    store.set("guard_active", ["battery:sensor.tableta_baterie", "battery:sensor.scrub_baterie"])
+    n = Notifier(brain.ha, ["notify.mobile_app_razvan"])
+    g = Guard(brain.ha, n, {"ignore": ["sensor.scrub_*"]}, store)
+    assert n.active["battery:sensor.tableta_baterie"].message == ""  # așa arăta bug-ul
+    await g.run_once()
+    msg = n.active["battery:sensor.tableta_baterie"].message
+    assert "Tabletă bucătărie" in msg and "12" in msg
+    assert "battery:sensor.scrub_baterie" not in n.active  # ignorată -> închisă
+    assert not [c for c in fake.calls if c["domain"] == "notify"]  # fără notificări duplicate
+    assert alert_entity("battery:sensor.tableta_baterie", brain.ha.states) == "sensor.tableta_baterie"
+    assert alert_entity("guard_burst", brain.ha.states) == ""

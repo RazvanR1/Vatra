@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.1 – Alert details fix
+**EN:**
+- Guard alerts (low battery, device unavailable) that were active before a restart showed no details. They now
+  show the device name, the battery level or state, and the entity, with a link to its history in Home Assistant.
+- Entities you add to `guard.ignore` later now also close their alerts that were already active.
+
+**RO:**
+- Alertele paznicului (baterie slabă, dispozitiv indisponibil) active dinainte de o repornire apăreau fără detalii.
+  Acum arată numele dispozitivului, nivelul bateriei sau starea și entitatea, cu link spre istoricul ei din Home Assistant.
+- Entitățile adăugate ulterior la `guard.ignore` își închid și alertele deja active.
+
 ## 2.2.0 – Setup guide, any local AI server, ready-made images
 **EN:**
 - **Setup guide in the panel (⚙ Setup)** – no YAML needed. It finds your phones (`notify.mobile_app_*`) and

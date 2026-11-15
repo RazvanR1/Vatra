@@ -137,6 +137,16 @@ class Guard:
                     level="warning", tier=FAULT if level <= 5 else ANOMALY)
         return found
 
+    def describe(self, key: str) -> str:
+        """Text pentru o alertă activă care nu mai are mesaj (refăcută după repornire)."""
+        kind, _, eid = key.partition(":")
+        st = self.ha.states.get(eid) or {}
+        name = st.get("attributes", {}).get("friendly_name", eid)
+        if kind == "battery":
+            level = self.battery_level(eid, st) if st else None
+            return t("guard.battery_msg", name=name, level=f"{level:.0f}" if level is not None else "?")
+        return f"{name}: {st.get('state', '?')}."
+
     def fixed(self, key: str) -> bool:
         """O alertă activă se închide doar când problema chiar a dispărut."""
         kind, _, eid = key.partition(":")
@@ -171,11 +181,23 @@ class Guard:
                     continue  # tocmai s-a rezolvat și a picat iar: nu insistăm
                 await self.notifier.notify(alert.title, alert.message, alert.level, key=alert.key)
         for key in list(self.notifier.active):
-            if key.split(":", 1)[0] in {"unavailable", "battery"} and key not in found \
-                    and self.fixed(key):
-                eid = key.split(":", 1)[1]
+            if key.split(":", 1)[0] not in {"unavailable", "battery"}:
+                continue
+            eid = key.split(":", 1)[1]
+            if key in found:
+                # Alertă deja activă (de ex. refăcută după o repornire, fără text): îi actualizăm detaliile.
+                cur, fresh = self.notifier.active[key], found[key]
+                cur.title, cur.message, cur.tier = fresh.title, fresh.message, fresh.tier
+                continue
+            if self.ignored(eid):
+                # Entitatea a fost trecută între timp la „ignoră”: închidem alerta fără mesaj.
+                self.notifier.active.pop(key, None)
+                continue
+            if self.fixed(key):
                 name = self.ha.attr(eid, "friendly_name", eid)
                 await self.notifier.resolve(key, t("guard.ok_again", name=name))
+            elif not self.notifier.active[key].message:
+                self.notifier.active[key].message = self.describe(key)
         self.findings = found
         if self.store is not None:
             self.store.set("guard_last_ok", self.last_ok)

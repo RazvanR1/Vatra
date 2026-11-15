@@ -17,6 +17,12 @@ STATIC = Path(__file__).parent / "static"
 INGRESS_IPS = {"172.30.32.2", "127.0.0.1", "::1"}
 
 
+def alert_entity(key: str, states: dict) -> str:
+    """Entitatea din cheia unei alerte (`battery:sensor.x`, `unavailable:light.y`), dacă există în HA."""
+    eid = key.partition(":")[2]
+    return eid if eid in states else ""
+
+
 def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Application:
     @web.middleware
     async def only_ingress(req: web.Request, handler):
@@ -29,6 +35,13 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     chat_history: list[dict] = []
     J = web.json_response
 
+    def alert_dict(a) -> dict:
+        d = asdict(a)
+        eid = alert_entity(a.key, brain.ha.states)
+        d["entity_id"] = eid
+        d["entity_name"] = brain.ha.attr(eid, "friendly_name", eid) if eid else ""
+        return d
+
     async def index(_req):
         return web.FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
@@ -39,7 +52,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         return J({
             "connected": ha.connected.is_set(),
             "entities": len(ha.states),
-            "active_alerts": [asdict(a) for a in brain.notifier.active.values()],
+            "active_alerts": [alert_dict(a) for a in brain.notifier.active.values()],
             "history": [asdict(a) for a in list(brain.notifier.history)[:50]],
             "automations": brain.automations.status(),
             "assistant": {"enabled": brain.assistant.enabled, "model": brain.assistant.model},

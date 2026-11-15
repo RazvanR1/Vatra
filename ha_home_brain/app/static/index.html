@@ -328,7 +328,7 @@ function render() {
   $("q").placeholder = T(S.assistant && !S.assistant.enabled ? "q.off" : "q");
   if (document.querySelector("#t-home.on")) get("api/insights").then(r => $("recent-ins").innerHTML = r.length ? r.slice(0,5).map(insRow).join("") : empty(T("agents_not_run")));
 }
-const alertRow = a => `<div class="item ${esc(a.level)}">${esc(a.title)}<small>${esc(a.message)} · ${when(a.time)}</small></div>`;
+const alertRow = a => `<div class="item ${esc(a.level)}">${esc(a.title)}${a.entity_name && !(a.message||"").includes(a.entity_name) ? `: ${esc(a.entity_name)}` : ""}<small>${esc(a.message)}${a.message ? " · " : ""}${when(a.time)}${a.entity_id ? ` · <a href="/history?entity_id=${encodeURIComponent(a.entity_id)}" target="_top">${esc(a.entity_id)}</a>` : ""}</small></div>`;
 const insRow = i => `<div class="item ${esc(i.severity)}"><span class="chip">${esc(i.agent_name)}</span> ${esc(i.title)}<small>${esc(i.detail)}</small></div>`;
 
 async function loadApprovals() {
