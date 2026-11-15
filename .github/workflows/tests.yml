@@ -24,8 +24,9 @@ jobs:
       - name: Conversation requirements matching the installed Home Assistant
         run: |
           python - <<'PY' > conv-req.txt
-          import json, pathlib, homeassistant.components.conversation as c
-          print("\n".join(json.loads((pathlib.Path(c.__file__).parent / "manifest.json").read_text())["requirements"]))
+          import importlib.util, json, pathlib
+          ha = pathlib.Path(importlib.util.find_spec("homeassistant").submodule_search_locations[0])
+          print("\n".join(json.loads((ha / "components/conversation/manifest.json").read_text())["requirements"]))
           PY
           pip install -r conv-req.txt
       - run: pytest -q tests_ha -p no:cacheprovider
