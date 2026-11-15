@@ -15,9 +15,15 @@ from .i18n import t
 
 log = logging.getLogger("home_brain.cleanup")
 
-DOWN = {"unavailable", "unknown", "", None}
+DEAD = "unavailable"                 # doar „unavailable” înseamnă că dispozitivul nu răspunde
+NO_VALUE = {"unavailable", "unknown", "", None}
 # Ce nu propunem niciodată: entitățile Vatra însuși și cele de sistem.
 SKIP_PREFIXES = ("sensor.vatra_", "binary_sensor.vatra_", "update.", "person.", "zone.", "sun.")
+# Entități fără stare: stau normal pe „unknown” până le folosești, deci nu spun nimic despre dispozitiv.
+STATELESS = {"button", "input_button", "notify", "scene", "event", "image", "tts", "stt", "conversation",
+             "wake_word", "ai_task"}
+# Dispozitive care „dorm” normal (televizor oprit, telefon plecat): nu le propunem niciodată.
+SLEEPY = {"media_player", "remote", "device_tracker"}
 
 
 def _sid(*parts) -> str:
@@ -42,12 +48,15 @@ class Cleanup:
         """Dispozitivele ale căror entități (existente în HA) sunt toate indisponibile acum."""
         out = []
         for dev, eids in self.context.device_entities.items():
-            live = [e for e in eids if e in self.ha.states and not e.startswith(SKIP_PREFIXES)]
+            present = [e for e in eids if e in self.ha.states and not e.startswith(SKIP_PREFIXES)]
+            if any(e.split(".", 1)[0] in SLEEPY for e in present):
+                continue
+            live = [e for e in present if e.split(".", 1)[0] not in STATELESS]
             if not live:
                 continue
-            if all(self.ha.states[e].get("state") in DOWN for e in live):
+            if all(self.ha.states[e].get("state") == DEAD for e in live):
                 out.append({"device_id": dev, "name": self.context.device_name.get(dev) or self.ha.name(live[0]),
-                            "entities": sorted(live)})
+                            "entities": sorted(present), "checked": sorted(live)})
         return out
 
     async def had_value(self, entity_ids: list[str]) -> set[str]:
@@ -59,8 +68,11 @@ class Cleanup:
             hist = await self.ha.ws({"type": "history/history_during_period", "start_time": start,
                                      "entity_ids": chunk, "minimal_response": True,
                                      "no_attributes": True, "significant_changes_only": False}, timeout=60)
-            for eid, states in (hist or {}).items():
-                if any((s.get("s") if "s" in s else s.get("state")) not in DOWN for s in states or []):
+            hist = hist or {}
+            for eid in chunk:
+                states = hist.get(eid)
+                # Fără niciun istoric (ex. exclusă din recorder) nu putem ști: o considerăm vie.
+                if not states or any((s.get("s") if "s" in s else s.get("state")) not in NO_VALUE for s in states):
                     alive.add(eid)
         return alive
 
@@ -70,14 +82,19 @@ class Cleanup:
         dead = self.dead_now()
         if dead:
             try:
-                alive = await self.had_value([e for d in dead for e in d["entities"]])
+                alive = await self.had_value([e for d in dead for e in d["checked"]])
             except Exception as err:  # noqa: BLE001
                 log.warning("Could not read history for cleanup: %s", err)
                 return self.candidates
-            dead = [d for d in dead if not alive.intersection(d["entities"])]
+            dead = [d for d in dead if not alive.intersection(d["checked"])]
         dead.sort(key=lambda d: (-len(d["entities"]), d["name"].lower()))
         self.candidates = dead
         self.last_scan = time.time()
+        # Propunerile încă în așteptare pentru dispozitive care nu mai sunt moarte se retrag.
+        still = {d["device_id"] for d in dead}
+        for a in self.approvals.pending():
+            if a["kind"] == "cleanup" and a["item_id"] not in still:
+                self.store.set_status("approval", a["id"], "resolved")
         if propose:
             sent = 0
             for d in dead:

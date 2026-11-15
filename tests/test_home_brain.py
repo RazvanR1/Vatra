@@ -586,3 +586,29 @@ async def test_mqtt_waits_quietly_without_mqtt_integration(setup):
     task.cancel()
     assert not bridge.connected and "not set up" in bridge.error
     assert not [c for c in fake.calls if c["domain"] == "mqtt"]
+
+
+async def test_cleanup_ignores_stateless_sleepy_and_untracked(setup):
+    """Falsuri pozitive găsite la Razvan: notify/select „unknown”, televizor oprit, entitate fără istoric."""
+    fake, brain = setup
+    from app.cleanup import _sid
+    brain.ha.states.clear()
+    rows = [("notify.uptime_razvan", "unknown", "uptime"), ("select.hallway_scene", "unknown", "hallway"),
+            ("media_player.tv", "unavailable", "tv"), ("button.tv_fav", "unavailable", "tv"),
+            ("sensor.untracked", "unavailable", "untracked"),
+            ("sensor.dead_temp", "unavailable", "dead"), ("button.dead_restart", "unknown", "dead")]
+    for eid, state, _ in rows:
+        brain.ha.states[eid] = {"entity_id": eid, "state": state, "attributes": {"friendly_name": eid}}
+    brain.context.load([{"entity_id": e, "device_id": d} for e, _, d in rows],
+                       [{"id": d, "name": d} for d in {r[2] for r in rows}])
+    fake.history = {"select.hallway_scene": [{"s": "unknown"}], "media_player.tv": [{"s": "unavailable"}],
+                    "sensor.dead_temp": [{"s": "unavailable"}]}  # sensor.untracked: fără istoric
+    # o propunere veche, greșită, din versiunea anterioară
+    await brain.approvals.ask("cleanup", "hallway", "Clean up: hallway?", "", {"device_id": "hallway",
+                              "name": "hallway", "entities": ["select.hallway_scene"]}, notify=False)
+    found = await brain.cleanup.scan()
+    assert [d["name"] for d in found] == ["dead"]
+    assert found[0]["entities"] == ["button.dead_restart", "sensor.dead_temp"]  # tot dispozitivul se dezactivează
+    pending = [a["item_id"] for a in brain.approvals.pending() if a["kind"] == "cleanup"]
+    assert pending == ["dead"]  # propunerea greșită pentru „hallway” a fost retrasă
+    assert brain.store.item("approval", _sid("cleanup", "hallway"))["status"] == "resolved"

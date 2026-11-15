@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.3 – Safer clean up
+- EN: Clean up no longer treats "unknown" as dead (notify, button, scene and some select entities sit on "unknown"
+  normally), skips TVs/media players and phones that are simply off or away, and never proposes an entity with no
+  history. Proposals made by 2.4.0–2.4.2 that no longer qualify are withdrawn automatically.
+- RO: Curățenia nu mai consideră „unknown” ca mort (entitățile notify, buton, scenă și unele select stau normal pe
+  „unknown”), sare peste televizoare/media playere și telefoane care sunt doar oprite sau plecate și nu mai propune
+  entități fără istoric. Propunerile făcute de 2.4.0–2.4.2 care nu mai corespund se retrag automat.
+
 ## 2.4.2
 - EN: Vatra entities are now published through Home Assistant's own MQTT integration (`mqtt.publish`): works with any broker HA uses, no Supervisor service or passwords needed. Entities become unavailable within 5 minutes if Vatra stops.
 - RO: Entitățile Vatra se publică acum prin integrarea MQTT a Home Assistant (`mqtt.publish`): merge cu orice broker folosește HA, fără serviciu Supervisor sau parole. Dacă Vatra se oprește, entitățile devin indisponibile în cel mult 5 minute.
