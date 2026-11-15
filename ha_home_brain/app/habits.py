@@ -194,6 +194,13 @@ class HabitMiner:
             return []
         names = names or {}
         days = observed_days(transitions[0][0], transitions[-1][0], self.tz)
+        skip = getattr(self, "skip_days", None) or set()
+        if skip:
+            # Zilele de vacanță nu spun nimic despre obiceiuri: le scoatem cu totul.
+            days = {k: [d for d in v if d not in skip] for k, v in days.items()}
+            transitions = [tr for tr in transitions if local(tr[0], self.tz).date() not in skip]
+            if not transitions:
+                return []
         tl = Timeline(transitions)
         human = [t for t in transitions if self.is_habit_transition(t)]
         habits = self._time_habits(human, days, tl, names) + self._sequence_habits(

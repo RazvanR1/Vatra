@@ -612,3 +612,65 @@ async def test_cleanup_ignores_stateless_sleepy_and_untracked(setup):
     pending = [a["item_id"] for a in brain.approvals.pending() if a["kind"] == "cleanup"]
     assert pending == ["dead"]  # propunerea greșită pentru „hallway” a fost retrasă
     assert brain.store.item("approval", _sid("cleanup", "hallway"))["status"] == "resolved"
+
+
+async def test_vacation_auto_learning_skip_and_intrusion(setup):
+    fake, brain = setup
+    import time as _t
+    from datetime import datetime as _dt
+    v = brain.vacation
+    v.persons = ["person.razvan", "person.hajni"]
+    for p in v.persons:
+        brain.ha.states[p] = {"entity_id": p, "state": "not_home", "attributes": {}, "last_changed": _ago(30)}
+    brain.ha.states["binary_sensor.usa_intrare"] = {"entity_id": "binary_sensor.usa_intrare", "state": "on",
+                                                    "attributes": {"device_class": "door", "friendly_name": "Ușa de la intrare"}}
+    assert v.is_active() and v.update()
+    assert v.days()  # zilele de vacanță sunt ținute minte
+    brain.miner.skip_days = v.days()
+    today = _dt.now(brain.tz).timestamp()
+    assert brain.miner.mine([(today, "light.x", "off", "on", "user")]) == []
+    # cineva deschide ușa în casa goală -> intră în lista de alerte; o singură dată
+    v.last_check = _t.time() - 60
+    hits = v.intrusions([(_t.time() - 5, "binary_sensor.usa_intrare", "off", "on", "")])
+    assert hits == [("binary_sensor.usa_intrare", "Ușa de la intrare")]
+    assert v.intrusions([(_t.time() - 5, "binary_sensor.usa_intrare", "off", "on", "")]) == []
+    # „M-am întors”: oprit manual; revine la automat când ajunge cineva acasă
+    v.set_manual("off")
+    assert not v.is_active()
+    brain.ha.states["person.hajni"]["state"] = "home"
+    v.update()
+    assert v.manual == "auto" and not v.is_active()
+    assert brain.store.get("vacation_periods")[-1][1] is not None  # perioada s-a închis
+
+
+async def test_weekly_report_counts_and_sends(setup):
+    fake, brain = setup
+    import time as _t
+    brain.store.put_item("done", "d1", {"automation_id": "home_brain_x", "name": "Veioză", "service": "auto"}, status="done")
+    brain.store.put_item("done", "d2", {"name": "Lumină", "service": "turn_off", "source": "Jarvis"}, status="undone")
+    brain.store.put_item("insight", "i1", {"agent": "energy", "agent_name": "Energie", "title": "Standby mare",
+                                           "detail": "", "severity": "warning"}, status="new")
+    r = brain.weekly.build()
+    assert r["stats"]["automations"] == 1 and r["stats"]["actions"] == 1 and r["stats"]["undone"] == 1
+    assert any("Standby mare" in x for x in r["lines"])
+    await brain.weekly.send()
+    sent = [c["service_data"] for c in fake.calls if c["domain"] == "notify"]
+    assert sent and sent[-1]["title"] == "Vatra – săptămâna ta"
+    assert brain.store.get("weekly_report")["stats"]["automations"] == 1
+
+
+async def test_vacation_intrusion_reaches_phone(setup):
+    fake, brain = setup
+    import time as _t
+    v = brain.vacation
+    v.persons = ["person.razvan"]
+    brain.ha.states["person.razvan"] = {"entity_id": "person.razvan", "state": "not_home", "attributes": {},
+                                        "last_changed": _ago(48)}
+    brain.ha.states["binary_sensor.miscare_hol"] = {"entity_id": "binary_sensor.miscare_hol", "state": "on",
+                                                    "attributes": {"device_class": "motion", "friendly_name": "Mișcare hol"}}
+    v.last_check = _t.time() - 120
+    brain.store.add_transition(_t.time() - 30, "binary_sensor.miscare_hol", "off", "on", "")
+    brain.store.flush()
+    await brain.check_unusual()
+    sent = [c["service_data"] for c in fake.calls if c["domain"] == "notify"]
+    assert any(s["title"] == "Activitate în casa goală" and "Mișcare hol" in s["message"] for s in sent)

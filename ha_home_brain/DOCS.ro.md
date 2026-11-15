@@ -87,6 +87,23 @@ notifications:
 - Consum mare cu pompa de căldură / centrala / AC pornite → explicat.
 - Releu care alimentează becuri smart → pornit permanent e normal; lumina o dă `light.*`.
 
+## Mod vacanță
+
+Modul vacanță pornește singur când **toate persoanele** (`learning.persons`) sunt plecate de `vacation.away_hours`
+ore (implicit 24) sau când apeși **Pornește modul vacanță** în tab-ul Acasă. Cât e pornit:
+- zilele de vacanță nu intră în învățarea obiceiurilor;
+- observațiile mărunte („lăsat prea mult”, „senzor tăcut”, „aprinderi repetate”) tac;
+- orice mișcare sau ușă/fereastră deschisă în casă ajunge imediat pe telefon (`vacation.security_alerts`).
+
+**M-am întors** îl oprește; revine la automat imediat ce ajunge cineva acasă. Există și ca
+`binary_sensor.vatra_vacation` (MQTT).
+
+## Raport săptămânal
+
+Duminică, la ora rezumatului (`agents.digest_hour`), un singur mesaj: obiceiuri și automatizări noi, acțiuni (și
+anulări), alerte, observații, curățenie și zile de vacanță. Același rezumat apare în tab-ul Acasă, la
+**Săptămâna asta**. Se oprește cu `weekly_report: false`.
+
 ## Curățenie
 
 La câteva ore, Vatra caută dispozitivele ale căror entități sunt **toate** indisponibile acum **și** n-au avut nicio

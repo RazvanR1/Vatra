@@ -83,6 +83,9 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             "llm": {"calls": brain.llm.calls, "last_seconds": round(brain.llm.last_seconds, 1),
                     "backend": brain.llm.backend}
             if hasattr(brain, "llm") else {},
+            "vacation": {"active": brain.vacation.is_active(), "mode": brain.vacation.manual,
+                         "days_week": round(brain.vacation.days_in_last(7), 1)}
+            if hasattr(brain, "vacation") else {},
             "mqtt": {"connected": brain.mqtt.connected, "error": brain.mqtt.error}
             if hasattr(brain, "mqtt") else {},
             "needs_setup": setup_mod.needs_setup(getattr(brain, "opts", {}) or {})
@@ -174,6 +177,22 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         except Exception as err:  # noqa: BLE001
             log.debug("Restart call ended: %s", err)  # conexiunea se poate închide chiar la repornire
 
+    async def weekly_get(_req):
+        saved = brain.store.get("weekly_report")
+        return J({"last": saved, "preview": brain.weekly.build()})
+
+    async def weekly_send(_req):
+        r = await brain.weekly.send()
+        return J({"ok": True, "message": t("week.sent"), "report": r})
+
+    async def vacation_set(req):
+        mode = str((await req.json()).get("mode", "auto"))
+        try:
+            brain.vacation.set_manual(mode)
+        except ValueError:
+            raise web.HTTPBadRequest()
+        return J({"ok": True, "active": brain.vacation.is_active(), "message": t(f"vac.mode_{mode}")})
+
     async def setup_dismiss(_req):
         if getattr(brain, "store", None):
             brain.store.set("setup_dismissed", True)
@@ -260,6 +279,9 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_post("/api/setup/test-notify", setup_test_notify)
     r.add_post("/api/setup/save", setup_save)
     r.add_post("/api/setup/dismiss", setup_dismiss)
+    r.add_post("/api/vacation", vacation_set)
+    r.add_get("/api/weekly", weekly_get)
+    r.add_post("/api/weekly/send", weekly_send)
     if hasattr(brain, "store"):
         r.add_get("/api/habits", habits)
         r.add_post("/api/habits/{id}/{action}", habit_action)

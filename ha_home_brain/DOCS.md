@@ -91,6 +91,23 @@ Tapping a notification opens the Vatra panel; if requests are waiting, it opens 
 - High consumption while the heat pump / boiler / AC runs → explained.
 - Relay powering smart bulbs → always on is normal; only `light.*` tells if the light is lit.
 
+## Vacation mode
+
+Vacation mode turns on by itself when **all people** (`learning.persons`) have been away for `vacation.away_hours`
+(default 24), or when you press **Start vacation mode** on the Home tab. While it is on:
+- vacation days are left out of habit learning;
+- small observations ("left on too long", "silent sensor", "flapping") are muted;
+- any motion or door/window opening in the house is sent to your phone right away (`vacation.security_alerts`).
+
+**I'm back** turns it off; it goes back to automatic as soon as someone is home. Also available as
+`binary_sensor.vatra_vacation` (MQTT).
+
+## Weekly report
+
+On Sunday at the digest hour (`agents.digest_hour`), one message: new habits and automations, actions (and undos),
+alerts, observations, clean up and vacation days. The same summary is on the Home tab under **This week**.
+Turn it off with `weekly_report: false`.
+
 ## Clean up
 
 Every few hours Vatra looks for devices whose entities are **all** unavailable now **and** had no real value in

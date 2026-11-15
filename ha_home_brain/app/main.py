@@ -28,6 +28,8 @@ from .notify import Notifier
 from .recorder import Recorder
 from .cleanup import Cleanup
 from .mqtt import MQTTBridge
+from .vacation import QUIET_KINDS, Vacation
+from .weekly import WeeklyReport
 from .setup import Supervisor
 from .store import Store
 from .web import build_app
@@ -78,9 +80,11 @@ class Brain:
         self.approvals.on("undo", self.approvals.handle_undo)
         self.approvals.on("automation", self._decide_habit)
         self.approvals.on("finding", self._decide_finding)
+        self.vacation = Vacation(self.ha, self.store, self.persons, self.tz, opts.get("vacation", {}))
         self.cleanup = Cleanup(self.ha, self.store, self.context, self.approvals, opts.get("cleanup", {}))
         self.approvals.on("cleanup", self.cleanup.handle)
         self.approvals.undo_handlers["cleanup"] = self.cleanup.undo
+        self.weekly = WeeklyReport(self, opts)
         self.mqtt = MQTTBridge(self, self.supervisor, os.environ.get("VATRA_VERSION", ""),
                                enabled=bool(opts.get("mqtt_entities", True)))
         self.last_learning: float | None = None
@@ -113,6 +117,7 @@ class Brain:
         transitions = self.store.transitions(since)
         await self.context.refresh()
         self.guard.learn_patterns(transitions)
+        self.miner.skip_days = self.vacation.days()
         habits = self.miner.mine(transitions, self.names())
         try:
             index = automation_index(await self.ha.automation_configs())
@@ -196,7 +201,15 @@ class Brain:
         """Observațiile apar în panou. Pe telefon ajung doar cele critice sau defecțiunile confirmate;
         restul intră în rezumatul de seară."""
         recent = self.store.transitions(time.time() - 1800)
-        found = {f.key: f for f in self.detector.check(recent)}
+        away = self.vacation.update()
+        for eid, name in self.vacation.intrusions(recent):
+            now_s = int(time.time())
+            await self.approvals.ask("finding", f"vacation:{eid}:{now_s // 600}", t("vac.alert_title"),
+                                     t("vac.alert_msg", name=name),
+                                     {"key": f"vacation:{eid}", "kind": "vacation", "entity_id": eid, "tier": FAULT},
+                                     buttons=[("seen", t("btn.seen"))], notify=True, level="critical")
+        found = {f.key: f for f in self.detector.check(recent)
+                 if not (away and f.kind in QUIET_KINDS and f.level != "critical")}
         now = time.time()
         new = [f for k, f in found.items()
                if k not in self.findings and self.store.get(f"snooze:{k}", 0) <= now]
@@ -246,6 +259,8 @@ class Brain:
             lines.append(t("digest.unusual", n=len(self.findings), example=first['message']))
         if self.cleanup.candidates:
             lines.append(t("digest.cleanup", n=len(self.cleanup.candidates)))
+        if self.vacation.is_active():
+            lines.append(t("digest.vacation"))
         return lines
 
     async def _decide_finding(self, item: dict, decision: str) -> str:
@@ -326,6 +341,7 @@ async def amain() -> None:
         brain.agents.digest_loop(),
         brain.notifier.run_forever(),
         brain.mqtt.run_forever(),
+        brain.weekly.run_forever(),
     )
 
 

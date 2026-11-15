@@ -86,11 +86,14 @@
   <div class="tab on" id="t-home">
     <div class="notice" id="setup-notice" hidden><span style="flex:1" data-i18n="su.notice"></span>
       <button onclick="document.querySelector('[data-t=setup]').click()" data-i18n="su.open"></button></div>
+    <div class="notice" id="vac-bar" hidden><span style="flex:1" id="vac-text"></span><span id="vac-btns" class="row" style="margin:0"></span></div>
     <section><h2 data-i18n="h.summary"></h2><div class="stats" id="stats"></div></section>
     <div class="grid">
       <section><h2 data-i18n="h.alerts"></h2><div id="alerts"></div></section>
       <section><h2 data-i18n="h.recent"></h2><div id="recent-ins"></div></section>
     </div>
+    <section><h2 data-i18n="h.weekly"></h2><div id="weekly"></div>
+      <div class="row"><button class="ghost" onclick="post('api/weekly/send').then(loadWeekly)" data-i18n="w.send"></button></div></section>
     <section><h2 data-i18n="h.rules"></h2><div id="rules"></div></section>
   </div>
 
@@ -196,6 +199,11 @@ const L = {
     "k.decizie":"decision", "k.blocat":"blocked", "k.umbră":"shadow", "k.acțiune":"action", "k.agent":"agent",
     "k.învățare":"learning", "k.automatizare":"automation", "k.memorie":"memory",
     "nav.setup":"⚙ Setup", "alerts.group":"{n} entities unavailable",
+    "vac.on":"🧳 Vacation mode is on – vacation days are left out of learning and I alert on any motion or open door.",
+    "vac.auto_on":"🧳 Vacation mode turned on by itself – everyone has been away for a while.",
+    "vac.off":"Going away for a few days? Vacation mode watches the empty house more closely.",
+    "vac.btn_on":"Start vacation mode", "vac.btn_off":"I'm back", "vac.btn_auto":"Automatic",
+    "h.weekly":"This week", "w.send":"Send the weekly report now", "w.none":"Nothing yet this week.",
     "su.notice":"Vatra isn't set up yet – it takes a minute and no YAML.", "su.open":"Open setup",
     "su.title":"Setup", "su.intro":"Pick what Vatra found in your Home Assistant. You can change everything later here or in the add-on's Configuration tab.",
     "su.nosave":"Saving works only when Vatra runs as a Home Assistant add-on.",
@@ -249,6 +257,11 @@ const L = {
     "k.decizie":"decizie", "k.blocat":"blocat", "k.umbră":"umbră", "k.acțiune":"acțiune", "k.agent":"agent",
     "k.învățare":"învățare", "k.automatizare":"automatizare", "k.memorie":"memorie",
     "nav.setup":"⚙ Configurare", "alerts.group":"{n} entități indisponibile",
+    "vac.on":"🧳 Modul vacanță e pornit – zilele de vacanță nu intră în învățare și anunț orice mișcare sau ușă deschisă.",
+    "vac.auto_on":"🧳 Modul vacanță a pornit singur – toată lumea e plecată de ceva vreme.",
+    "vac.off":"Pleci câteva zile? Modul vacanță urmărește mai atent casa goală.",
+    "vac.btn_on":"Pornește modul vacanță", "vac.btn_off":"M-am întors", "vac.btn_auto":"Automat",
+    "h.weekly":"Săptămâna asta", "w.send":"Trimite acum raportul săptămânal", "w.none":"Nimic încă săptămâna asta.",
     "su.notice":"Vatra nu e configurat încă – durează un minut și nu ai nevoie de YAML.", "su.open":"Deschide configurarea",
     "su.title":"Configurare", "su.intro":"Bifează ce a găsit Vatra în Home Assistant. Poți schimba orice mai târziu, aici sau în tab-ul Configuration al add-on-ului.",
     "su.nosave":"Salvarea merge doar când Vatra rulează ca add-on în Home Assistant.",
@@ -324,6 +337,13 @@ function render() {
   const N = S.notifications || {};
   if (N.mode) $("ntf").textContent = T("ntf", {mode: N.mode, quiet: N.quiet_hours, sent: N.sent_today, max: N.max_per_day, queued: N.queued});
   $("setup-notice").hidden = !S.needs_setup;
+  const V = S.vacation || {};
+  if (V.mode !== undefined) {
+    $("vac-bar").hidden = false;
+    $("vac-text").textContent = V.active ? T(V.mode === "on" ? "vac.on" : "vac.auto_on") : T("vac.off");
+    const b = (m, k, cls) => `<button class="${cls||""}" onclick="post('api/vacation',{mode:'${m}'}).then(refresh)">${T(k)}</button>`;
+    $("vac-btns").innerHTML = V.active ? b(V.mode === "on" ? "auto" : "off", "vac.btn_off") : b("on", "vac.btn_on", "ghost");
+  }
   if (!refresh.opened && S.needs_setup && location.hash !== "#home") { refresh.opened = true; document.querySelector('[data-t="setup"]')?.click(); }
   if (!refresh.opened && S.pending > 0 && location.hash !== "#home") { refresh.opened = true; document.querySelector('[data-t="approvals"]')?.click(); }
   refresh.opened = true;
@@ -401,6 +421,13 @@ $("chat").onsubmit = async e => {
     w.textContent = t; } catch (err) { w.textContent = T("error") + err; }
 };
 
+// ---------- raport săptămânal ----------
+async function loadWeekly() {
+  const r = await get("api/weekly");
+  const rep = r.preview || {};
+  $("weekly").innerHTML = (rep.lines || []).length ? rep.lines.map(x => `<div class="item">${esc(x)}</div>`).join("") : empty(T("w.none"));
+}
+
 // ---------- ghid de pornire ----------
 let SU = null;
 const checks = (id, items, sel, key, label, none) => $(id).innerHTML = items.length ? items.map(i => `<label class="opt">
@@ -473,7 +500,7 @@ window.saveSetup = async () => {
     catch (e) { down = true; }
   }, 2000);
 };
-refresh(); setInterval(refresh, 15000);
+refresh(); loadWeekly(); setInterval(refresh, 15000);
 </script>
 </body>
 </html>

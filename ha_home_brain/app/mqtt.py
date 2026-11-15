@@ -38,6 +38,8 @@ def entity_configs(version: str) -> list[tuple[str, dict]]:
                                   "value_template": "{{ value_json.last_alert }}"}),
         ("sensor", "unusual", {"name": t("mqtt.unusual"), "icon": "mdi:chart-bell-curve",
                                "value_template": "{{ value_json.unusual }}", "state_class": "measurement"}),
+        ("binary_sensor", "vacation", {"name": t("mqtt.vacation"), "icon": "mdi:bag-suitcase",
+                                       "value_template": "{{ 'ON' if value_json.vacation else 'OFF' }}"}),
         ("sensor", "cleanup", {"name": t("mqtt.cleanup"), "icon": "mdi:broom",
                                "value_template": "{{ value_json.cleanup }}", "state_class": "measurement"}),
     ]
@@ -57,7 +59,8 @@ def snapshot(brain) -> tuple[dict, dict]:
     state = {"alerts": len(active), "approvals": len(brain.approvals.pending()),
              "problem": bool(faults), "last_alert": (last.title if last else t("mqtt.none"))[:250],
              "unusual": len(getattr(brain, "findings", {}) or {}),
-             "cleanup": len(getattr(getattr(brain, "cleanup", None), "candidates", []) or [])}
+             "cleanup": len(getattr(getattr(brain, "cleanup", None), "candidates", []) or []),
+             "vacation": bool(getattr(brain, "vacation", None) and brain.vacation.is_active())}
     attrs = {"alerts": [{"title": a.title, "message": a.message, "entity": a.key.partition(":")[2],
                          "level": a.level} for a in sorted(active, key=lambda a: a.time, reverse=True)[:20]]}
     return state, attrs

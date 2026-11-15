@@ -146,6 +146,20 @@ configuration:
   mqtt_entities:
     name: Entitățile Vatra în Home Assistant (MQTT)
     description: Publică senzori precum alertele active, aprobările în așteptare și „problemă” prin brokerul tău MQTT (ex. Mosquitto), pentru dashboard-uri și automatizări.
+  weekly_report:
+    name: Raport săptămânal
+    description: Duminică seara (la ora rezumatului), un mesaj cu ce a învățat, ce a făcut și ce a observat Vatra în săptămâna respectivă.
+  vacation:
+    name: Mod vacanță
+    description: Când toată lumea e plecată de ceva vreme (sau îl pornești din panou), zilele de vacanță nu intră în învățarea obiceiurilor, observațiile mărunte tac, iar mișcarea sau ușile deschise în casa goală ajung imediat pe telefon.
+    fields:
+      auto:
+        name: Automat
+        description: Pornește singur când toate persoanele sunt plecate de destul timp.
+      away_hours:
+        name: Plecați de (ore)
+      security_alerts:
+        name: Alertă la mișcare / uși cât sunteți plecați
   cleanup:
     name: Curățenie
     description: Găsește dispozitivele ale căror entități n-au mai avut nicio valoare de multe zile (dispozitive vândute, containere șterse) și propune să le dezactiveze. Nu șterge nimic; Anulează le reactivează.

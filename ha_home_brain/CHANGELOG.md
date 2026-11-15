@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.5.0 – Vacation mode and weekly report
+**EN:**
+- **Vacation mode:** turns on by itself when everyone has been away for 24 h (or from the Home tab). Vacation days
+  are left out of habit learning, small observations go quiet, and motion or doors opening in the empty house are
+  sent to your phone right away. "I'm back" turns it off. Options under `vacation`; `binary_sensor.vatra_vacation`.
+- **Weekly report:** Sunday evening, one message with what Vatra learned, did and noticed this week; also on the
+  Home tab ("This week"), with a button to send it now. Option `weekly_report`.
+
+**RO:**
+- **Mod vacanță:** pornește singur când toată lumea e plecată de 24 de ore (sau din tab-ul Acasă). Zilele de vacanță
+  nu intră în învățarea obiceiurilor, observațiile mărunte tac, iar mișcarea sau ușile deschise în casa goală ajung
+  imediat pe telefon. „M-am întors” îl oprește. Opțiuni la `vacation`; `binary_sensor.vatra_vacation`.
+- **Raport săptămânal:** duminică seara, un mesaj cu ce a învățat, ce a făcut și ce a observat Vatra în săptămâna
+  respectivă; apare și în tab-ul Acasă („Săptămâna asta”), cu buton de trimitere imediată. Opțiune `weekly_report`.
+
 ## 2.4.3 – Safer clean up
 - EN: Clean up no longer treats "unknown" as dead (notify, button, scene and some select entities sit on "unknown"
   normally), skips TVs/media players and phones that are simply off or away, and never proposes an entity with no

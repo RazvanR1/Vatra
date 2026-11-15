@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.4.3"
+version: "2.5.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -74,6 +74,11 @@ options:
     digest_hour: 19
     allow_actions: false
   mqtt_entities: true
+  weekly_report: true
+  vacation:
+    auto: true
+    away_hours: 24
+    security_alerts: true
   cleanup:
     enabled: true
     days: 7
@@ -163,6 +168,11 @@ schema:
     digest_hour: int(0,23)
     allow_actions: bool
   mqtt_entities: bool
+  weekly_report: bool
+  vacation:
+    auto: bool
+    away_hours: float(6,240)
+    security_alerts: bool
   cleanup:
     enabled: bool
     days: int(3,90)

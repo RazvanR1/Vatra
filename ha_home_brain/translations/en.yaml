@@ -146,6 +146,20 @@ configuration:
   mqtt_entities:
     name: Vatra entities in Home Assistant (MQTT)
     description: Publishes sensors such as active alerts, pending approvals and "problem" through your MQTT broker (e.g. Mosquitto), for dashboards and automations.
+  weekly_report:
+    name: Weekly report
+    description: On Sunday evening (at the digest hour), one message with what Vatra learned, did and noticed during the week.
+  vacation:
+    name: Vacation mode
+    description: When everyone has been away for a while (or you turn it on in the panel), vacation days are left out of habit learning, small observations are muted, and motion or doors opening in the empty house are sent to your phone right away.
+    fields:
+      auto:
+        name: Automatic
+        description: Turn on by itself when all people have been away long enough.
+      away_hours:
+        name: Away for (hours)
+      security_alerts:
+        name: Alert on motion / doors while away
   cleanup:
     name: Clean up
     description: Finds devices whose entities have had no value for many days (sold devices, deleted containers) and offers to disable them. Nothing is deleted; Undo enables them again.
