@@ -91,6 +91,28 @@ Tapping a notification opens the Vatra panel; if requests are waiting, it opens 
 - High consumption while the heat pump / boiler / AC runs → explained.
 - Relay powering smart bulbs → always on is normal; only `light.*` tells if the light is lit.
 
+## Clean up
+
+Every few hours Vatra looks for devices whose entities are **all** unavailable now **and** had no real value in
+Home Assistant's history for the last `cleanup.days` days (default 7) – sold devices, deleted Docker containers,
+abandoned integrations. Each one appears in **Approvals** (no phone notification): **Disable** turns its entities
+off in the entity registry (nothing is deleted), **Keep** means it won't ask again. **Undo** in the Log enables them.
+
+## Vatra entities (MQTT)
+
+If you have an MQTT broker (e.g. the Mosquitto app), Vatra connects to it by itself and creates a **Vatra** device:
+
+| Entity | What it shows |
+|---|---|
+| `sensor.vatra_active_alerts` | Number of active alerts; the list is in its attributes |
+| `sensor.vatra_pending_approvals` | Requests waiting for your answer |
+| `binary_sensor.vatra_problem` | On when a confirmed fault is active |
+| `sensor.vatra_last_alert` | Title of the newest alert |
+| `sensor.vatra_unusual` | Unusual observations |
+| `sensor.vatra_cleanup` | Dead devices that can be disabled |
+
+Example: turn a light red while `binary_sensor.vatra_problem` is on. Turn it off with `mqtt_entities: false`.
+
 ## Safety
 
 - `autonomy`: `shadow` | `copilot` (default) | `autonomous`; per domain with `autonomy_overrides`,

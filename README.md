@@ -1,7 +1,7 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
-![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Version](https://img.shields.io/badge/version-2.4.0-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
@@ -31,7 +31,9 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 | 🛡️ **Safety rails that can't be bypassed** | Locks, alarm, valves, gates and "important" devices (boiler, fridge, server, NAS…) always need approval. Shell commands, Supervisor calls, restarting HA, disabling automations and temperatures outside your limits are blocked outright. |
 | 🤖 **Local AI agents** (optional) | Climate, Energy, Security and Server/homelab agents analyse the house every few hours **only if something changed**, one at a time, on a single local model (Ollama or any OpenAI-compatible server). Their findings go to the panel and a single evening digest. |
 | 💬 **Jarvis chat** | Ask about the house or give commands in the panel; it also knows what the brain has observed. Commands go through the same safety rails. |
-| 🚨 **Guard** | Devices that become unavailable, low batteries — one alert per problem, a summary when many things fail at once, and a "resolved" message when it's fixed. Not fooled by HA restarts. |
+| 🚨 **Guard** | Devices that become unavailable, low batteries — grouped per device ("Dishwasher is not responding – 4 entities"), a summary when many things fail at once, and a "resolved" message when it's fixed. Not fooled by HA restarts. |
+| 🧹 **Clean up** | Finds devices that have had no value for over a week (sold devices, deleted containers, abandoned integrations) — checked against your history — and offers to disable their entities. Nothing is deleted; Undo enables them again. |
+| 📡 **Vatra entities in HA** | Through your MQTT broker (e.g. Mosquitto): `sensor.vatra_active_alerts`, `sensor.vatra_pending_approvals`, `binary_sensor.vatra_problem`, `sensor.vatra_last_alert`, `sensor.vatra_cleanup`… for dashboards and automations. |
 | 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis, Log (with Undo) and a **Setup guide**: it finds your phones, people and AI server by itself – no YAML needed. |
 | 🌍 **English and Romanian** | Follows your Home Assistant language automatically; the panel has an EN/RO switch. Adding a language is one column in one file. |
 

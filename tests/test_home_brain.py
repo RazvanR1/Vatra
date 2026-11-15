@@ -58,7 +58,10 @@ class FakeHA:
             elif msg["type"] in ("logbook/get_events",):
                 res = []
             elif msg["type"] == "history/history_during_period":
-                res = {}
+                res = {e: v for e, v in getattr(self, "history", {}).items() if e in msg.get("entity_ids", [])}
+            elif msg["type"] == "config/entity_registry/update":
+                self.registry_updates = getattr(self, "registry_updates", []) + [msg]
+                res = {"entity_entry": {"entity_id": msg["entity_id"], "disabled_by": msg.get("disabled_by")}}
             elif msg["type"] == "automation/config":
                 res = {"config": {}}
             elif msg["type"] == "get_services":
@@ -491,3 +494,58 @@ async def test_guard_groups_alerts_by_device(setup):
     assert sent[0]["title"] == "Dishwasher Bosch nu răspunde"
     assert sent[0]["message"].startswith("4 entități indisponibile: Connected, Remote Start")
     assert len(brain.notifier.active) == 4  # fiecare entitate rămâne urmărită separat
+
+
+async def test_cleanup_proposes_dead_devices_and_undo(setup):
+    """Curățenie: doar dispozitivele fără nicio valoare în istoric sunt propuse; Dezactivează + Anulează."""
+    fake, brain = setup
+    from app.cleanup import _sid
+    brain.ha.states.clear()
+    for eid, state in [("sensor.old_cpu", "unavailable"), ("switch.old_container", "unavailable"),
+                       ("sensor.washer_power", "unavailable"), ("sensor.washer_door", "unavailable"),
+                       ("light.living", "on")]:
+        brain.ha.states[eid] = {"entity_id": eid, "state": state, "attributes": {"friendly_name": eid}}
+    brain.context.load(
+        [{"entity_id": "sensor.old_cpu", "device_id": "old"}, {"entity_id": "switch.old_container", "device_id": "old"},
+         {"entity_id": "sensor.washer_power", "device_id": "washer"},
+         {"entity_id": "sensor.washer_door", "device_id": "washer"},
+         {"entity_id": "light.living", "device_id": "living"}],
+        [{"id": "old", "name": "stirling-pdf-old"}, {"id": "washer", "name": "Washer"}, {"id": "living", "name": "Living"}])
+    # mașina de spălat a funcționat acum 2 zile (doar e oprită de la priză acum) -> NU e propusă
+    fake.history = {"sensor.old_cpu": [{"s": "unavailable"}], "switch.old_container": [{"s": "unavailable"}],
+                    "sensor.washer_power": [{"s": "12.5"}, {"s": "unavailable"}],
+                    "sensor.washer_door": [{"s": "unavailable"}]}
+    found = await brain.cleanup.scan()
+    assert [d["name"] for d in found] == ["stirling-pdf-old"]
+    pending = [a for a in brain.approvals.pending() if a["kind"] == "cleanup"]
+    assert len(pending) == 1 and "stirling-pdf-old" in pending[0]["title"]
+    assert not [c for c in fake.calls if c["domain"] == "notify"]  # doar în panou
+    msg = await brain.approvals.decide(_sid("cleanup", "old"), "ok")
+    assert "2" in msg
+    upd = fake.registry_updates
+    assert {u["entity_id"] for u in upd} == {"sensor.old_cpu", "switch.old_container"}
+    assert all(u["disabled_by"] == "user" for u in upd)
+    done = [d for d in brain.approvals.recent_done() if d.get("kind") == "cleanup"][0]
+    await brain.approvals.undo(done["id"])
+    assert [u["disabled_by"] for u in fake.registry_updates[-2:]] == [None, None]
+    # a doua căutare nu mai întreabă același dispozitiv
+    await brain.cleanup.scan()
+    assert len([a for a in brain.store.items("approval", limit=100) if a["kind"] == "cleanup"]) == 1
+
+
+def test_mqtt_discovery_payloads_and_snapshot(setup):
+    _, brain = setup
+    from app.mqtt import entity_configs, snapshot
+    from app.notify import Alert
+    cfgs = dict(entity_configs("2.4.0"))
+    assert "homeassistant/binary_sensor/vatra/problem/config" in cfgs
+    p = cfgs["homeassistant/sensor/vatra/active_alerts/config"]
+    assert p["unique_id"] == "vatra_active_alerts" and p["default_entity_id"] == "sensor.vatra_active_alerts"
+    assert p["availability_topic"] == "vatra/status" and p["device"]["sw_version"] == "2.4.0"
+    brain.notifier.active.clear()
+    brain.notifier.active["battery:sensor.x"] = Alert("battery:sensor.x", "Baterie slabă", "X: 12%.", tier="anomaly")
+    state, attrs = snapshot(brain)
+    assert state["alerts"] == 1 and state["problem"] is False and state["last_alert"] == "Baterie slabă"
+    brain.notifier.active["unavailable:light.y"] = Alert("unavailable:light.y", "Indisponibil", "", tier="fault")
+    assert snapshot(brain)[0]["problem"] is True
+    assert attrs["alerts"][0]["entity"] == "sensor.x"

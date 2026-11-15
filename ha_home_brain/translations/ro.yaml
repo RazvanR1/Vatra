@@ -143,6 +143,20 @@ configuration:
       allow_actions:
         name: Permite acțiuni
         description: Agenții pot propune acțiuni pe dispozitive (mereu prin aprobare).
+  mqtt_entities:
+    name: Entitățile Vatra în Home Assistant (MQTT)
+    description: Publică senzori precum alertele active, aprobările în așteptare și „problemă” prin brokerul tău MQTT (ex. Mosquitto), pentru dashboard-uri și automatizări.
+  cleanup:
+    name: Curățenie
+    description: Găsește dispozitivele ale căror entități n-au mai avut nicio valoare de multe zile (dispozitive vândute, containere șterse) și propune să le dezactiveze. Nu șterge nimic; Anulează le reactivează.
+    fields:
+      enabled:
+        name: Activat
+      days:
+        name: Moarte de (zile)
+        description: Un dispozitiv e propus doar dacă nicio entitate a lui n-a avut valoare în atâtea zile.
+      max_proposals:
+        name: Propuneri pe căutare
   presence_camera:
     name: Regulă – camere doar când nu e nimeni
     description: Regulă fixă opțională. Las-o goală dacă ai deja o automatizare pentru asta.

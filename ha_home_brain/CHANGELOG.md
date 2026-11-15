@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.4.0 – Clean up and Vatra entities
+**EN:**
+- **Clean up:** Vatra finds devices that have had no value for over a week (checked against Home Assistant's
+  history) – sold devices, deleted containers, abandoned integrations – and offers to disable their entities, in the
+  Approvals tab. Nothing is deleted; Undo in the Log enables them again. Options: `cleanup.enabled`, `cleanup.days`.
+- **Vatra entities via MQTT:** if you have an MQTT broker (e.g. Mosquitto), a *Vatra* device appears with
+  active alerts, pending approvals, problem, last alert, unusual observations and dead devices – for dashboards
+  and automations. Option: `mqtt_entities`.
+- The evening digest mentions dead devices that can be cleaned up.
+
+**RO:**
+- **Curățenie:** Vatra găsește dispozitivele care n-au mai avut nicio valoare de peste o săptămână (verificat în
+  istoricul Home Assistant) – dispozitive vândute, containere șterse, integrări abandonate – și propune să le
+  dezactiveze entitățile, în tab-ul Aprobări. Nu șterge nimic; Anulează din Jurnal le reactivează.
+  Opțiuni: `cleanup.enabled`, `cleanup.days`.
+- **Entitățile Vatra prin MQTT:** dacă ai un broker MQTT (ex. Mosquitto), apare un dispozitiv *Vatra* cu alerte
+  active, aprobări în așteptare, problemă, ultima alertă, observații neobișnuite și dispozitive moarte – pentru
+  dashboard-uri și automatizări. Opțiune: `mqtt_entities`.
+- Rezumatul de seară amintește dispozitivele moarte care pot fi curățate.
+
 ## 2.3.0 – Alerts grouped by device
 **EN:**
 - When several entities of the same device (or integration) go down together, the phone gets **one** message:

@@ -73,6 +73,8 @@ class Approvals:
         self.guard = Guardrails(cfg)
         self.actionable = bool(cfg.get("actionable_notifications", True))
         self.handlers: dict[str, Callable[[dict, str], Awaitable[str]]] = {}
+        # Anulare pentru acțiuni care nu sunt servicii HA (ex. curățenia: reactivează entități).
+        self.undo_handlers: dict[str, Callable[[dict], Awaitable[str]]] = {}
         ha.on_event("mobile_app_notification_action", self._on_action)
 
     # ---------- cereri ----------
@@ -184,6 +186,10 @@ class Approvals:
         done = self.store.item("done", did)
         if not done or done["status"] != "done":
             return t("ap.no_undo")
+        if done.get("kind") in self.undo_handlers:
+            msg = await self.undo_handlers[done["kind"]](done)
+            self.store.set_status("done", did, "undone")
+            return msg
         if done.get("automation_id"):
             await self.ha.delete_automation(done["automation_id"])
             self.store.set_status("done", did, "undone")

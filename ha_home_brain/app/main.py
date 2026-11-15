@@ -26,6 +26,8 @@ from .ha import HAClient
 from .llm import LLM
 from .notify import Notifier
 from .recorder import Recorder
+from .cleanup import Cleanup
+from .mqtt import MQTTBridge
 from .setup import Supervisor
 from .store import Store
 from .web import build_app
@@ -76,6 +78,11 @@ class Brain:
         self.approvals.on("undo", self.approvals.handle_undo)
         self.approvals.on("automation", self._decide_habit)
         self.approvals.on("finding", self._decide_finding)
+        self.cleanup = Cleanup(self.ha, self.store, self.context, self.approvals, opts.get("cleanup", {}))
+        self.approvals.on("cleanup", self.cleanup.handle)
+        self.approvals.undo_handlers["cleanup"] = self.cleanup.undo
+        self.mqtt = MQTTBridge(self, self.supervisor, os.environ.get("VATRA_VERSION", ""),
+                               enabled=bool(opts.get("mqtt_entities", True)))
         self.last_learning: float | None = None
         self.findings: dict[str, dict] = {}
         self._migrate()
@@ -237,6 +244,8 @@ class Brain:
         if self.findings:
             first = next(iter(self.findings.values()))
             lines.append(t("digest.unusual", n=len(self.findings), example=first['message']))
+        if self.cleanup.candidates:
+            lines.append(t("digest.cleanup", n=len(self.cleanup.candidates)))
         return lines
 
     async def _decide_finding(self, item: dict, decision: str) -> str:
@@ -271,6 +280,12 @@ class Brain:
                     await self.learn()
                 except Exception:  # noqa: BLE001
                     log.exception("Learning failed")
+            try:
+                if not self.learning_enabled:
+                    await self.context.refresh()
+                await self.cleanup.scan()
+            except Exception:  # noqa: BLE001
+                log.exception("Cleanup scan failed")
             await asyncio.sleep(6 * 3600)
 
     async def unusual_loop(self) -> None:
@@ -310,6 +325,7 @@ async def amain() -> None:
         brain.agents.run_forever(),
         brain.agents.digest_loop(),
         brain.notifier.run_forever(),
+        brain.mqtt.run_forever(),
     )
 
 

@@ -87,6 +87,30 @@ notifications:
 - Consum mare cu pompa de căldură / centrala / AC pornite → explicat.
 - Releu care alimentează becuri smart → pornit permanent e normal; lumina o dă `light.*`.
 
+## Curățenie
+
+La câteva ore, Vatra caută dispozitivele ale căror entități sunt **toate** indisponibile acum **și** n-au avut nicio
+valoare reală în istoricul Home Assistant în ultimele `cleanup.days` zile (implicit 7) – dispozitive vândute,
+containere Docker șterse, integrări abandonate. Fiecare apare în **Aprobări** (fără notificare pe telefon):
+**Dezactivează** le oprește entitățile în registrul HA (nu șterge nimic), **Păstrează** înseamnă că nu mai întreabă.
+**Anulează** din Jurnal le reactivează.
+
+## Entitățile Vatra (MQTT)
+
+Dacă ai un broker MQTT (de exemplu aplicația Mosquitto), Vatra se conectează singur la el și creează un dispozitiv
+**Vatra**:
+
+| Entitate | Ce arată |
+|---|---|
+| `sensor.vatra_active_alerts` | Numărul alertelor active; lista e în atribute |
+| `sensor.vatra_pending_approvals` | Cererile care așteaptă răspunsul tău |
+| `binary_sensor.vatra_problem` | Pornit când e activă o defecțiune confirmată |
+| `sensor.vatra_last_alert` | Titlul celei mai noi alerte |
+| `sensor.vatra_unusual` | Observațiile neobișnuite |
+| `sensor.vatra_cleanup` | Dispozitivele moarte care pot fi dezactivate |
+
+Exemplu: un bec devine roșu cât timp `binary_sensor.vatra_problem` e pornit. Se oprește cu `mqtt_entities: false`.
+
 ## Siguranță
 
 - `autonomy`: `shadow` | `copilot` (implicit) | `autonomous`; pe domenii cu `autonomy_overrides`,

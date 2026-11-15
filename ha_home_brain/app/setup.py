@@ -44,6 +44,13 @@ class Supervisor:
                     raise RuntimeError((data or {}).get("message") or f"HTTP {r.status}")
                 return (data or {}).get("data") or {}
 
+    async def info(self) -> dict:
+        return await self._call("GET", "/addons/self/info")
+
+    async def service(self, name: str) -> dict:
+        """Datele de conectare la un serviciu oferit de Supervisor (ex. brokerul MQTT)."""
+        return await self._call("GET", f"/services/{name}")
+
     async def options(self) -> dict:
         return (await self._call("GET", "/addons/self/info")).get("options") or {}
 

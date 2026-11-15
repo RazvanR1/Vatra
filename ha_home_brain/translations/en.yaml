@@ -143,6 +143,20 @@ configuration:
       allow_actions:
         name: Allow actions
         description: Let agents propose device actions (always via approval).
+  mqtt_entities:
+    name: Vatra entities in Home Assistant (MQTT)
+    description: Publishes sensors such as active alerts, pending approvals and "problem" through your MQTT broker (e.g. Mosquitto), for dashboards and automations.
+  cleanup:
+    name: Clean up
+    description: Finds devices whose entities have had no value for many days (sold devices, deleted containers) and offers to disable them. Nothing is deleted; Undo enables them again.
+    fields:
+      enabled:
+        name: Enabled
+      days:
+        name: Dead for (days)
+        description: A device is proposed only if none of its entities had a value in this many days.
+      max_proposals:
+        name: Proposals per scan
   presence_camera:
     name: Rule – cameras only when away
     description: Optional fixed rule. Leave empty if you already have an automation for this.
