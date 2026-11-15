@@ -26,6 +26,7 @@ from .ha import HAClient
 from .llm import LLM
 from .notify import Notifier
 from .recorder import Recorder
+from .assist import AssistDiscovery
 from .cleanup import Cleanup
 from .mqtt import MQTTBridge
 from .vacation import QUIET_KINDS, Vacation
@@ -85,6 +86,7 @@ class Brain:
         self.approvals.on("cleanup", self.cleanup.handle)
         self.approvals.undo_handlers["cleanup"] = self.cleanup.undo
         self.weekly = WeeklyReport(self, opts)
+        self.assist = AssistDiscovery(self, self.supervisor)
         self.mqtt = MQTTBridge(self, self.supervisor, os.environ.get("VATRA_VERSION", ""),
                                enabled=bool(opts.get("mqtt_entities", True)))
         self.last_learning: float | None = None
@@ -318,6 +320,7 @@ class Brain:
         await self.sync_language()
         await self.context.refresh()
         await self.notifier.resolve_panel_url()
+        await self.assist.announce()
         await self.guard.run_forever()
 
 

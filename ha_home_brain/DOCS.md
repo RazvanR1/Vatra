@@ -91,6 +91,13 @@ Tapping a notification opens the Vatra panel; if requests are waiting, it opens 
 - High consumption while the heat pump / boiler / AC runs → explained.
 - Relay powering smart bulbs → always on is normal; only `light.*` tells if the light is lit.
 
+## Voice (Assist)
+
+Jarvis can answer by voice through Home Assistant Assist. Install the small **Vatra (voice / Assist)** integration
+from HACS (custom repository `https://github.com/RazvanR1/Vatra`, category Integration), restart Home Assistant,
+confirm the discovered **Vatra** in Settings → Devices & services, then choose **Vatra Jarvis** as the conversation
+agent in Settings → Voice assistants. Details and the manual address/code: panel → Setup → Voice (Assist).
+
 ## Vacation mode
 
 Vacation mode turns on by itself when **all people** (`learning.persons`) have been away for `vacation.away_hours`

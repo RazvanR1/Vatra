@@ -1,0 +1,13 @@
+{
+  "domain": "vatra",
+  "name": "Vatra",
+  "codeowners": ["@RazvanR1"],
+  "config_flow": true,
+  "dependencies": ["conversation"],
+  "documentation": "https://github.com/RazvanR1/Vatra#voice-assist",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/RazvanR1/Vatra/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

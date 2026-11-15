@@ -16,7 +16,7 @@ import os
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, tzinfo
+from datetime import timedelta, datetime, timezone, tzinfo
 from zoneinfo import ZoneInfo
 
 import aiohttp
@@ -89,6 +89,19 @@ class Notifier:
         else:
             self._used = getattr(self, "_used", 0) + 1
 
+    def _count(self, name: str) -> None:
+        """Contor zilnic persistent (pentru raportul săptămânal; istoricul din memorie se pierde la repornire)."""
+        if self.store is None:
+            return
+        day = datetime.now(self.tz).date().isoformat() if self.tz else datetime.now().date().isoformat()
+        self.store.set(f"{name}:{day}", (self.store.get(f"{name}:{day}", 0) or 0) + 1)
+
+    def counted(self, name: str, days: int = 7) -> int:
+        if self.store is None:
+            return 0
+        today = datetime.now(self.tz).date() if self.tz else datetime.now().date()
+        return sum(self.store.get(f"{name}:{(today - timedelta(days=i)).isoformat()}", 0) or 0 for i in range(days))
+
     # ---------- API folosit de restul aplicației ----------
     async def raise_alert(self, alert: Alert, send: bool = True) -> None:
         """Înregistrează alerta o singură dată per cheie, până se rezolvă; trimiterea respectă politica."""
@@ -96,6 +109,7 @@ class Notifier:
             return
         self.active[alert.key] = alert
         self.history.appendleft(alert)
+        self._count("alerts_new")
         if not send:
             return
         if time.time() - self.recently_resolved.get(alert.key, 0) < self.cooldown and alert.level != "critical":
@@ -109,6 +123,7 @@ class Notifier:
             return
         alert.resolved = True
         self.recently_resolved[key] = time.time()
+        self._count("alerts_fixed")
         self.queue = [a for a in self.queue if a.key != key]  # nu mai anunțăm ce s-a rezolvat deja
         if message:
             ok = Alert(key=key, title=t("resolved", title=alert.title), message=message, level="info")

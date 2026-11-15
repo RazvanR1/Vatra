@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.6.0 – Jarvis by voice (Assist)
+**EN:**
+- **Jarvis in Assist:** a small companion integration (HACS → custom repository, category Integration) adds
+  *Vatra Jarvis* as a conversation agent – talk to it from the phone app, a watch or a voice satellite. Vatra
+  announces itself, so Home Assistant discovers it with one click; a secret code protects the connection.
+- Panel → Setup → **Voice (Assist)** with the steps and the manual address/code.
+- Weekly report: alert counts now survive restarts ("N new and M fixed this week").
+
+**RO:**
+- **Jarvis în Assist:** o mică integrare însoțitoare (HACS → custom repository, categoria Integration) adaugă
+  *Vatra Jarvis* ca agent de conversație – îi vorbești din aplicația de telefon, de pe ceas sau de pe un satelit
+  vocal. Vatra se anunță singur, așa că Home Assistant îl descoperă cu un click; un cod secret protejează legătura.
+- Panou → Configurare → **Voce (Assist)**, cu pașii și adresa/codul pentru varianta manuală.
+- Raport săptămânal: numărul de alerte nu se mai pierde la repornire („N noi și M rezolvate săptămâna asta”).
+
 ## 2.5.0 – Vacation mode and weekly report
 **EN:**
 - **Vacation mode:** turns on by itself when everyone has been away for 24 h (or from the Home tab). Vacation days

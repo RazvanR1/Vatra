@@ -27,9 +27,17 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     @web.middleware
     async def only_ingress(req: web.Request, handler):
         # Panoul poate comanda dispozitive, deci acceptăm doar cereri venite prin ingress-ul HA.
+        # Excepție: integrarea Vatra pentru Assist, care vine din HA cu codul secret.
+        if req.path == "/api/conversation" and assist_token() and \
+                req.headers.get("X-Vatra-Token") == assist_token():
+            return await handler(req)
         if allowed_ips is not None and req.remote not in allowed_ips:
             raise web.HTTPForbidden(text="Acces doar prin Home Assistant")
         return await handler(req)
+
+    def assist_token() -> str:
+        a = getattr(brain, "assist", None)
+        return a.token() if a is not None else ""
 
     app = web.Application(middlewares=[only_ingress])
     chat_history: list[dict] = []
@@ -118,6 +126,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
                         "site_context": opts.get("site_context", ""),
                         "assistant": {**ai, "has_key": has_key}},
             "detected": await setup_mod.detect(brain.ha),
+            "assist": {"token": assist_token(), "port": 8099,
+                       "host": getattr(getattr(brain, "assist", None), "hostname", "") or ""},
         })
 
     async def setup_test_ai(req):
@@ -209,6 +219,25 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         del chat_history[:-12]
         return J(result)
 
+    conversations: dict[str, list[dict]] = {}
+
+    async def conversation(req):
+        """Assist (voce sau text din HA) -> Jarvis. Răspunsul e scurt, bun de citit cu voce tare."""
+        body = await req.json()
+        text = str(body.get("text", "")).strip()
+        cid = str(body.get("conversation_id") or "") or f"c{int(time.time() * 1000)}"
+        if not text:
+            return J({"speech": t("web.ask"), "conversation_id": cid})
+        hist = conversations.setdefault(cid, [])
+        result = await brain.assistant.ask(text, hist)
+        speech = result.get("reply", "") or t("web.ask")
+        hist.extend([{"role": "user", "content": text}, {"role": "assistant", "content": speech}])
+        del hist[:-12]
+        if len(conversations) > 50:
+            for k in list(conversations)[:-50]:
+                conversations.pop(k, None)
+        return J({"speech": speech, "conversation_id": cid, "actions": result.get("actions", [])})
+
     async def test_notify(_req):
         await brain.notifier.send("Vatra", t("web.test"), "info")
         return J({"ok": True})
@@ -280,6 +309,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_post("/api/setup/save", setup_save)
     r.add_post("/api/setup/dismiss", setup_dismiss)
     r.add_post("/api/vacation", vacation_set)
+    r.add_post("/api/conversation", conversation)
     r.add_get("/api/weekly", weekly_get)
     r.add_post("/api/weekly/send", weekly_send)
     if hasattr(brain, "store"):

@@ -11,3 +11,22 @@ jobs:
       - run: pip install -r ha_home_brain/requirements.txt pytest pytest-asyncio pyyaml
       - run: python -c "import yaml; yaml.safe_load(open('ha_home_brain/config.yaml'))"
       - run: pytest -q
+
+  integration:
+    name: Assist integration (custom_components/vatra)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pytest-homeassistant-custom-component hassil home-assistant-intents
+      - run: pytest -q tests_ha -p no:cacheprovider
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          ignore: brands

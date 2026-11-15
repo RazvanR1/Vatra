@@ -674,3 +674,41 @@ async def test_vacation_intrusion_reaches_phone(setup):
     await brain.check_unusual()
     sent = [c["service_data"] for c in fake.calls if c["domain"] == "notify"]
     assert any(s["title"] == "Activitate în casa goală" and "Mișcare hol" in s["message"] for s in sent)
+
+
+async def test_alert_counters_survive_restart(setup):
+    fake, brain = setup
+    from app.notify import Alert, Notifier
+    n = brain.notifier
+    await n.raise_alert(Alert("x:1", "A", "m"), send=False)
+    await n.raise_alert(Alert("x:2", "B", "m"), send=False)
+    await n.resolve("x:1")
+    n2 = Notifier(brain.ha, [], store=brain.store, tz=brain.tz)  # „repornire”
+    assert n2.counted("alerts_new") == 2 and n2.counted("alerts_fixed") == 1
+
+
+async def test_conversation_endpoint_needs_token(setup):
+    _, brain = setup
+    from aiohttp.test_utils import TestClient, TestServer
+    from app.web import build_app
+
+    async def fake_ask(q, hist=None):
+        return {"reply": f"Am înțeles: {q}", "actions": []}
+    brain.assistant.ask = fake_ask
+    # allowed_ips gol: doar codul secret poate deschide /api/conversation
+    client = TestClient(TestServer(build_app(brain, allowed_ips=set())))
+    await client.start_server()
+    try:
+        r = await client.post("/api/conversation", json={"text": "salut"})
+        assert r.status == 403
+        r = await client.post("/api/conversation", json={"text": "salut"}, headers={"X-Vatra-Token": "greșit"})
+        assert r.status == 403
+        tok = brain.assist.token()
+        r = await client.post("/api/conversation", json={"text": "salut", "conversation_id": "c1"},
+                              headers={"X-Vatra-Token": tok})
+        data = await r.json()
+        assert data == {"speech": "Am înțeles: salut", "conversation_id": "c1", "actions": []}
+        r = await client.get("/api/status", headers={"X-Vatra-Token": tok})
+        assert r.status == 403  # codul deschide doar conversația, nu și restul panoului
+    finally:
+        await client.close()

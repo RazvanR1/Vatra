@@ -157,6 +157,10 @@
       <label class="field"><span data-i18n="su.home_p"></span><textarea id="su-site"></textarea></label>
       <label class="field"><span data-i18n="su.lang"></span><select id="su-lang"><option value="auto">Auto (Home Assistant)</option><option value="en">English</option><option value="ro">Română</option></select></label>
     </section>
+    <section><h2>5 · <span data-i18n="su.voice"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.voice_p"></p>
+      <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li data-i18n="su.voice_1"></li><li data-i18n="su.voice_2"></li><li data-i18n="su.voice_3"></li></ol>
+      <small class="muted" data-i18n="su.voice_manual"></small>
+      <div class="row"><input id="su-voice-host" readonly><input id="su-voice-token" readonly></div></section>
     <section><div class="row" style="margin:0"><button id="su-save" onclick="saveSetup()" data-i18n="su.save"></button>
       <button class="ghost" onclick="post('api/setup/dismiss').then(()=>{S.needs_setup=false;render();document.querySelector('[data-t=home]').click()})" data-i18n="su.later"></button></div>
       <small class="muted" style="display:block;margin-top:8px" data-i18n="su.advanced"></small></section>
@@ -224,6 +228,11 @@ const L = {
     "su.save":"Save and restart Vatra", "su.later":"Not now",
     "su.advanced":"Advanced options (guard, learning, safety, agents) stay in Settings → Add-ons → Vatra → Configuration.",
     "su.restarting":"Vatra is restarting with the new settings…",
+    "su.voice":"Voice (Assist)", "su.voice_p":"Talk to Jarvis from the Home Assistant app, a watch or a voice satellite.",
+    "su.voice_1":"In HACS → ⋮ → Custom repositories, add https://github.com/RazvanR1/Vatra as an Integration and download “Vatra (voice / Assist)”. Restart Home Assistant.",
+    "su.voice_2":"Settings → Devices & services: “Vatra” is discovered by itself – press Configure.",
+    "su.voice_3":"Settings → Voice assistants: pick “Vatra Jarvis” as the conversation agent.",
+    "su.voice_manual":"If it isn't discovered, add the Vatra integration by hand with this address, port 8099 and code:",
   },
   ro: {
     "nav.home":"Acasă", "nav.approvals":"Aprobări", "nav.habits":"Obiceiuri", "nav.unusual":"Neobișnuit",
@@ -282,6 +291,11 @@ const L = {
     "su.save":"Salvează și repornește Vatra", "su.later":"Nu acum",
     "su.advanced":"Opțiunile avansate (paznic, învățare, siguranță, agenți) rămân în Setări → Add-ons → Vatra → Configuration.",
     "su.restarting":"Vatra repornește cu setările noi…",
+    "su.voice":"Voce (Assist)", "su.voice_p":"Vorbește cu Jarvis din aplicația Home Assistant, de pe ceas sau de pe un satelit vocal.",
+    "su.voice_1":"În HACS → ⋮ → Custom repositories, adaugă https://github.com/RazvanR1/Vatra ca Integration și descarcă „Vatra (voice / Assist)”. Repornește Home Assistant.",
+    "su.voice_2":"Setări → Dispozitive și servicii: „Vatra” apare singur ca descoperit – apasă Configurează.",
+    "su.voice_3":"Setări → Asistenți vocali: alege „Vatra Jarvis” ca agent de conversație.",
+    "su.voice_manual":"Dacă nu apare singur, adaugă integrarea Vatra manual cu adresa aceasta, portul 8099 și codul:",
   },
 };
 let LANG = null;
@@ -447,7 +461,8 @@ async function loadSetup() {
   $("su-url").value = (a.backend === "openai" ? a.openai_url : a.ollama_url) || "";
   $("su-key").value = ""; $("su-key").placeholder = a.has_key ? T("su.key_saved") : "";
   $("su-model").value = a.model || ""; $("su-ctx").value = a.num_ctx || 8192;
-  $("su-site").value = o.site_context || ""; $("su-lang").value = o.language || "auto";
+  $("su-site").value = o.site_context || "";
+  $("su-voice-host").value = (SU.assist || {}).host || "—"; $("su-voice-token").value = (SU.assist || {}).token || ""; $("su-lang").value = o.language || "auto";
   aiBackend(true);
 }
 window.aiBackend = keep => {

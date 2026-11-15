@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "hassio_confirm": {
+        "title": "Vatra",
+        "description": "Adaug pe Jarvis din aplicația Vatra ca agent de conversație? Apoi alege **Vatra Jarvis** în Setări → Asistenți vocali."
+      },
+      "user": {
+        "title": "Vatra",
+        "description": "De obicei Vatra e găsit singur. Dacă nu, copiază adresa și codul din panoul Vatra → Configurare → Voce (Assist).",
+        "data": {"host": "Adresă", "port": "Port", "token": "Cod"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Vatra nu răspunde. Rulează aplicația Vatra?",
+      "invalid_auth": "Codul nu e bun. Copiază-l din nou din panoul Vatra."
+    },
+    "abort": {"already_configured": "Vatra e deja configurat."}
+  }
+}

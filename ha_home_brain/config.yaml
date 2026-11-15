@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.5.0"
+version: "2.6.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -13,6 +13,8 @@ boot: auto
 watchdog: "http://[HOST]:[PORT:8099]/api/health"
 homeassistant_api: true
 hassio_api: true
+discovery:
+  - vatra
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:fireplace

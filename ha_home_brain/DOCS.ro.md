@@ -87,6 +87,14 @@ notifications:
 - Consum mare cu pompa de căldură / centrala / AC pornite → explicat.
 - Releu care alimentează becuri smart → pornit permanent e normal; lumina o dă `light.*`.
 
+## Voce (Assist)
+
+Jarvis poate răspunde vocal prin Assist din Home Assistant. Instalezi mica integrare **Vatra (voice / Assist)** din
+HACS (custom repository `https://github.com/RazvanR1/Vatra`, categoria Integration), repornești Home Assistant,
+confirmi **Vatra** descoperit în Setări → Dispozitive și servicii, apoi alegi **Vatra Jarvis** ca agent de
+conversație în Setări → Asistenți vocali. Detalii și adresa/codul pentru varianta manuală: panou → Configurare →
+Voce (Assist).
+
 ## Mod vacanță
 
 Modul vacanță pornește singur când **toate persoanele** (`learning.persons`) sunt plecate de `vacation.away_hours`

@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "hassio_confirm": {
+        "title": "Vatra",
+        "description": "Add Jarvis from the Vatra app as a conversation agent? Then pick **Vatra Jarvis** in Settings → Voice assistants."
+      },
+      "user": {
+        "title": "Vatra",
+        "description": "Usually Vatra is found by itself. If not, copy the address and code from the Vatra panel → Setup → Voice (Assist).",
+        "data": {"host": "Address", "port": "Port", "token": "Code"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Vatra is not responding. Is the Vatra app running?",
+      "invalid_auth": "The code is not right. Copy it again from the Vatra panel."
+    },
+    "abort": {"already_configured": "Vatra is already set up."}
+  }
+}

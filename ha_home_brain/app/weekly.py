@@ -39,20 +39,21 @@ class WeeklyReport:
         insights = [i for i in self._since(store.items("insight", limit=500), since) if i.get("severity") != "info"]
         habits_new = self._since(store.items("habit", ("new", "proposed"), limit=200), since)
         alerts_active = len(b.notifier.active)
-        alerts_week = len([a for a in b.notifier.history
-                           if _iso_ts(a.time) >= since and not a.resolved])
+        alerts_week = b.notifier.counted("alerts_new") if hasattr(b.notifier, "counted") else 0
+        alerts_fixed = b.notifier.counted("alerts_fixed") if hasattr(b.notifier, "counted") else 0
         vac_days = b.vacation.days_in_last(7) if hasattr(b, "vacation") else 0.0
         stats = {"automations": len(automations), "actions": len(actions), "undone": len(undone),
                  "cleaned": sum(len(d.get("entities", [])) for d in cleaned), "findings": len(findings),
                  "insights": len(insights), "habits_new": len(habits_new), "alerts_active": alerts_active,
-                 "alerts_week": alerts_week, "cleanup_left": len(getattr(b.cleanup, "candidates", []) or []),
+                 "alerts_week": alerts_week, "alerts_fixed": alerts_fixed, "cleanup_left": len(getattr(b.cleanup, "candidates", []) or []),
                  "vacation_days": round(vac_days, 1)}
         lines = []
         if stats["automations"] or stats["habits_new"]:
             lines.append(t("week.habits", new=stats["habits_new"], created=stats["automations"]))
         if stats["actions"]:
             lines.append(t("week.actions", n=stats["actions"], undone=stats["undone"]))
-        lines.append(t("week.alerts", week=stats["alerts_week"], active=stats["alerts_active"]))
+        lines.append(t("week.alerts", week=stats["alerts_week"], fixed=stats["alerts_fixed"],
+                       active=stats["alerts_active"]))
         if stats["findings"] or stats["insights"]:
             lines.append(t("week.observed", findings=stats["findings"], insights=stats["insights"]))
         if stats["cleaned"]:
