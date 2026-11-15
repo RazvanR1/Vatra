@@ -74,13 +74,16 @@ class MQTTBridge:
 
     async def credentials(self) -> dict | None:
         if not self.supervisor.available:
+            self.error = "no Supervisor"
             return None
         try:
             if self.version in ("", "dev"):
                 self.version = (await self.supervisor.info()).get("version") or self.version
-            return await self.supervisor.service("mqtt")
+            creds = await self.supervisor.service("mqtt")
+            self.error = ""
+            return creds
         except Exception as err:  # noqa: BLE001
-            self.error = str(err)
+            self.error = f"{type(err).__name__}: {err}"
             return None
 
     async def run_forever(self) -> None:
@@ -97,7 +100,10 @@ class MQTTBridge:
             creds = await self.credentials()
             if not creds or not creds.get("host"):
                 self.connected = False
-                await asyncio.sleep(600)  # fără broker: verificăm rar, poate îl instalezi mai târziu
+                self.error = self.error or "no MQTT broker"
+                log.info("MQTT entities not available: %s (checking again in %ss)", self.error, delay)
+                await asyncio.sleep(delay)  # fără broker: verificăm tot mai rar, poate îl instalezi mai târziu
+                delay = min(delay * 2, 900)
                 continue
             try:
                 will = aiomqtt.Will(STATUS, "offline", retain=True)

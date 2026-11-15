@@ -83,6 +83,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             "llm": {"calls": brain.llm.calls, "last_seconds": round(brain.llm.last_seconds, 1),
                     "backend": brain.llm.backend}
             if hasattr(brain, "llm") else {},
+            "mqtt": {"connected": brain.mqtt.connected, "error": brain.mqtt.error}
+            if hasattr(brain, "mqtt") else {},
             "needs_setup": setup_mod.needs_setup(getattr(brain, "opts", {}) or {})
             and not (store.get("setup_dismissed") if store else False),
         })

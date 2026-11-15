@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.1
+- EN: MQTT: the reason is now shown in the log and in the panel status when the Vatra entities can't be published; faster first retry.
+- RO: MQTT: motivul apare acum în log și în starea panoului când entitățile Vatra nu pot fi publicate; prima reîncercare e mai rapidă.
+
 ## 2.4.0 – Clean up and Vatra entities
 **EN:**
 - **Clean up:** Vatra finds devices that have had no value for over a week (checked against Home Assistant's
