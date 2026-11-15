@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.1
+- EN: MQTT publishes are no longer written to the log every minute (debug level only).
+- RO: Publicările MQTT nu mai sunt scrise în log la fiecare minut (doar la nivel debug).
+
 ## 2.6.0 – Jarvis by voice (Assist)
 **EN:**
 - **Jarvis in Assist:** a small companion integration (HACS → custom repository, category Integration) adds

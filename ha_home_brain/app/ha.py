@@ -103,7 +103,9 @@ class HAClient:
             msg["service_data"] = data
         if target:
             msg["target"] = target
-        log.info("Serviciu: %s.%s %s %s", domain, service, target or "", data or "")
+        # Publicările MQTT (la fiecare minut) doar la nivel debug, ca să nu umple logul.
+        (log.debug if domain == "mqtt" else log.info)("Serviciu: %s.%s %s %s", domain, service,
+                                                      target or "", data or "")
         res = await self._request(msg)
         if isinstance(res, dict):
             self.brain_contexts.add((res.get("context") or {}).get("id"))
