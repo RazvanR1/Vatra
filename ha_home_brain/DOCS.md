@@ -100,7 +100,7 @@ off in the entity registry (nothing is deleted), **Keep** means it won't ask aga
 
 ## Vatra entities (MQTT)
 
-If you have an MQTT broker (e.g. the Mosquitto app), Vatra connects to it by itself and creates a **Vatra** device:
+If Home Assistant has the **MQTT integration** set up (e.g. with the Mosquitto app), Vatra publishes through it – no passwords needed – and a **Vatra** device appears:
 
 | Entity | What it shows |
 |---|---|

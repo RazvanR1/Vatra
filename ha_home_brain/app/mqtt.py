@@ -1,7 +1,7 @@
 """Entitățile Vatra în Home Assistant, prin MQTT discovery.
 
-Brokerul (de obicei add-on-ul Mosquitto) e luat automat de la Supervisor (`services: mqtt:want`).
-Dacă nu există broker, modulul stă liniștit: restul Vatra merge la fel.
+Publicăm prin serviciul `mqtt.publish` din Home Assistant, deci merge cu orice broker are configurat HA
+(Mosquitto sau extern), fără parole. Dacă HA n-are MQTT, modulul stă liniștit: restul Vatra merge la fel.
 """
 from __future__ import annotations
 
@@ -64,6 +64,12 @@ def snapshot(brain) -> tuple[dict, dict]:
 
 
 class MQTTBridge:
+    """Publică prin serviciul `mqtt.publish` al Home Assistant: merge cu orice broker are HA, fără parole."""
+
+    REPUBLISH = 60          # secunde: starea se retrimite periodic ...
+    EXPIRE = 300            # ... iar dacă Vatra se oprește, entitățile devin „indisponibile” după atât
+    DISCOVERY_EVERY = 1800  # retrimitem și configurația (de ex. după o repornire HA)
+
     def __init__(self, brain, supervisor, version: str, enabled: bool = True) -> None:
         self.brain = brain
         self.supervisor = supervisor
@@ -72,62 +78,68 @@ class MQTTBridge:
         self.connected = False
         self.error = ""
 
-    async def credentials(self) -> dict | None:
-        if not self.supervisor.available:
-            self.error = "no Supervisor"
-            return None
+    async def _publish(self, topic: str, payload, retain: bool = True) -> None:
+        if not isinstance(payload, str):
+            payload = json.dumps(payload, ensure_ascii=False)
+        await self.brain.ha.call_service("mqtt", "publish", {"topic": topic, "payload": payload, "retain": retain})
+
+    async def _has_mqtt(self) -> bool:
         try:
-            if self.version in ("", "dev"):
-                self.version = (await self.supervisor.info()).get("version") or self.version
-            creds = await self.supervisor.service("mqtt")
-            self.error = ""
-            return creds
+            services = await self.brain.ha.ws({"type": "get_services"})
         except Exception as err:  # noqa: BLE001
             self.error = f"{type(err).__name__}: {err}"
-            return None
+            return False
+        if "publish" not in (services or {}).get("mqtt", {}):
+            self.error = "MQTT integration is not set up in Home Assistant"
+            return False
+        return True
+
+    async def publish_discovery(self) -> None:
+        if self.version in ("", "dev") and self.supervisor is not None and self.supervisor.available:
+            try:
+                self.version = (await self.supervisor.info()).get("version") or self.version
+            except Exception:  # noqa: BLE001
+                pass
+        for topic, payload in entity_configs(self.version or "dev"):
+            if payload.get("state_topic") == STATE:
+                payload = {**payload, "expire_after": self.EXPIRE}
+            await self._publish(topic, payload)
+        await self._publish(STATUS, "online")
 
     async def run_forever(self) -> None:
         if not self.enabled:
             return
-        try:
-            import aiomqtt  # noqa: PLC0415
-        except ImportError:
-            log.info("aiomqtt not installed; MQTT entities disabled")
-            return
-        await self.brain.ha.connected.wait()
-        delay = 10
+        delay = 30
         while True:
-            creds = await self.credentials()
-            if not creds or not creds.get("host"):
+            await self.brain.ha.connected.wait()
+            if not await self._has_mqtt():
                 self.connected = False
-                self.error = self.error or "no MQTT broker"
                 log.info("MQTT entities not available: %s (checking again in %ss)", self.error, delay)
-                await asyncio.sleep(delay)  # fără broker: verificăm tot mai rar, poate îl instalezi mai târziu
-                delay = min(delay * 2, 900)
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 1800)
                 continue
             try:
-                will = aiomqtt.Will(STATUS, "offline", retain=True)
-                async with aiomqtt.Client(hostname=creds["host"], port=int(creds.get("port", 1883)),
-                                          username=creds.get("username"), password=creds.get("password"),
-                                          identifier="vatra", will=will) as client:
-                    self.connected, self.error, delay = True, "", 10
-                    log.info("MQTT connected to %s:%s – Vatra entities published", creds["host"], creds.get("port"))
-                    for topic, payload in entity_configs(self.version):
-                        await client.publish(topic, json.dumps(payload, ensure_ascii=False), retain=True)
-                    await client.publish(STATUS, "online", retain=True)
-                    last = None
-                    while True:
-                        state, attrs = snapshot(self.brain)
-                        current = (json.dumps(state, ensure_ascii=False), json.dumps(attrs, ensure_ascii=False))
-                        if current != last:
-                            await client.publish(STATE, current[0], retain=True)
-                            await client.publish(ATTRS, current[1], retain=True)
-                            last = current
-                        await asyncio.sleep(15)
+                await self.publish_discovery()
+                self.connected, self.error, delay = True, "", 30
+                log.info("MQTT: Vatra entities published through Home Assistant")
+                last, sent_at, disc_at = None, 0.0, asyncio.get_running_loop().time()
+                while self.brain.ha.connected.is_set():
+                    now = asyncio.get_running_loop().time()
+                    if now - disc_at > self.DISCOVERY_EVERY:
+                        await self.publish_discovery()
+                        disc_at = now
+                    state, attrs = snapshot(self.brain)
+                    current = (json.dumps(state, ensure_ascii=False), json.dumps(attrs, ensure_ascii=False))
+                    if current != last or now - sent_at >= self.REPUBLISH:
+                        await self._publish(STATE, current[0])
+                        await self._publish(ATTRS, current[1])
+                        last, sent_at = current, now
+                    await asyncio.sleep(15)
+                self.connected = False  # HA s-a deconectat: la revenire retrimitem tot
             except asyncio.CancelledError:
                 raise
             except Exception as err:  # noqa: BLE001
-                self.connected, self.error = False, str(err)
-                log.warning("MQTT: %s (retrying in %ss)", err, delay)
+                self.connected, self.error = False, f"{type(err).__name__}: {err}"
+                log.warning("MQTT: %s (retrying in %ss)", self.error, delay)
                 await asyncio.sleep(delay)
-                delay = min(delay * 2, 300)
+                delay = min(delay * 2, 600)

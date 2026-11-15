@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.2
+- EN: Vatra entities are now published through Home Assistant's own MQTT integration (`mqtt.publish`): works with any broker HA uses, no Supervisor service or passwords needed. Entities become unavailable within 5 minutes if Vatra stops.
+- RO: Entitățile Vatra se publică acum prin integrarea MQTT a Home Assistant (`mqtt.publish`): merge cu orice broker folosește HA, fără serviciu Supervisor sau parole. Dacă Vatra se oprește, entitățile devin indisponibile în cel mult 5 minute.
+
 ## 2.4.1
 - EN: MQTT: the reason is now shown in the log and in the panel status when the Vatra entities can't be published; faster first retry.
 - RO: MQTT: motivul apare acum în log și în starea panoului când entitățile Vatra nu pot fi publicate; prima reîncercare e mai rapidă.

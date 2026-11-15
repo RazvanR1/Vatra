@@ -549,3 +549,40 @@ def test_mqtt_discovery_payloads_and_snapshot(setup):
     brain.notifier.active["unavailable:light.y"] = Alert("unavailable:light.y", "Indisponibil", "", tier="fault")
     assert snapshot(brain)[0]["problem"] is True
     assert attrs["alerts"][0]["entity"] == "sensor.x"
+
+
+async def test_mqtt_publishes_through_ha_service(setup):
+    fake, brain = setup
+    import asyncio
+    from app.mqtt import MQTTBridge
+    fake_services = {"mqtt": {"publish": {}}}
+    async def ws(msg, timeout=30):
+        return fake_services if msg["type"] == "get_services" else None
+    brain.ha.ws = ws
+    bridge = MQTTBridge(brain, None, "2.4.2")
+    task = asyncio.create_task(bridge.run_forever())
+    await asyncio.sleep(0.5)
+    task.cancel()
+    pubs = [c["service_data"] for c in fake.calls if c["domain"] == "mqtt" and c["service"] == "publish"]
+    topics = [p["topic"] for p in pubs]
+    assert bridge.connected
+    assert "homeassistant/binary_sensor/vatra/problem/config" in topics
+    assert "vatra/status" in topics and "vatra/state" in topics
+    cfg = next(p for p in pubs if p["topic"].endswith("active_alerts/config"))
+    import json as _j
+    assert _j.loads(cfg["payload"])["expire_after"] == 300 and cfg["retain"] is True
+
+
+async def test_mqtt_waits_quietly_without_mqtt_integration(setup):
+    fake, brain = setup
+    import asyncio
+    from app.mqtt import MQTTBridge
+    async def ws(msg, timeout=30):
+        return {"light": {"turn_on": {}}}
+    brain.ha.ws = ws
+    bridge = MQTTBridge(brain, None, "2.4.2")
+    task = asyncio.create_task(bridge.run_forever())
+    await asyncio.sleep(0.3)
+    task.cancel()
+    assert not bridge.connected and "not set up" in bridge.error
+    assert not [c for c in fake.calls if c["domain"] == "mqtt"]

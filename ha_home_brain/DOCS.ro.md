@@ -97,8 +97,8 @@ containere Docker șterse, integrări abandonate. Fiecare apare în **Aprobări*
 
 ## Entitățile Vatra (MQTT)
 
-Dacă ai un broker MQTT (de exemplu aplicația Mosquitto), Vatra se conectează singur la el și creează un dispozitiv
-**Vatra**:
+Dacă Home Assistant are **integrarea MQTT** configurată (de exemplu cu aplicația Mosquitto), Vatra publică prin ea –
+fără parole – și apare un dispozitiv **Vatra**:
 
 | Entitate | Ce arată |
 |---|---|
