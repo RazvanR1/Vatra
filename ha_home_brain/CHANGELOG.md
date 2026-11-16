@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.3 – Better Jarvis by voice
+- EN: Jarvis now knows Vatra's own state – active alerts grouped per device, pending approvals, dead devices to clean up, vacation mode – so "how many alerts are there?" gets the real answer. Voice answers (Assist) are short plain sentences with friendly names, without Markdown.
+- RO: Jarvis știe acum și starea Vatra – alertele active grupate pe dispozitiv, aprobările în așteptare, dispozitivele moarte de curățat, modul vacanță – așa că la „câte alerte sunt?” primești răspunsul real. Răspunsurile vocale (Assist) sunt propoziții scurte, cu nume prietenoase, fără Markdown.
+
 ## 2.6.2
 - EN: OpenAI-compatible servers that only accept the default temperature (Claude 4.7+ through `https://api.anthropic.com/v1`, OpenAI reasoning models) now work: on a 400, Vatra retries without the optional fields and remembers. Docs show the cloud addresses for OpenAI and Claude.
 - RO: Serverele compatibile OpenAI care acceptă doar temperatura implicită (Claude 4.7+ prin `https://api.anthropic.com/v1`, modelele de raționament OpenAI) merg acum: la o eroare 400, Vatra reîncearcă fără câmpurile opționale și ține minte. Documentația arată adresele cloud pentru OpenAI și Claude.

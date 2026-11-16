@@ -89,6 +89,17 @@ S: dict[str, dict] = {
     "week.vacation": _e("Vacation: {days} days with the house empty.", "Vacanță: {days} zile cu casa goală."),
     "week.top": _e("Most important: {title}", "Cel mai important: {title}"),
     "week.sent": _e("Weekly report sent.", "Raportul săptămânal a fost trimis."),
+    "jarvis.ctx_alerts": _e("Vatra alerts: {n} active entities on {groups} devices – most: {top}.",
+                            "Alerte Vatra: {n} entități active pe {groups} dispozitive – cele mai multe: {top}."),
+    "jarvis.ctx_no_alerts": _e("Vatra alerts: none – everything is fine.", "Alerte Vatra: niciuna – totul e în regulă."),
+    "jarvis.ctx_pending": _e("Waiting for approval ({n}): {titles}.", "Așteaptă aprobare ({n}): {titles}."),
+    "jarvis.ctx_cleanup": _e("Dead devices that can be cleaned up ({n}): {names}.",
+                             "Dispozitive moarte care pot fi curățate ({n}): {names}."),
+    "jarvis.ctx_vacation": _e("Vacation mode is on (nobody home).", "Modul vacanță e pornit (nu e nimeni acasă)."),
+    "jarvis.voice": _e("This answer will be read aloud by a voice assistant: answer in 1–3 short, natural sentences, "
+                       "plain text only (no Markdown, no lists), and use friendly names, never entity IDs.",
+                       "Răspunsul va fi citit cu voce tare: răspunde în 1–3 propoziții scurte și naturale, doar text "
+                       "simplu (fără Markdown, fără liste) și folosește numele prietenoase, niciodată ID-uri de entități."),
     "vac.started": _e("Vacation mode on: nobody is home.", "Mod vacanță pornit: nu e nimeni acasă."),
     "vac.ended": _e("Vacation mode off after {days} days.", "Mod vacanță oprit după {days} zile."),
     "vac.alert_title": _e("Activity in the empty house", "Activitate în casa goală"),

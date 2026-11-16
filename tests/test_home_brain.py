@@ -692,8 +692,9 @@ async def test_conversation_endpoint_needs_token(setup):
     from aiohttp.test_utils import TestClient, TestServer
     from app.web import build_app
 
-    async def fake_ask(q, hist=None):
-        return {"reply": f"Am înțeles: {q}", "actions": []}
+    async def fake_ask(q, hist=None, voice=False):
+        assert voice is True
+        return {"reply": f"**Am înțeles:** {q}", "actions": []}
     brain.assistant.ask = fake_ask
     # allowed_ips gol: doar codul secret poate deschide /api/conversation
     client = TestClient(TestServer(build_app(brain, allowed_ips=set())))
@@ -712,3 +713,14 @@ async def test_conversation_endpoint_needs_token(setup):
         assert r.status == 403  # codul deschide doar conversația, nu și restul panoului
     finally:
         await client.close()
+
+
+def test_plain_speech_and_jarvis_sees_vatra_state(setup):
+    _, brain = setup
+    from app.notify import Alert
+    from app.web import plain_speech
+    assert plain_speech("Vatra are **97** alerte:\n- `Dishwasher` (17)\n# Titlu") == "Vatra are 97 alerte:\nDishwasher (17)\nTitlu"
+    brain.notifier.active.clear()
+    brain.notifier.active["unavailable:light.a"] = Alert("unavailable:light.a", "Device unavailable", "")
+    summary = brain.brain_summary()
+    assert "1 entități active" in summary or "1 active" in summary

@@ -281,7 +281,26 @@ class Brain:
 
     # ---------- rezumat pentru Jarvis ----------
     def brain_summary(self) -> str:
-        lines = [f"- {f['message']}" for f in list(self.findings.values())[:5]]
+        lines = []
+        active = list(self.notifier.active.values())
+        if active:
+            groups = self.guard.group(active)
+            top = sorted(groups.values(), key=lambda g: -len(g[1]))[:6]
+            lines.append(t("jarvis.ctx_alerts", n=len(active), groups=len(groups),
+                           top="; ".join(f"{label} ({len(items)})" for label, items in top)))
+        else:
+            lines.append(t("jarvis.ctx_no_alerts"))
+        pending = self.approvals.pending()
+        if pending:
+            lines.append(t("jarvis.ctx_pending", n=len(pending),
+                           titles="; ".join(a["title"] for a in pending[:4])))
+        if self.cleanup.candidates:
+            lines.append(t("jarvis.ctx_cleanup", n=len(self.cleanup.candidates),
+                           names=", ".join(d["name"] for d in self.cleanup.candidates[:5])))
+        if self.vacation.is_active():
+            lines.append(t("jarvis.ctx_vacation"))
+        lines = [f"- {x}" for x in lines]
+        lines += [f"- {f['message']}" for f in list(self.findings.values())[:5]]
         lines += [f"- {i['agent_name']}: {i['title']}" for i in self.agents.insights(5)]
         lines += [f"- {t('main.habit')}: {h['description']}" for h in self.store.items("habit", ("new", "proposed", "created"), 5)]
         return "\n".join(lines)

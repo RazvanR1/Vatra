@@ -69,7 +69,7 @@ class Assistant:
             size += len(line) + 1
         return "\n".join(lines)
 
-    async def ask(self, question: str, history: list[dict] | None = None) -> dict:
+    async def ask(self, question: str, history: list[dict] | None = None, voice: bool = False) -> dict:
         if not self.enabled:
             return {"reply": t("jarvis.off"), "actions": []}
         ctx = t("jarvis.state") + "\n" + self.house_context()
@@ -77,7 +77,10 @@ class Assistant:
             more = self.extra_context()
             if more:
                 ctx += "\n\n" + t("jarvis.observed") + "\n" + more[:1500]
-        messages = [{"role": "system", "content": t("jarvis.prompt", site=self.site or t("agent.default_site")) + "\n\n" + ctx},
+        system = t("jarvis.prompt", site=self.site or t("agent.default_site"))
+        if voice:
+            system += "\n\n" + t("jarvis.voice")
+        messages = [{"role": "system", "content": system + "\n\n" + ctx},
                     *(history or [])[-6:], {"role": "user", "content": question}]
         try:
             data, raw = await self.llm.chat_json(messages, timeout=120)

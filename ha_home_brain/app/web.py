@@ -17,6 +17,15 @@ STATIC = Path(__file__).parent / "static"
 INGRESS_IPS = {"172.30.32.2", "127.0.0.1", "::1"}
 
 
+def plain_speech(text: str) -> str:
+    """Text bun de citit cu voce tare: fără Markdown (ID-urile le evită promptul)."""
+    import re
+    text = re.sub(r"`([^`]*)`", r"\1", text or "")
+    text = re.sub(r"\*\*|__|(?<!\w)[*_](?!\s)|(?<!\s)[*_](?!\w)|^#+\s*", "", text, flags=re.M)
+    text = re.sub(r"^\s*[-•]\s+", "", text, flags=re.M)
+    return re.sub(r"\s+\n", "\n", text).strip()
+
+
 def alert_entity(key: str, states: dict) -> str:
     """Entitatea din cheia unei alerte (`battery:sensor.x`, `unavailable:light.y`), dacă există în HA."""
     eid = key.partition(":")[2]
@@ -229,8 +238,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         if not text:
             return J({"speech": t("web.ask"), "conversation_id": cid})
         hist = conversations.setdefault(cid, [])
-        result = await brain.assistant.ask(text, hist)
-        speech = result.get("reply", "") or t("web.ask")
+        result = await brain.assistant.ask(text, hist, voice=True)
+        speech = plain_speech(result.get("reply", "")) or t("web.ask")
         hist.extend([{"role": "user", "content": text}, {"role": "assistant", "content": speech}])
         del hist[:-12]
         if len(conversations) > 50:
