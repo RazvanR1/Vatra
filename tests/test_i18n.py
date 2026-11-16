@@ -96,15 +96,68 @@ def test_agent_prompt_language_switches():
 
 
 def test_panel_has_both_languages():
-    html = (ROOT / "app" / "static" / "index.html").read_text()
-    block = html[html.index("const L = {"):html.index("let LANG")]
-    en = set(re.findall(r'"([^"]+)":', block[block.index("en:"):block.index("ro:")]))
-    ro = set(re.findall(r'"([^"]+)":', block[block.index("ro:"):]))
+    en, ro = set(i18n.LANGS["en"]["panel"]), set(i18n.LANGS["ro"]["panel"])
     assert en == ro and len(en) > 50
-    for key in re.findall(r'data-i18n="([^"]+)"', html):
-        assert key in en, key
 
 
 def test_config_has_language_option():
     cfg = (ROOT / "config.yaml").read_text()
-    assert "language: auto" in cfg and "language: list(auto|en|ro)" in cfg
+    assert "language: auto" in cfg and "language: list(auto|en|ro" in cfg
+
+
+# --- 2.7: one file per language (app/locales/<code>.json) ---------------------------------
+import json  # noqa: E402
+
+LOCALES = ROOT / "app" / "locales"
+
+
+def _ph(s):
+    return {f for _, f, _, _ in string.Formatter().parse(s) if f}
+
+
+def test_locale_files_are_consistent_with_english():
+    en = json.loads((LOCALES / "en.json").read_text(encoding="utf-8"))
+    for f in LOCALES.glob("*.json"):
+        d = json.loads(f.read_text(encoding="utf-8"))
+        assert d.get("_meta", {}).get("name"), f"{f.name}: _meta.name missing"
+        for sec in ("app", "panel"):
+            extra = set(d.get(sec, {})) - set(en[sec])
+            assert not extra, f"{f.name} [{sec}] has keys not in en.json: {extra}"
+            for k, v in d.get(sec, {}).items():
+                if sec == "app":
+                    assert _ph(v) == _ph(en[sec][k]), f"{f.name} {k}: placeholders differ"
+                else:
+                    assert set(re.findall(r"\{(\w+)\}", v)) == set(re.findall(r"\{(\w+)\}", en[sec][k])), f"{f.name} {k}"
+
+
+def test_config_language_option_lists_every_locale():
+    opt = re.search(r"language: list\(([^)]*)\)", (ROOT / "config.yaml").read_text()).group(1).split("|")
+    assert opt[0] == "auto"
+    assert {f.stem for f in LOCALES.glob("*.json")} <= set(opt)
+
+
+def test_panel_keys_exist_in_english():
+    html = (ROOT / "app" / "static" / "index.html").read_text()
+    used = set(re.findall(r'data-i18n="([^"]+)"', html)) | set(re.findall(r'\bT\("([a-z][\w.]*)"', html))
+    missing = {k for k in used if not k.endswith(".")} - set(i18n.LANGS["en"]["panel"])
+    assert not missing, missing
+
+
+def test_fallbacks_and_language_list():
+    assert i18n.match("ro-RO") == "ro"
+    assert i18n.match("xx-YY") == "en"
+    i18n.set_language("ro")
+    assert i18n.panel("ro")["tab.overview"] if "tab.overview" in i18n.LANGS["en"]["panel"] else True
+    p = i18n.panel("xx")
+    assert p == i18n.LANGS["en"]["panel"]
+    codes = {x["code"]: x for x in i18n.languages()}
+    assert codes["en"]["coverage"] == 100 and "ro" in codes
+    i18n.set_language("en")
+
+
+def test_partial_translation_falls_back_to_english(monkeypatch):
+    monkeypatch.setitem(i18n.LANGS, "hu", {"_meta": {"name": "Magyar"}, "app": {}, "panel": {}})
+    assert i18n.set_language("hu-HU") == "hu"
+    key = next(iter(i18n.LANGS["en"]["app"]))
+    assert t(key) == i18n.LANGS["en"]["app"][key]
+    i18n.set_language("en")

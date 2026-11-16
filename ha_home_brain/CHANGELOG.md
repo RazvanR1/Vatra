@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.0 – One file per language
+- EN: All texts of a language now live in one file, `app/locales/<code>.json` (notifications, prompts and the web panel), with English as fallback for anything not translated. A new language is picked up automatically; the panel has a language list that shows how complete each translation is. Hungarian (`hu`) is added to the `language` option, ready for the community translation. Guide: TRANSLATING.md.
+- RO: Toate textele unei limbi stau acum într-un singur fișier, `app/locales/<cod>.json` (notificări, prompturi și panoul web), cu engleza drept rezervă pentru ce nu e tradus. O limbă nouă e preluată automat; panoul are o listă de limbi care arată cât de completă e fiecare traducere. Maghiara (`hu`) e adăugată în opțiunea `language`, pregătită pentru traducerea din comunitate. Ghid: TRANSLATING.md.
+
 ## 2.6.3 – Better Jarvis by voice
 - EN: Jarvis now knows Vatra's own state – active alerts grouped per device, pending approvals, dead devices to clean up, vacation mode – so "how many alerts are there?" gets the real answer. Voice answers (Assist) are short plain sentences with friendly names, without Markdown.
 - RO: Jarvis știe acum și starea Vatra – alertele active grupate pe dispozitiv, aprobările în așteptare, dispozitivele moarte de curățat, modul vacanță – așa că la „câte alerte sunt?” primești răspunsul real. Răspunsurile vocale (Assist) sunt propoziții scurte, cu nume prietenoase, fără Markdown.

@@ -1,7 +1,7 @@
 configuration:
   language:
     name: Language
-    description: "Language of notifications, the panel default and the AI. auto = same as Home Assistant (Romanian if HA is in Romanian, English otherwise)."
+    description: "Language of notifications, the panel default and the AI. auto = same as Home Assistant when Vatra has that language, English otherwise. Available: English, Română, Magyar (in progress)."
   log_level:
     name: Log level
   time_zone:

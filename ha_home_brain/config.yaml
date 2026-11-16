@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.6.3"
+version: "2.7.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -112,7 +112,7 @@ options:
     max_entities: 150
     num_ctx: 8192
 schema:
-  language: list(auto|en|ro)
+  language: list(auto|en|ro|hu)
   log_level: list(debug|info|warning|error)
   time_zone: str
   site_context: str?

@@ -70,7 +70,7 @@
 <body>
 <header>
   <div class="bar"><span id="conn" class="dot"></span><h1>🔥 Vatra</h1><span id="sub" class="muted" style="font-size:13px">the local brain for Home Assistant</span><span id="meta"></span>
-    <button id="lang" title="Language / Limba">EN</button></div>
+    <select id="lang" title="Language"></select></div>
   <nav id="nav">
     <button data-t="home" class="on" data-i18n="nav.home"></button>
     <button data-t="approvals"><span data-i18n="nav.approvals"></span><span id="nb" class="badge" hidden></span></button>
@@ -155,7 +155,7 @@
     </section>
     <section><h2>4 · <span data-i18n="su.home"></span></h2>
       <label class="field"><span data-i18n="su.home_p"></span><textarea id="su-site"></textarea></label>
-      <label class="field"><span data-i18n="su.lang"></span><select id="su-lang"><option value="auto">Auto (Home Assistant)</option><option value="en">English</option><option value="ro">Română</option></select></label>
+      <label class="field"><span data-i18n="su.lang"></span><select id="su-lang"></select></label>
     </section>
     <section><h2>5 · <span data-i18n="su.voice"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.voice_p"></p>
       <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li data-i18n="su.voice_1"></li><li data-i18n="su.voice_2"></li><li data-i18n="su.voice_3"></li></ol>
@@ -170,155 +170,37 @@
 <div id="toast"></div>
 <script>
 // ---------- traduceri (adaugă o limbă: încă o coloană aici și în app/i18n.py) ----------
-const L = {
-  en: {
-    "nav.home":"Home", "nav.approvals":"Approvals", "nav.habits":"Habits", "nav.unusual":"Unusual",
-    "nav.agents":"Agents", "nav.log":"Log",
-    "h.summary":"At a glance", "h.alerts":"Active alerts", "h.recent":"Recent observations", "h.rules":"Built-in rules",
-    "h.approvals":"Waiting for your decision", "h.habits":"Learned habits", "h.habits_other":"Already automated / rejected",
-    "p.habits":"Learned only from what you do (not from automations), tested on history. Habits that are already automated are listed separately.",
-    "h.unusual":"Unusual right now", "h.explained":"Unavailable, but normal", "h.guard":"Guard – history",
-    "h.insights":"Observations", "h.done":"What I did (with Undo)",
-    "b.relearn":"Relearn now", "b.test":"Send a test notification", "b.send":"Send", "sent":"Sent.",
-    "q":"Ask something about the home…", "q.off":"The assistant is not configured – open Setup",
-    "entities":"{n} entities", "disconnected":"disconnected from HA",
-    "s.transitions":"changes in memory", "s.days":"days of history", "s.pending":"waiting for approval",
-    "s.findings":"unusual things", "s.ai":"AI calls today", "s.import":"history import",
-    "imp.not_started":"not started", "imp.running":"running", "imp.done":"done", "imp.failed":"failed",
-    "all_ok":"All good.", "nothing_yet":"Nothing yet.", "nothing":"Nothing.", "nothing_unusual":"Nothing unusual.",
-    "learning":"Still learning what is normal in this home…", "agents_not_run":"The agents haven't run yet.",
-    "rule_off":"off (an HA automation already does this)",
-    "ntf":"Notifications: {mode}, quiet {quiet}, today {sent}/{max} grouped messages, {queued} waiting.",
-    "no_approvals":"Nothing to approve.",
-    "st.new":"new", "st.proposed":"proposed", "st.created":"automated", "st.rejected":"rejected", "st.covered":"already automated",
-    "confidence":"confidence {n}%", "backtest":"backtest {h}/{f} correct", "extra":"{n} extra",
-    "covered_by":"already done by “{n}”", "home_only":"only when someone is home",
-    "b.create":"Create the automation", "b.propose":"Send to phone", "b.not_habit":"Not a habit", "b.restore":"Restore",
-    "no_habits":"No new habits for now.", "habits_learning":"Still learning… (the first analysis runs after the history import)",
-    "ag.climate":"Climate", "ag.energy":"Energy", "ag.security":"Security", "ag.server":"Server & homelab",
-    "last_run":"last run: {t}", "ran":"{n} observations in {s} s", "b.run":"Run now", "running":"Running…",
-    "sk.not_run":"hasn't run yet", "sk.no_data":"no data", "sk.no_change":"nothing new since the last analysis",
-    "agents_off":"The agents are off or the AI is not configured.", "no_insights":"No observations yet.",
-    "undone":"· undone", "b.undo":"Undo", "error":"Error: ",
-    "k.decizie":"decision", "k.blocat":"blocked", "k.umbră":"shadow", "k.acțiune":"action", "k.agent":"agent",
-    "k.învățare":"learning", "k.automatizare":"automation", "k.memorie":"memory",
-    "nav.setup":"⚙ Setup", "alerts.group":"{n} entities unavailable",
-    "vac.on":"🧳 Vacation mode is on – vacation days are left out of learning and I alert on any motion or open door.",
-    "vac.auto_on":"🧳 Vacation mode turned on by itself – everyone has been away for a while.",
-    "vac.off":"Going away for a few days? Vacation mode watches the empty house more closely.",
-    "vac.btn_on":"Start vacation mode", "vac.btn_off":"I'm back", "vac.btn_auto":"Automatic",
-    "h.weekly":"This week", "w.send":"Send the weekly report now", "w.none":"Nothing yet this week.",
-    "su.notice":"Vatra isn't set up yet – it takes a minute and no YAML.", "su.open":"Open setup",
-    "su.title":"Setup", "su.intro":"Pick what Vatra found in your Home Assistant. You can change everything later here or in the add-on's Configuration tab.",
-    "su.nosave":"Saving works only when Vatra runs as a Home Assistant add-on.",
-    "su.phones":"Phones for notifications", "su.phones_p":"Alerts and Approve / Reject buttons go here (Home Assistant Companion app).",
-    "su.none_phone":"No phone found. Install the Home Assistant Companion app on your phone and log in.",
-    "su.add":"Add", "su.test":"Test",
-    "su.people":"People in the home", "su.people_p":"Used for “only when someone is home” and presence-aware checks.",
-    "su.none_person":"No person.* entities found (Settings → People).",
-    "su.ai":"AI server (optional)", "su.ai_p":"For the AI agents and Jarvis. Everything else works without it.",
-    "su.scan":"Search my network", "su.scanning":"Searching… (a few seconds)", "su.found_none":"Nothing found. Enter the address by hand.",
-    "su.found_models":"{n} models",
-    "su.backend":"Server type", "su.openai":"OpenAI-compatible (LM Studio, llama.cpp, vLLM, LocalAI…)",
-    "su.url":"Server address", "su.key":"API key (only if the server needs one)", "su.key_saved":"saved – leave empty to keep",
-    "su.test_ai":"Test connection", "su.ai_ok":"Connected – {n} models.", "su.ai_bad":"Not reachable: {e}",
-    "su.model":"Model", "su.ctx":"Context size (num_ctx – same as the Ollama integration in HA)",
-    "su.home":"About your home", "su.home_p":"A few sentences for the AI: who lives here, schedule, heating… (optional)",
-    "su.lang":"Language",
-    "su.save":"Save and restart Vatra", "su.later":"Not now",
-    "su.advanced":"Advanced options (guard, learning, safety, agents) stay in Settings → Add-ons → Vatra → Configuration.",
-    "su.restarting":"Vatra is restarting with the new settings…",
-    "su.voice":"Voice (Assist)", "su.voice_p":"Talk to Jarvis from the Home Assistant app, a watch or a voice satellite.",
-    "su.voice_1":"In HACS → ⋮ → Custom repositories, add https://github.com/RazvanR1/Vatra as an Integration and download “Vatra (voice / Assist)”. Restart Home Assistant.",
-    "su.voice_2":"Settings → Devices & services: “Vatra” is discovered by itself – press Configure.",
-    "su.voice_3":"Settings → Voice assistants: pick “Vatra Jarvis” as the conversation agent.",
-    "su.voice_manual":"If it isn't discovered, add the Vatra integration by hand with this address, port 8099 and code:",
-  },
-  ro: {
-    "nav.home":"Acasă", "nav.approvals":"Aprobări", "nav.habits":"Obiceiuri", "nav.unusual":"Neobișnuit",
-    "nav.agents":"Agenți", "nav.log":"Jurnal",
-    "h.summary":"Pe scurt", "h.alerts":"Alerte active", "h.recent":"Observații recente", "h.rules":"Reguli fixe",
-    "h.approvals":"Așteaptă decizia ta", "h.habits":"Obiceiuri învățate", "h.habits_other":"Deja automatizate / respinse",
-    "p.habits":"Învățate doar din ce faci tu (nu din automatizări), testate pe istoric. Cele deja automatizate apar separat.",
-    "h.unusual":"Neobișnuit acum", "h.explained":"Indisponibil, dar normal", "h.guard":"Paznic – istoric",
-    "h.insights":"Observații", "h.done":"Ce am făcut (cu Undo)",
-    "b.relearn":"Reînvață acum", "b.test":"Trimite notificare de test", "b.send":"Trimite", "sent":"Trimis.",
-    "q":"Întreabă ceva despre casă…", "q.off":"Asistentul nu e configurat – deschide Configurare",
-    "entities":"{n} entități", "disconnected":"deconectat de la HA",
-    "s.transitions":"schimbări în memorie", "s.days":"zile de istoric", "s.pending":"așteaptă aprobare",
-    "s.findings":"lucruri neobișnuite", "s.ai":"apeluri AI azi", "s.import":"import istoric",
-    "imp.not_started":"neînceput", "imp.running":"în curs", "imp.done":"făcut", "imp.failed":"eșuat",
-    "all_ok":"Totul e în regulă.", "nothing_yet":"Nimic încă.", "nothing":"Nimic.", "nothing_unusual":"Nimic neobișnuit.",
-    "learning":"Încă învăț ce e normal în casă…", "agents_not_run":"Agenții n-au rulat încă.",
-    "rule_off":"oprită (o face deja o automatizare din HA)",
-    "ntf":"Notificări: {mode}, liniște {quiet}, azi {sent}/{max} mesaje grupate, {queued} în așteptare.",
-    "no_approvals":"Nimic de aprobat.",
-    "st.new":"nou", "st.proposed":"propus", "st.created":"automatizat", "st.rejected":"respins", "st.covered":"deja automatizat",
-    "confidence":"încredere {n}%", "backtest":"backtest {h}/{f} corecte", "extra":"{n} în plus",
-    "covered_by":"făcut deja de „{n}”", "home_only":"doar când e cineva acasă",
-    "b.create":"Creează automatizarea", "b.propose":"Trimite pe telefon", "b.not_habit":"Nu e obicei", "b.restore":"Repune",
-    "no_habits":"Niciun obicei nou deocamdată.", "habits_learning":"Încă învăț… (prima analiză se face după importul istoricului)",
-    "ag.climate":"Climă", "ag.energy":"Energie", "ag.security":"Securitate", "ag.server":"Server & homelab",
-    "last_run":"ultima rulare: {t}", "ran":"{n} observații în {s} s", "b.run":"Rulează acum", "running":"Rulează…",
-    "sk.not_run":"încă nu a rulat", "sk.no_data":"nu are date", "sk.no_change":"nimic nou de la ultima analiză",
-    "agents_off":"Agenții sunt opriți sau AI-ul nu e configurat.", "no_insights":"Nicio observație încă.",
-    "undone":"· anulat", "b.undo":"Anulează", "error":"Eroare: ",
-    "k.decizie":"decizie", "k.blocat":"blocat", "k.umbră":"umbră", "k.acțiune":"acțiune", "k.agent":"agent",
-    "k.învățare":"învățare", "k.automatizare":"automatizare", "k.memorie":"memorie",
-    "nav.setup":"⚙ Configurare", "alerts.group":"{n} entități indisponibile",
-    "vac.on":"🧳 Modul vacanță e pornit – zilele de vacanță nu intră în învățare și anunț orice mișcare sau ușă deschisă.",
-    "vac.auto_on":"🧳 Modul vacanță a pornit singur – toată lumea e plecată de ceva vreme.",
-    "vac.off":"Pleci câteva zile? Modul vacanță urmărește mai atent casa goală.",
-    "vac.btn_on":"Pornește modul vacanță", "vac.btn_off":"M-am întors", "vac.btn_auto":"Automat",
-    "h.weekly":"Săptămâna asta", "w.send":"Trimite acum raportul săptămânal", "w.none":"Nimic încă săptămâna asta.",
-    "su.notice":"Vatra nu e configurat încă – durează un minut și nu ai nevoie de YAML.", "su.open":"Deschide configurarea",
-    "su.title":"Configurare", "su.intro":"Bifează ce a găsit Vatra în Home Assistant. Poți schimba orice mai târziu, aici sau în tab-ul Configuration al add-on-ului.",
-    "su.nosave":"Salvarea merge doar când Vatra rulează ca add-on în Home Assistant.",
-    "su.phones":"Telefoane pentru notificări", "su.phones_p":"Aici ajung alertele și butoanele Aprobă / Respinge (aplicația Home Assistant Companion).",
-    "su.none_phone":"N-am găsit niciun telefon. Instalează aplicația Home Assistant Companion pe telefon și conectează-te.",
-    "su.add":"Adaugă", "su.test":"Test",
-    "su.people":"Cine locuiește în casă", "su.people_p":"Pentru condiția „doar când e cineva acasă” și verificările legate de prezență.",
-    "su.none_person":"N-am găsit entități person.* (Setări → Persoane).",
-    "su.ai":"Server AI (opțional)", "su.ai_p":"Pentru agenții AI și Jarvis. Restul merge și fără.",
-    "su.scan":"Caută în rețea", "su.scanning":"Caut… (câteva secunde)", "su.found_none":"N-am găsit nimic. Scrie adresa de mână.",
-    "su.found_models":"{n} modele",
-    "su.backend":"Tipul serverului", "su.openai":"Compatibil OpenAI (LM Studio, llama.cpp, vLLM, LocalAI…)",
-    "su.url":"Adresa serverului", "su.key":"Cheie API (doar dacă serverul cere)", "su.key_saved":"salvată – lasă gol ca s-o păstrezi",
-    "su.test_ai":"Testează conexiunea", "su.ai_ok":"Conectat – {n} modele.", "su.ai_bad":"Nu răspunde: {e}",
-    "su.model":"Model", "su.ctx":"Mărimea contextului (num_ctx – la fel ca integrarea Ollama din HA)",
-    "su.home":"Despre casa ta", "su.home_p":"Câteva propoziții pentru AI: cine locuiește aici, program, încălzire… (opțional)",
-    "su.lang":"Limba",
-    "su.save":"Salvează și repornește Vatra", "su.later":"Nu acum",
-    "su.advanced":"Opțiunile avansate (paznic, învățare, siguranță, agenți) rămân în Setări → Add-ons → Vatra → Configuration.",
-    "su.restarting":"Vatra repornește cu setările noi…",
-    "su.voice":"Voce (Assist)", "su.voice_p":"Vorbește cu Jarvis din aplicația Home Assistant, de pe ceas sau de pe un satelit vocal.",
-    "su.voice_1":"În HACS → ⋮ → Custom repositories, adaugă https://github.com/RazvanR1/Vatra ca Integration și descarcă „Vatra (voice / Assist)”. Repornește Home Assistant.",
-    "su.voice_2":"Setări → Dispozitive și servicii: „Vatra” apare singur ca descoperit – apasă Configurează.",
-    "su.voice_3":"Setări → Asistenți vocali: alege „Vatra Jarvis” ca agent de conversație.",
-    "su.voice_manual":"Dacă nu apare singur, adaugă integrarea Vatra manual cu adresa aceasta, portul 8099 și codul:",
-  },
-};
+// Texts live in app/locales/<code>.json ("panel" section), served with English fallback by api/i18n/<code>.
+const L = {};
 let LANG = null;
-const T = (k, v) => { let s = (L[LANG] || L.en)[k] ?? L.en[k] ?? k; for (const [a, b] of Object.entries(v || {})) s = s.replaceAll(`{${a}}`, b); return s; };
-function setLang(l, save) {
-  LANG = L[l] ? l : "en";
+const T = (k, v) => { let s = (L[LANG] || {})[k] ?? k; for (const [a, b] of Object.entries(v || {})) s = s.replaceAll(`{${a}}`, b); return s; };
+const LANGS = () => S.languages?.length ? S.languages : [{code: "en", name: "English", locale: "en-GB"}];
+const LOCALE = () => (LANGS().find(x => x.code === LANG) || {}).locale;
+async function setLang(l, save) {
+  const codes = LANGS().map(x => x.code);
+  l = codes.includes(l) ? l : (codes.includes((l || "").split("-")[0]) ? l.split("-")[0] : "en");
+  if (!L[l]) { try { L[l] = await get("api/i18n/" + l); } catch (e) { L[l] = L.en || {}; } }
+  LANG = l;
   if (save) { try { localStorage.setItem("vatra_lang", LANG); } catch (e) {} }
   document.documentElement.lang = LANG;
   document.querySelectorAll("[data-i18n]").forEach(e => e.textContent = T(e.dataset.i18n));
-  $("lang").textContent = LANG === "ro" ? "RO → EN" : "EN → RO";
+  $("lang").innerHTML = LANGS().map(x => `<option value="${x.code}">${x.code.toUpperCase()}</option>`).join("");
+  $("lang").value = LANG;
+  $("su-lang").innerHTML = `<option value="auto">Auto (Home Assistant)</option>` +
+    LANGS().map(x => `<option value="${x.code}">${esc(x.name)}${x.coverage < 100 ? ` (${x.coverage}%)` : ""}</option>`).join("");
   $("q").placeholder = T(S.assistant && !S.assistant.enabled ? "q.off" : "q");
 }
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const when = t => t ? new Date(typeof t === "number" ? t*1000 : t).toLocaleString(LANG === "ro" ? "ro-RO" : undefined) : "—";
+const when = t => t ? new Date(typeof t === "number" ? t*1000 : t).toLocaleString(LOCALE()) : "—";
 const get = p => fetch(p).then(r => r.json());
 const post = (p, b) => fetch(p, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(b||{})})
   .then(r => r.json()).then(r => { if (r && r.message) toast(r.message); return r; });
 function toast(t) { const e = $("toast"); e.textContent = t; e.style.display = "block"; clearTimeout(e._t); e._t = setTimeout(() => e.style.display = "none", 4000); }
 const empty = t => `<div class="empty">${t}</div>`;
 
-$("lang").onclick = () => { setLang(LANG === "ro" ? "en" : "ro", true); render(); const on = document.querySelector("#nav button.on"); on && on.click(); };
+$("lang").onchange = async () => { await setLang($("lang").value, true); render(); const on = document.querySelector("#nav button.on"); on && on.click(); };
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "t-" + b.dataset.t));
@@ -328,7 +210,7 @@ document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
 let S = {};
 async function refresh() {
   try { S = await get("api/status"); } catch (e) { $("conn").className = "dot bad"; return; }
-  if (!LANG) { let saved = null; try { saved = localStorage.getItem("vatra_lang"); } catch (e) {} setLang(saved || S.language || "en"); }
+  if (!LANG) { let saved = null; try { saved = localStorage.getItem("vatra_lang"); } catch (e) {} await setLang(saved || S.language || "en"); }
   render();
 }
 function render() {

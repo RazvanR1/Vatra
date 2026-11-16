@@ -1,7 +1,7 @@
 configuration:
   language:
     name: Limba
-    description: "Limba notificărilor, a panoului (implicit) și a AI-ului. auto = la fel ca Home Assistant (română dacă HA e în română, altfel engleză)."
+    description: "Limba notificărilor, a panoului (implicit) și a AI-ului. auto = la fel ca Home Assistant dacă Vatra are limba respectivă, altfel engleză. Disponibile: English, Română, Magyar (în lucru)."
   log_level:
     name: Nivel de log
   time_zone:

@@ -13,6 +13,7 @@ import os
 
 import aiohttp
 
+from . import i18n
 from .llm import BACKENDS, list_models
 
 log = logging.getLogger("home_brain.setup")
@@ -90,7 +91,7 @@ def merge(current: dict, patch: dict) -> dict:
 def clean(patch: dict) -> dict:
     """Validează ce vine din panou, ca Supervisor-ul să nu refuze opțiunile."""
     out: dict = {}
-    if patch.get("language") in ("auto", "en", "ro"):
+    if patch.get("language") == "auto" or patch.get("language") in i18n.SUPPORTED:
         out["language"] = patch["language"]
     if isinstance(patch.get("notify_services"), list):
         out["notify_services"] = [s.strip() for s in patch["notify_services"]

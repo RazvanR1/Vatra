@@ -67,6 +67,9 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     async def index(_req):
         return web.FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
+    async def i18n_panel(req):
+        return J(i18n.panel(req.match_info["code"]))
+
     async def status(_req):
         ha = brain.ha
         store = getattr(brain, "store", None)
@@ -87,6 +90,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             "pending": len(brain.approvals.pending()) if hasattr(brain, "approvals") else 0,
             "findings": list(getattr(brain, "findings", {}).values()),
             "language": i18n.lang(),
+            "languages": i18n.languages(),
             "explained": getattr(getattr(brain, "guard", None), "explained", {}),
             "notifications": {
                 "mode": brain.notifier.mode, "quiet_hours": brain.notifier.quiet,
@@ -309,6 +313,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_get("/", index)
     r.add_get("/api/health", health)
     r.add_get("/api/status", status)
+    r.add_get("/api/i18n/{code}", i18n_panel)
     r.add_post("/api/chat", chat)
     r.add_post("/api/test-notify", test_notify)
     r.add_get("/api/setup", setup_get)
