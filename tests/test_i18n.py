@@ -18,12 +18,13 @@ ROOT = Path(__file__).resolve().parents[1] / "ha_home_brain"
 RO_CHARS = re.compile(r"[ăâîșțĂÂÎȘȚ]")
 
 
-def test_every_entry_has_both_languages_with_same_placeholders():
+def test_every_entry_has_english_and_romanian_with_same_placeholders():
     fmt = string.Formatter()
     for key, e in S.items():
-        assert set(e) == {"en", "ro"}, key
-        ph = [{f for _, f, _, _ in fmt.parse(e[lang]) if f} for lang in ("en", "ro")]
-        assert ph[0] == ph[1], f"{key}: {ph}"
+        assert {"en", "ro"} <= set(e), key
+        en_ph = {f for _, f, _, _ in fmt.parse(e["en"]) if f}
+        for lang, text in e.items():
+            assert {f for _, f, _, _ in fmt.parse(text) if f} == en_ph, f"{key} [{lang}]"
         assert not RO_CHARS.search(e["en"]), f"Romanian text in English for {key}"
 
 
