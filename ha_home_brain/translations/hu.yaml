@@ -1,0 +1,207 @@
+configuration:
+  language:
+    name: Nyelv
+    description: "Az értesítések, a panel alapértelmezett és az AI nyelve. auto = ugyanaz, mint a Home Assistanté (román HA esetén román, egyébként angol)."
+  log_level:
+    name: Naplózási szint
+  time_zone:
+    name: Időzóna
+    description: A szokásokhoz és a csendes órákhoz használt IANA időzóna, pl. Europe/Bucharest.
+  site_context:
+    name: A házadról
+    description: Néhány mondat az otthonodról (ki lakik ott, napirend, fűtés). Az AI ágensek és a Jarvis megkapja.
+  notify_services:
+    name: Értesítési szolgáltatások
+    description: Ide mennek a riasztások és a jóváhagyási kérések, pl. notify.mobile_app_my_phone. A gombok a mobile_app szolgáltatásokkal működnek.
+  ntfy_url:
+    name: ntfy téma URL
+    description: Opcionális. A riasztásokat erre az ntfy témára is elküldi.
+  notifications:
+    name: Értesítések
+    description: Mennyit ír a Vatra a telefonodra. A panelben mindig minden látható.
+    fields:
+      mode:
+        name: Mód
+        description: "smart = a kritikusat azonnal, a többit csoportosítva küldi; all = mindent azonnal (régi működés); critical_only = csak a kritikusat."
+      quiet_hours:
+        name: Csendes órák
+        description: "pl. 22-7. Ebben az időszakban csak kritikus riasztás megy; a jóváhagyások reggelig várnak."
+      max_per_day:
+        name: Csoportos üzenetek naponta
+        description: A nem kritikus üzenetek legnagyobb száma naponta. Ezen felül a riasztások csak a panelben maradnak.
+      batch_minutes:
+        name: Csoportosítási időköz (perc)
+        description: A nem kritikus riasztásokat összegyűjti, és legfeljebb ilyen gyakran küldi el együtt.
+      send_resolved:
+        name: Értesítés a megoldódásról
+        description: Megoldva üzeneteket is küld (alapból ki van kapcsolva, ezek csak a panelben jelennek meg).
+      cooldown_hours:
+        name: Ismétlési szünet (óra)
+        description: Egy megoldódott, majd visszatért problémát ennyi időn belül nem küld újra.
+  guard:
+    name: Őr (Guard)
+    description: Riasztások az elérhetetlenné váló eszközökről és a lemerülő elemekről.
+    fields:
+      unavailable_minutes:
+        name: Elérhetetlen ennyi ideig (perc)
+        description: Akkor riaszt, ha egy eszköz ennyi ideje elérhetetlen.
+      max_unavailable_hours:
+        name: Figyelmen kívül hagyás ennyi idő után (óra)
+        description: Az ennél régebben leállt eszközöket ismertnek/eltávolítottnak tekinti, és nem riaszt miattuk.
+      bad_states:
+        name: Rossz állapotok
+        description: Problémának tekintett állapotok (add hozzá az "unknown"-t, ha szeretnéd).
+      battery_threshold:
+        name: Alacsony elemszint (%)
+      interval_seconds:
+        name: Ellenőrzési időköz (másodperc)
+      ignore:
+        name: Kihagyás
+        description: Figyelmen kívül hagyandó entitásminták, pl. sensor.*_linkquality
+  learning:
+    name: Szokások tanulása
+    description: Megtanulja az emberek szokásait, és natív automatizmusokat javasol.
+    fields:
+      enabled:
+        name: Bekapcsolva
+      persons:
+        name: Személyek
+        description: person.* entitások, a "csak ha valaki otthon van" feltételekhez és a jelenlét-ellenőrzéshez.
+      history_import_days:
+        name: Importálandó előzmények (nap)
+        description: Az első indításkor egyszer importálja, hogy a tanulás azonnal elkezdődhessen.
+      min_support_days:
+        name: Minimum napok
+        description: Egy szokásnak legalább ennyi napon meg kell jelennie.
+      min_confidence:
+        name: Minimális megbízhatóság
+        description: A napok hányadán kell megjelennie a szokásnak (0.6 = 60 %).
+      propose_automations:
+        name: Automatizmusok javaslata
+        description: Az erős szokásokat automatizmus-javaslatként elküldi a telefonodra.
+      max_proposals_per_day:
+        name: Javaslatok naponta
+  unusual:
+    name: Szokatlan tevékenység
+    description: Megtanulja, mi a normális, és jelzi, ami nem az. Nem kell hozzá eszközlista.
+    fields:
+      range:
+        name: Rendellenes értékek
+        description: Az adott órára jellemző normálistól messze eltérő értékek.
+      silent:
+        name: Elnémult szenzorok
+        description: Olyan szenzorok, amelyek általában óránként változnak, és hirtelen megálltak.
+      flapping:
+        name: Pattogás
+        description: A szokásosnál jóval gyakrabban be- és kikapcsolódó eszközök.
+      dwell:
+        name: Túl sokáig így maradt
+        description: Ajtók, lámpák, eszközök, amelyek a szokásosnál sokkal hosszabb ideig maradtak egy állapotban.
+      open_away:
+        name: Nyitva, miközben nincs itthon senki
+        description: Nyitott ajtók/ablakok, miközben senki nincs otthon.
+      min_days:
+        name: Minimum adatnapok
+      max_push_per_day:
+        name: Értesítések naponta
+        description: A naponta telefonra küldött kritikus / megerősített hibás megfigyelések felső határa.
+      ignore:
+        name: Kihagyás
+        description: Figyelmen kívül hagyandó entitásminták.
+  safety:
+    name: Biztonság
+    description: Mit tehet a Vatra magától. A kritikus eszközök mindig jóváhagyást kérnek.
+    fields:
+      autonomy:
+        name: Önállóság
+        description: shadow = csak naplóz, copilot = előbb megkérdezi, autonomous = a biztonságos dolgokat megteszi, és Visszavonást kínál.
+      autonomy_overrides:
+        name: Önállóság tartományonként
+        description: pl. light:autonomous
+      min_temperature:
+        name: Minimális hőmérséklet
+      max_temperature:
+        name: Maximális hőmérséklet
+      actionable_notifications:
+        name: Gombok az értesítésekben
+  agents:
+    name: AI ágensek
+    description: Helyi ágensek (Ollama) a klímához, energiához, biztonsághoz és a szerverhez. Csak akkor futnak, ha változott valami.
+    fields:
+      agents:
+        name: Ágensek
+      agents_interval_hours:
+        name: Időköz (óra)
+      quiet_hours:
+        name: Csendes órák
+        description: Ebben az időszakban az ágensek nem futtatnak zajos elemzéseket, pl. 23-7.
+      notify:
+        name: Értesítések
+        description: none, digest (naponta egy összegzés) vagy critical.
+      digest_hour:
+        name: Összegzés órája
+      allow_actions:
+        name: Műveletek engedélyezése
+        description: Az ágensek eszközműveleteket javasolhatnak (mindig jóváhagyással).
+  mqtt_entities:
+    name: Vatra entitások a Home Assistantban (MQTT)
+    description: Érzékelőket tesz közzé (pl. aktív riasztások, függő jóváhagyások és "probléma") az MQTT brókeren (pl. Mosquitto) keresztül, irányítópultokhoz és automatizmusokhoz.
+  weekly_report:
+    name: Heti jelentés
+    description: Vasárnap este (az összegzés órájában) egy üzenet arról, mit tanult, tett és vett észre a Vatra a héten.
+  vacation:
+    name: Nyaralás mód
+    description: Ha mindenki egy ideje távol van (vagy te bekapcsolod a panelben), a nyaralási napok kimaradnak a szokások tanulásából, az apró megfigyelések elnémulnak, az üres házban észlelt mozgás vagy ajtónyitás pedig azonnal a telefonodra megy.
+    fields:
+      auto:
+        name: Automatikus
+        description: Magától bekapcsol, ha minden személy elég régóta távol van.
+      away_hours:
+        name: Távol ennyi ideje (óra)
+      security_alerts:
+        name: Riasztás mozgásról / ajtónyitásról távollét alatt
+  cleanup:
+    name: Takarítás
+    description: Megkeresi azokat az eszközöket, amelyek entitásainak sok napja nincs értékük (eladott eszközök, törölt konténerek), és felajánlja a letiltásukat. Semmi nem törlődik; a Visszavonás újra engedélyezi őket.
+    fields:
+      enabled:
+        name: Bekapcsolva
+      days:
+        name: Halott ennyi napja (nap)
+        description: Egy eszközt csak akkor javasol, ha egyik entitásának sem volt értéke ennyi napja.
+      max_proposals:
+        name: Javaslatok vizsgálatonként
+  presence_camera:
+    name: Szabály – kamerák csak távollétben
+    description: Opcionális fix szabály. Hagyd üresen, ha már van erre automatizmusod.
+  heating_ac_lock:
+    name: Szabály – kazán ki, amíg a klíma fűt
+    description: Opcionális fix szabály. Hagyd üresen, ha már van erre automatizmusod.
+  follow_thermostat:
+    name: Szabály – szelepek követik a termosztátot
+    description: Opcionális fix szabály. Hagyd üresen, ha már van erre automatizmusod.
+  assistant:
+    name: AI modell (Ollama vagy OpenAI-kompatibilis) és Jarvis
+    fields:
+      backend:
+        name: AI szerver típusa
+        description: "ollama: natív Ollama API. openai: bármely OpenAI-kompatibilis szerver (LM Studio, llama.cpp, vLLM, LocalAI…)."
+      ollama_url:
+        name: Ollama URL
+        description: pl. http://192.168.1.50:11434. Hagyd üresen az AI funkciók kikapcsolásához.
+      openai_url:
+        name: OpenAI-kompatibilis URL
+        description: Akkor használja, ha a típus openai, pl. http://192.168.1.50:1234/v1 (LM Studio) vagy http://IP:8080/v1 (llama.cpp).
+      api_key:
+        name: API-kulcs
+        description: Csak akkor kell, ha a szervered kéri. A legtöbb helyi szerver nem.
+      model:
+        name: Modell
+        description: pl. qwen3.5:9b
+      allowed_domains:
+        name: Tartományok, amelyeket a Jarvis vezérelhet
+      max_entities:
+        name: Entitások maximális száma a kontextusban
+      num_ctx:
+        name: Kontextusméret
+        description: Tartsd ugyanazon az értéken, mint a HA-beli Ollama integrációd, hogy a modellt ne kelljen újratölteni.
