@@ -34,7 +34,7 @@ The advanced options stay in the Configuration tab.
 ## Language
 
 `language: auto` (default) follows Home Assistant when Vatra has that language, English otherwise.
-Set `en`, `ro` or `hu` to force one (Hungarian is being translated; missing texts show in English).
+Set `en`, `ro` or `hu` to force one.
 This decides notifications, the evening digest, approval buttons and the language of the AI agents.
 The panel starts in the same language and has a language switch, remembered per browser/phone. Jarvis answers in the language you write to it.
 
