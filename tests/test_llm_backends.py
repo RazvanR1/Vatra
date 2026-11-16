@@ -74,8 +74,9 @@ async def test_openai_backend_without_json_mode_falls_back():
         assert data == {"ok": True}
         data, _ = await llm.chat_json([{"role": "user", "content": "y"}])
         assert data == {"ok": True}
-        # după primul refuz nu mai trimite response_format
+        # după primul refuz nu mai trimite response_format și nici temperature
         assert ["response_format" in c for c in calls] == [True, False, False]
+        assert ["temperature" in c for c in calls] == [True, False, False]
     finally:
         await server.close()
 
@@ -103,3 +104,21 @@ async def test_ollama_backend_still_default_and_lists_models():
 def test_disabled_without_url():
     assert not LLM({"backend": "openai"}).enabled
     assert not LLM({}).enabled
+
+
+async def test_claude_style_server_rejecting_temperature():
+    """Endpoint-ul compatibil OpenAI al Claude: 400 pentru json_object și pentru temperature < 1."""
+    async def chat(req):
+        body = await req.json()
+        if "response_format" in body or body.get("temperature", 1) < 1:
+            return web.json_response({"error": {"message": "temperature must be 1"}}, status=400)
+        assert req.headers.get("Authorization") == "Bearer sk-ant-test"
+        return web.json_response({"choices": [{"message": {"content": '{"reply": "Bună!"}'}}]})
+
+    server = await _server([("POST", "/v1/chat/completions", chat)])
+    try:
+        llm = LLM({"backend": "openai", "openai_url": str(server.make_url("/v1")), "api_key": "sk-ant-test",
+                   "model": "claude-sonnet-5-5"})
+        assert (await llm.chat_json([{"role": "user", "content": "salut"}]))[0] == {"reply": "Bună!"}
+    finally:
+        await server.close()

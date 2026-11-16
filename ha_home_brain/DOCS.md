@@ -160,6 +160,7 @@ assistant:
   ollama_url: "http://IP:11434"
   # openai_url: "http://IP:1234/v1"   # LM Studio; llama.cpp: http://IP:8080/v1
   # api_key: ""                       # only if the server needs one
+  # Cloud (optional, needs an API key): OpenAI https://api.openai.com/v1 · Claude https://api.anthropic.com/v1
   model: "qwen3.5:9b"
   num_ctx: 8192        # Ollama: same as the Ollama integration in HA, so the model isn't reloaded
 agents:

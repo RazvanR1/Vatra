@@ -64,7 +64,8 @@ class LLM:
         self.lock = asyncio.Lock()
         self.calls = 0
         self.last_seconds = 0.0
-        self._json_mode = True  # unele servere OpenAI nu acceptă response_format=json_object
+        self._json_mode = True    # unele servere nu acceptă response_format=json_object
+        self._temperature = True  # unele modele acceptă doar temperatura implicită
 
     @property
     def enabled(self) -> bool:
@@ -103,19 +104,24 @@ class LLM:
         return body.get("message", {}).get("content", "")
 
     async def _openai(self, s: aiohttp.ClientSession, messages: list[dict]) -> str:
-        payload: dict = {"model": self.model, "messages": messages, "stream": False, "temperature": 0.2}
+        payload: dict = {"model": self.model, "messages": messages, "stream": False}
         if self._json_mode:
             payload["response_format"] = {"type": "json_object"}
+        if self._temperature:
+            payload["temperature"] = 0.2
         async with s.post(f"{self.url}/chat/completions", json=payload, headers=self._headers()) as r:
-            if r.status in (400, 422) and self._json_mode:
-                # Server fără JSON mode (ex. unele versiuni LM Studio): reîncercăm fără, ținem minte.
-                log.info("Server rejected response_format=json_object (%s); retrying without it", r.status)
-                self._json_mode = False
+            if r.status in (400, 422) and (self._json_mode or self._temperature):
+                # Unele servere refuză response_format=json_object (Claude, unele LM Studio) sau orice
+                # temperature diferit de implicit (Claude 4.7+, modelele de raționament OpenAI):
+                # reîncercăm doar cu câmpurile de bază și ținem minte.
+                log.info("Server rejected optional fields (%s: %s); retrying without them",
+                         r.status, (await r.text())[:200])
+                self._json_mode = self._temperature = False
                 payload.pop("response_format", None)
+                payload.pop("temperature", None)
             else:
                 r.raise_for_status()
-                body = await r.json()
-                return _openai_content(body)
+                return _openai_content(await r.json())
         async with s.post(f"{self.url}/chat/completions", json=payload, headers=self._headers()) as r:
             r.raise_for_status()
             return _openai_content(await r.json())

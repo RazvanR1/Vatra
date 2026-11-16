@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.2
+- EN: OpenAI-compatible servers that only accept the default temperature (Claude 4.7+ through `https://api.anthropic.com/v1`, OpenAI reasoning models) now work: on a 400, Vatra retries without the optional fields and remembers. Docs show the cloud addresses for OpenAI and Claude.
+- RO: Serverele compatibile OpenAI care acceptă doar temperatura implicită (Claude 4.7+ prin `https://api.anthropic.com/v1`, modelele de raționament OpenAI) merg acum: la o eroare 400, Vatra reîncearcă fără câmpurile opționale și ține minte. Documentația arată adresele cloud pentru OpenAI și Claude.
+
 ## 2.6.1
 - EN: MQTT publishes are no longer written to the log every minute (debug level only).
 - RO: Publicările MQTT nu mai sunt scrise în log la fiecare minut (doar la nivel debug).

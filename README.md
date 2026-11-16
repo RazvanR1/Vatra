@@ -1,7 +1,7 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
-![Version](https://img.shields.io/badge/version-2.6.1-blue)
+![Version](https://img.shields.io/badge/version-2.6.2-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
@@ -133,7 +133,7 @@ Vatra panel → **Setup → Voice (Assist)**.
 | `agents.notify` | `digest` | `none`, `digest` (one summary at `digest_hour`), or `critical`. |
 | `agents.allow_actions` | `false` | Let agents propose device actions (always via approval). |
 | `assistant.backend` | `ollama` | `ollama` (native API) or `openai` (any OpenAI-compatible server: LM Studio, llama.cpp, vLLM, LocalAI…). |
-| `assistant.openai_url` / `api_key` | — | Address of the OpenAI-compatible server (e.g. `http://IP:1234/v1`) and a key, only if it needs one. |
+| `assistant.openai_url` / `api_key` | — | Address of the OpenAI-compatible server (e.g. `http://IP:1234/v1`) and a key, only if it needs one. Cloud models work too – OpenAI: `https://api.openai.com/v1`, Claude: `https://api.anthropic.com/v1`, with an API key (not a ChatGPT/Claude subscription). Then only the AI agents' and Jarvis's prompts leave your home; everything else stays local. |
 | `assistant.num_ctx` | `8192` | Ollama only: keep it equal to your Ollama integration in HA so the model isn't reloaded. |
 
 The full list with explanations is in the add-on's **Documentation** tab ([DOCS.md](ha_home_brain/DOCS.md)).
