@@ -33,8 +33,6 @@ jobs:
   hacs:
     name: HACS validation
     runs-on: ubuntu-latest
-    # Informativ: descrierea și topic-urile repo-ului se setează din GitHub (About), nu din cod.
-    continue-on-error: true
     steps:
       - uses: hacs/action@main
         with:
