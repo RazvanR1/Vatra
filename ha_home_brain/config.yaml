@@ -112,7 +112,7 @@ options:
     max_entities: 150
     num_ctx: 8192
 schema:
-  language: list(auto|en|ro|hu)
+  language: list(auto|en|ro|hu|es)
   log_level: list(debug|info|warning|error)
   time_zone: str
   site_context: str?
