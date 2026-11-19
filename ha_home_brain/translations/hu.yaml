@@ -205,3 +205,6 @@ configuration:
       num_ctx:
         name: Kontextusméret
         description: Tartsd ugyanazon az értéken, mint a HA-beli Ollama integrációd, hogy a modellt ne kelljen újratölteni.
+      extra_body:
+        name: További kérésmezők (JSON)
+        description: 'Csak OpenAI-kompatibilis típusnál. Minden kéréssel elküldve, pl. {"chat_template_kwargs": {"enable_thinking": false}}, hogy egy gondolkodó modell (Qwen3) gondolkodás nélkül válaszoljon.'

@@ -66,6 +66,9 @@ class LLM:
         self.last_seconds = 0.0
         self._json_mode = True    # unele servere nu acceptă response_format=json_object
         self._temperature = True  # unele modele acceptă doar temperatura implicită
+        # câmpuri în plus trimise serverului OpenAI-compatibil, ex.
+        # {"chat_template_kwargs": {"enable_thinking": false}} ca să nu „gândească” modelul
+        self.extra_body = _extra_body(cfg.get("extra_body"))
 
     @property
     def enabled(self) -> bool:
@@ -104,13 +107,20 @@ class LLM:
         return body.get("message", {}).get("content", "")
 
     async def _openai(self, s: aiohttp.ClientSession, messages: list[dict]) -> str:
-        payload: dict = {"model": self.model, "messages": messages, "stream": False}
+        payload: dict = {**self.extra_body, "model": self.model, "messages": messages, "stream": False}
         if self._json_mode:
             payload["response_format"] = {"type": "json_object"}
         if self._temperature:
             payload["temperature"] = 0.2
         async with s.post(f"{self.url}/chat/completions", json=payload, headers=self._headers()) as r:
-            if r.status in (400, 422) and (self._json_mode or self._temperature):
+            if r.status >= 500 and self._json_mode and _json_failure(r.status, await r.text()):
+                # Unele servere (Strata, vLLM cu guided decoding) răspund 502/500 când modelul
+                # scrie text simplu în loc de JSON. Răspunsul în proză e bun pentru noi
+                # (parse_json îl tratează), așa că reîncercăm o dată fără response_format.
+                log.info("Server failed to force JSON (%s); retrying without response_format", r.status)
+                self._json_mode = False
+                payload.pop("response_format", None)
+            elif r.status in (400, 422) and (self._json_mode or self._temperature):
                 # Unele servere refuză response_format=json_object (Claude, unele LM Studio) sau orice
                 # temperature diferit de implicit (Claude 4.7+, modelele de raționament OpenAI):
                 # reîncercăm doar cu câmpurile de bază și ținem minte.
@@ -132,6 +142,29 @@ class LLM:
 
     def budget_chars(self, share: float = 0.6) -> int:
         return int(self.num_ctx * share * 3.5)
+
+
+def _extra_body(value) -> dict:
+    """Opțiunea extra_body: un obiect JSON (text în configurație) sau gol."""
+    if isinstance(value, dict):
+        return value
+    if not value or not str(value).strip():
+        return {}
+    try:
+        data = json.loads(str(value))
+    except (json.JSONDecodeError, ValueError):
+        log.warning("assistant.extra_body is not valid JSON, ignored: %s", str(value)[:100])
+        return {}
+    if not isinstance(data, dict):
+        log.warning("assistant.extra_body must be a JSON object, ignored")
+        return {}
+    return data
+
+
+def _json_failure(status: int, body: str) -> bool:
+    """Un 5xx care vine din forțarea formatului JSON (sau un 502 fără explicație)."""
+    text = (body or "").lower()
+    return status == 502 or any(w in text for w in ("json", "structured_output", "structured output"))
 
 
 def _openai_content(body: dict) -> str:

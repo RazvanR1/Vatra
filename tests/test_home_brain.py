@@ -160,7 +160,9 @@ async def setup(monkeypatch):
                  "action": {"domain": "climate", "service": "set_temperature",
                             "entity_id": "climate.ac_living", "data": {"temperature": 35}}}]}
             return web.json_response({"message": {"role": "assistant", "content": json.dumps(content)}})
-        assert "light.living" in body["messages"][0]["content"]
+        # the house state travels with the question (last message), the system prompt stays fixed
+        assert "light.living" in body["messages"][-1]["content"]
+        assert "light.living" not in body["messages"][0]["content"]
         if "aprinde" in q:
             content = {"reply": "Aprind lumina.", "actions": [
                 {"domain": "light", "service": "turn_on", "entity_id": "light.living"},

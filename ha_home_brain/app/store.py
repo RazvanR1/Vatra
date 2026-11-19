@@ -63,15 +63,24 @@ class Store:
                 return
             cur = self.db.cursor()
             cur.execute("BEGIN")
-            cur.executemany("INSERT OR IGNORE INTO transitions VALUES (?,?,?,?,?)", tr)
-            for (eid, hour), vals in nums.items():
-                cur.execute(
-                    """INSERT INTO samples VALUES (?,?,?,?,?,?,?)
-                       ON CONFLICT(entity_id, hour) DO UPDATE SET
-                       n=n+excluded.n, total=total+excluded.total, sq=sq+excluded.sq,
-                       mn=min(mn, excluded.mn), mx=max(mx, excluded.mx)""",
-                    (eid, hour, len(vals), sum(vals), sum(v * v for v in vals), min(vals), max(vals)))
-            cur.execute("COMMIT")
+            try:
+                cur.executemany("INSERT OR IGNORE INTO transitions VALUES (?,?,?,?,?)", tr)
+                for (eid, hour), vals in nums.items():
+                    cur.execute(
+                        """INSERT INTO samples VALUES (?,?,?,?,?,?,?)
+                           ON CONFLICT(entity_id, hour) DO UPDATE SET
+                           n=n+excluded.n, total=total+excluded.total, sq=sq+excluded.sq,
+                           mn=min(mn, excluded.mn), mx=max(mx, excluded.mx)""",
+                        (eid, hour, len(vals), sum(vals), sum(v * v for v in vals), min(vals), max(vals)))
+                cur.execute("COMMIT")
+            except Exception:
+                # Never leave the shared connection inside an open transaction, and keep
+                # the data for the next flush instead of dropping it.
+                cur.execute("ROLLBACK")
+                self._tr_buf[:0] = tr
+                for k, vals in nums.items():
+                    self._num_buf.setdefault(k, [])[:0] = vals
+                raise
 
     def add_transitions(self, rows: Iterable[tuple]) -> int:
         rows = list(rows)
@@ -79,8 +88,12 @@ class Store:
             cur = self.db.cursor()
             cur.execute("BEGIN")
             before = self.db.total_changes
-            cur.executemany("INSERT OR IGNORE INTO transitions VALUES (?,?,?,?,?)", rows)
-            cur.execute("COMMIT")
+            try:
+                cur.executemany("INSERT OR IGNORE INTO transitions VALUES (?,?,?,?,?)", rows)
+                cur.execute("COMMIT")
+            except Exception:
+                cur.execute("ROLLBACK")
+                raise
             return self.db.total_changes - before
 
     # ---------- citire ----------

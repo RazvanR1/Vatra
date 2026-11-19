@@ -89,10 +89,12 @@ class HAClient:
         cid = context.get("id")
         if cid in self.brain_contexts or context.get("parent_id") in self.brain_contexts:
             return ORIGIN_BRAIN
-        if cid in self.automation_contexts or context.get("parent_id"):
+        if cid in self.automation_contexts or context.get("parent_id") in self.automation_contexts:
             return ORIGIN_AUTOMATION
         if context.get("user_id"):
             return ORIGIN_USER
+        if context.get("parent_id"):
+            return ORIGIN_AUTOMATION  # caused by something else in HA (an automation we did not see start)
         return ORIGIN_DEVICE
 
     # ---------- acțiuni ----------

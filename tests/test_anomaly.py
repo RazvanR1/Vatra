@@ -92,3 +92,12 @@ def test_battery_and_irregular_sensors_are_not_silent():
     sparse = [("sensor.t", h, 3, 63.0, 1323.0, 20.9, 21.1) for h in range(hour_now - 240, hour_now, 4)]
     batt = [("sensor.b", h, 2, 160.0, 12800.0, 80, 80) for h in range(hour_now - 240, hour_now)]
     assert make(s, sparse + batt).check([], NOW) == []
+
+
+def test_dead_sensor_stays_silent_while_the_rest_of_the_house_reports():
+    """A sensor dead for 3 days keeps its 'silent' alert: coverage is measured while it was alive."""
+    hour_now = int(NOW // 3600)
+    dead = [x for x in temp_samples("sensor.t") if x[1] < hour_now - 72]
+    alive = temp_samples("sensor.other")
+    s = {"sensor.t": st("21", 72 * 3600, device_class="temperature", state_class="measurement")}
+    assert [x.kind for x in make(s, dead + alive).check([], NOW)] == ["silent"]

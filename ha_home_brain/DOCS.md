@@ -163,6 +163,7 @@ assistant:
   # Cloud (optional, needs an API key): OpenAI https://api.openai.com/v1 · Claude https://api.anthropic.com/v1
   model: "qwen3.5:9b"
   num_ctx: 8192        # Ollama: same as the Ollama integration in HA, so the model isn't reloaded
+  # extra_body: '{"chat_template_kwargs": {"enable_thinking": false}}'   # OpenAI type: thinking models answer faster
 agents:
   agents_interval_hours: 6
   quiet_hours: "23-7"  # agents don't run noisy analyses at night

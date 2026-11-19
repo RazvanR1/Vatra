@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.7.1"
+version: "2.7.2"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -111,6 +111,7 @@ options:
       - script
     max_entities: 150
     num_ctx: 8192
+    extra_body: ""
 schema:
   language: list(auto|en|ro|hu)
   log_level: list(debug|info|warning|error)
@@ -202,3 +203,4 @@ schema:
       - str
     max_entities: int(20,2000)
     num_ctx: int(2048,131072)
+    extra_body: str?

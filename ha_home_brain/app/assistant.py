@@ -80,8 +80,11 @@ class Assistant:
         system = t("jarvis.prompt", site=self.site or t("agent.default_site"))
         if voice:
             system += "\n\n" + t("jarvis.voice")
-        messages = [{"role": "system", "content": system + "\n\n" + ctx},
-                    *(history or [])[-6:], {"role": "user", "content": question}]
+        # The house state changes on every question: it goes last, with the question, so the
+        # server can reuse its prompt cache for the system prompt and the history.
+        messages = [{"role": "system", "content": system},
+                    *(history or [])[-6:],
+                    {"role": "user", "content": ctx + "\n\n" + t("jarvis.question") + "\n" + question}]
         try:
             data, raw = await self.llm.chat_json(messages, timeout=120)
         except Exception as err:  # noqa: BLE001

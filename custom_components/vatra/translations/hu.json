@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "hassio_confirm": {
+        "title": "Vatra",
+        "description": "Hozzáadod a Vatra alkalmazás Jarvisát beszélgetési ügynökként? Utána válaszd a **Vatra Jarvis** lehetőséget a Beállítások → Hangasszisztensek menüben."
+      },
+      "user": {
+        "title": "Vatra",
+        "description": "A Vatra általában magától megtalálható. Ha nem, másold ki a címet és a kódot a Vatra panelről (Beállítás → Hang (Assist)).",
+        "data": {
+          "host": "Cím",
+          "port": "Port",
+          "token": "Kód"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "A Vatra nem válaszol. Fut a Vatra alkalmazás?",
+      "invalid_auth": "A kód nem megfelelő. Másold ki újra a Vatra panelről."
+    },
+    "abort": {
+      "already_configured": "A Vatra már be van állítva."
+    }
+  }
+}

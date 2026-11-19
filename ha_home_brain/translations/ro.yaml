@@ -205,3 +205,6 @@ configuration:
       num_ctx:
         name: Mărimea contextului
         description: Ține-o egală cu integrarea Ollama din HA, ca modelul să nu se reîncarce.
+      extra_body:
+        name: Câmpuri în plus la cerere (JSON)
+        description: 'Doar pentru tipul OpenAI-compatibil. Se trimit la fiecare cerere, ex. {"chat_template_kwargs": {"enable_thinking": false}} ca un model care „gândește” (Qwen3) să răspundă direct.'

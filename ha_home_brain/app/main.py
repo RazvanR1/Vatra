@@ -54,7 +54,7 @@ class Brain:
                                  cfg=ncfg, tz=self.tz, store=self.store)
         self.context = HomeContext(self.ha)
         self.guard = Guard(self.ha, self.notifier, opts.get("guard", {}), self.store, self.context)
-        self.automations = Automations(self.ha, self.notifier, opts)
+        self.automations = Automations(self.ha, self.notifier, opts, self.store)
         self.recorder = Recorder(self.ha, self.store, opts.get("learning", {}))
         learn = opts.get("learning", {})
         self.persons = [p for p in learn.get("persons", []) if p]
@@ -210,11 +210,12 @@ class Brain:
                                      t("vac.alert_msg", name=name),
                                      {"key": f"vacation:{eid}", "kind": "vacation", "entity_id": eid, "tier": FAULT},
                                      buttons=[("seen", t("btn.seen"))], notify=True, level="critical")
-        found = {f.key: f for f in self.detector.check(recent)
-                 if not (away and f.kind in QUIET_KINDS and f.level != "critical")}
         now = time.time()
-        new = [f for k, f in found.items()
-               if k not in self.findings and self.store.get(f"snooze:{k}", 0) <= now]
+        # a finding marked "seen" stays out of the panel and the digest for 24 h
+        found = {f.key: f for f in self.detector.check(recent)
+                 if not (away and f.kind in QUIET_KINDS and f.level != "critical")
+                 and self.store.get(f"snooze:{f.key}", 0) <= now}
+        new = [f for k, f in found.items() if k not in self.findings]
         today = datetime.now(self.tz).date().isoformat()
         pushed = self.store.get(f"finding_push:{today}", 0)
         for f in new:
@@ -268,6 +269,7 @@ class Brain:
     async def _decide_finding(self, item: dict, decision: str) -> str:
         p = item["payload"]
         key, eid, kind = p["key"], p["entity_id"], p["kind"]
+        self.findings.pop(key, None)
         if decision == "mute":
             self.detector.muted.add(f"{eid}:{kind}")
             self.store.set("muted", sorted(self.detector.muted))

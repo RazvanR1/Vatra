@@ -122,3 +122,35 @@ async def test_claude_style_server_rejecting_temperature():
         assert (await llm.chat_json([{"role": "user", "content": "salut"}]))[0] == {"reply": "Bună!"}
     finally:
         await server.close()
+
+
+async def test_server_failing_to_force_json_is_retried_in_prose():
+    """Strata answers 502 structured_output_failed when the model writes prose (issue #3)."""
+    bodies = []
+
+    async def chat(req):
+        body = await req.json()
+        bodies.append(body)
+        if "response_format" in body:
+            return web.json_response({"type": "structured_output_failed",
+                                      "message": "model did not return valid JSON"}, status=502)
+        return web.json_response({"choices": [{"message": {"content": "I speak the language you write in."}}]})
+
+    server = await _server([("POST", "/v1/chat/completions", chat)])
+    try:
+        base = str(server.make_url("")).rstrip("/")
+        llm = LLM({"backend": "openai", "openai_url": base, "model": "qwen",
+                   "extra_body": '{"chat_template_kwargs": {"enable_thinking": false}}'})
+        data, raw = await llm.chat_json([{"role": "user", "content": "why Dutch?"}])
+        assert data is None and raw.startswith("I speak")
+        assert len(bodies) == 2 and "response_format" not in bodies[1]
+        assert all(b["chat_template_kwargs"] == {"enable_thinking": False} for b in bodies)
+        await llm.chat_json([{"role": "user", "content": "again"}])
+        assert len(bodies) == 3  # remembered: no second try with JSON mode
+    finally:
+        await server.close()
+
+
+def test_bad_extra_body_is_ignored():
+    assert LLM({"backend": "openai", "openai_url": "http://x", "extra_body": "{nope"}).extra_body == {}
+    assert LLM({"backend": "openai", "openai_url": "http://x", "extra_body": "[1]"}).extra_body == {}

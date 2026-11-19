@@ -80,11 +80,23 @@ class HeatingAcLock(Rule):
     """Centrala nu pornește cât timp AC-ul încălzește; revine apoi la modul anterior."""
     name_key = "rule.boiler"
 
-    def __init__(self, ha, notifier, cfg: dict) -> None:
+    def __init__(self, ha, notifier, cfg: dict, store=None) -> None:
         super().__init__(ha, notifier)
         self.acs = [a for a in cfg.get("ac_climates", []) if a]
         self.boiler = cfg.get("boiler_climate", "") or ""
-        self.saved_mode: str | None = None
+        self.store = store
+        # kept in the database: after a restart the boiler must still come back on
+        self._saved_mode: str | None = store.get("boiler_saved_mode") if store else None
+
+    @property
+    def saved_mode(self) -> str | None:
+        return self._saved_mode
+
+    @saved_mode.setter
+    def saved_mode(self, value: str | None) -> None:
+        self._saved_mode = value
+        if self.store is not None:
+            self.store.set("boiler_saved_mode", value)
 
     @property
     def enabled(self) -> bool:
@@ -136,19 +148,26 @@ class FollowThermostat(Rule):
         for f in self.followers:
             if self.ha.state(f) in (None, "unavailable", "unknown"):
                 continue
+            # Ask for what the valve can hold: a valve with 0.5 °C steps shows 21.0 when
+            # asked for 21.3, and asking again on every update would never end.
+            try:
+                step = float(self.ha.attr(f, "target_temp_step") or 0.5)
+            except (TypeError, ValueError):
+                step = 0.5
+            want = round(round(float(target) / step) * step, 2)
             current = self.ha.attr(f, "temperature")
-            if current is None or abs(float(current) - float(target)) >= 0.25:
-                await self.ha.call_service("climate", "set_temperature", {"temperature": target},
+            if current is None or abs(float(current) - want) >= step / 2:
+                await self.ha.call_service("climate", "set_temperature", {"temperature": want},
                                            target={"entity_id": f})
-                self.last_action = t("rule.valves_set", names=f, temp=target)
+                self.last_action = t("rule.valves_set", names=f, temp=want)
 
 
 class Automations:
-    def __init__(self, ha, notifier, cfg: dict) -> None:
+    def __init__(self, ha, notifier, cfg: dict, store=None) -> None:
         self.ha = ha
         self.rules: list[Rule] = [
             PresenceCamera(ha, notifier, cfg.get("presence_camera", {})),
-            HeatingAcLock(ha, notifier, cfg.get("heating_ac_lock", {})),
+            HeatingAcLock(ha, notifier, cfg.get("heating_ac_lock", {}), store),
             FollowThermostat(ha, notifier, cfg.get("follow_thermostat", {})),
         ]
         self._lock = asyncio.Lock()

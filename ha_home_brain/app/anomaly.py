@@ -95,13 +95,16 @@ class Baselines:
             mean = total / n
             std = math.sqrt(max(sq / n - mean * mean, 0))
             self.hourly[(eid, hod)] = (n, mean, std, mn, mx, days)
+        # Regularity is measured while each sensor was alive (its own first to last hour):
+        # with the last hour of the whole house, a dead sensor would slowly lose its
+        # coverage and its "silent" alert would clear itself as if it had recovered.
         first_hour: dict[str, int] = {}
-        last_hour = 0
+        last_hour: dict[str, int] = {}
         for eid, hour, *_ in samples:
             first_hour[eid] = min(first_hour.get(eid, hour), hour)
-            last_hour = max(last_hour, hour)
+            last_hour[eid] = max(last_hour.get(eid, hour), hour)
         for eid in hours_seen:
-            window = max(last_hour - first_hour[eid] + 1, 1)
+            window = max(last_hour[eid] - first_hour[eid] + 1, 1)
             self.rate[eid] = total_n[eid] / window
             self.coverage[eid] = hours_seen[eid] / window
             self.overall[eid] = (mins[eid], maxs[eid])

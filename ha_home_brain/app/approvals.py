@@ -20,7 +20,8 @@ BLOCKED_SERVICES = {("homeassistant", "stop"), ("homeassistant", "restart"),
                     ("automation", "reload"), ("homeassistant", "update_entity"),
                     ("homeassistant", "reload_config_entry")}
 CRITICAL_SERVICES = {("lock", "unlock"), ("lock", "open"), ("valve", "open_valve"),
-                     ("alarm_control_panel", "alarm_disarm"), ("cover", "open_cover")}
+                     ("alarm_control_panel", "alarm_disarm"), ("cover", "open_cover"),
+                     ("cover", "toggle"), ("cover", "set_cover_position")}
 CRITICAL_WORDS = ("centrala", "central_heating", "boiler", "gaz", "gas", "pompa", "robinet",
                   "valve", "frigider", "refrigerator", "server", "nas", "proxmox", "truenas")
 
@@ -43,7 +44,8 @@ class Guardrails:
     def mode_for(self, domain: str) -> str:
         return self.overrides.get(domain, self.default_mode)
 
-    def evaluate(self, domain: str, service: str, entity_id: str, data: dict | None) -> tuple[str, str]:
+    def evaluate(self, domain: str, service: str, entity_id: str, data: dict | None,
+                 name: str = "") -> tuple[str, str]:
         """Întoarce (decizie, motiv): blocked | approve | allowed."""
         data = data or {}
         if domain in BLOCKED or (domain, service) in BLOCKED_SERVICES:
@@ -60,8 +62,10 @@ class Guardrails:
                     return "blocked", t("safe.temp_range", temp=temp, lo=self.min_temp, hi=self.max_temp)
         if (domain, service) in CRITICAL_SERVICES or domain in ("lock", "alarm_control_panel", "valve"):
             return "approve", t("safe.critical")
-        if any(w in entity_id.lower() for w in CRITICAL_WORDS):
-            return "approve", "dispozitiv important: cere mereu aprobare"
+        # the friendly name too: a fridge plug is often just switch.plug_01
+        label = f"{entity_id} {name}".lower()
+        if any(w in label for w in CRITICAL_WORDS):
+            return "approve", t("safe.important")
         return "allowed", ""
 
 
@@ -137,7 +141,7 @@ class Approvals:
     async def request_action(self, source: str, domain: str, service: str, entity_id: str,
                              data: dict | None, reason: str, user_initiated: bool = False) -> dict:
         """Calea unică prin care un agent (sau Jarvis) poate atinge un dispozitiv."""
-        decision, why = self.guard.evaluate(domain, service, entity_id, data)
+        decision, why = self.guard.evaluate(domain, service, entity_id, data, self.ha.name(entity_id))
         sig = self._signature(domain, service, entity_id)
         if decision == "blocked":
             self.store.log("blocat", f"{source}: {sig} – {why}")
@@ -211,7 +215,8 @@ class Approvals:
             self.store.set("rejected_signatures", sorted(set(self.store.get("rejected_signatures", [])) | {sig}))
             return t("ap.rejected")
         if decision == "always":
-            if self.guard.evaluate(p["domain"], p["service"], p["entity_id"], p["data"])[0] == "allowed":
+            if self.guard.evaluate(p["domain"], p["service"], p["entity_id"], p["data"],
+                                   self.ha.name(p["entity_id"]))[0] == "allowed":
                 self.store.set("allowed_signatures", sorted(set(self.store.get("allowed_signatures", [])) | {sig}))
         res = await self.execute(p)
         return t("ap.done") if res["status"] == "done" else str(res)

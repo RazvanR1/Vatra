@@ -162,6 +162,7 @@ assistant:
   # Cloud (opțional, cu cheie API): OpenAI https://api.openai.com/v1 · Claude https://api.anthropic.com/v1
   model: "qwen3.5:9b"
   num_ctx: 8192        # Ollama: același ca integrarea Ollama din HA, ca modelul să nu se reîncarce
+  # extra_body: '{"chat_template_kwargs": {"enable_thinking": false}}'   # tip OpenAI: modelele care „gândesc” răspund mai repede
 agents:
   agents_interval_hours: 6
   quiet_hours: "23-7"  # agenții nu rulează analize zgomotoase noaptea

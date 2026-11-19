@@ -205,3 +205,6 @@ configuration:
       num_ctx:
         name: Context size
         description: Keep it equal to your Ollama integration in HA so the model is not reloaded.
+      extra_body:
+        name: Extra request fields (JSON)
+        description: 'Only for the OpenAI-compatible type. Sent with every request, e.g. {"chat_template_kwargs": {"enable_thinking": false}} so a thinking model (Qwen3) answers without thinking first.'

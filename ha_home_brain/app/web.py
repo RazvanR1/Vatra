@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -38,7 +39,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         # Panoul poate comanda dispozitive, deci acceptăm doar cereri venite prin ingress-ul HA.
         # Excepție: integrarea Vatra pentru Assist, care vine din HA cu codul secret.
         if req.path == "/api/conversation" and assist_token() and \
-                req.headers.get("X-Vatra-Token") == assist_token():
+                secrets.compare_digest(req.headers.get("X-Vatra-Token", "").encode(), assist_token().encode()):
             return await handler(req)
         if allowed_ips is not None and req.remote not in allowed_ips:
             raise web.HTTPForbidden(text="Acces doar prin Home Assistant")

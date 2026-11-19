@@ -18,6 +18,7 @@ from .const import CONF_TOKEN, DOMAIN
 ERRORS = {
     "en": ("Vatra is not responding right now.", "Vatra refused the request – reconfigure the Vatra integration."),
     "ro": ("Vatra nu răspunde acum.", "Vatra a refuzat cererea – reconfigurează integrarea Vatra."),
+    "hu": ("A Vatra most nem válaszol.", "A Vatra elutasította a kérést – állítsd be újra a Vatra integrációt."),
 }
 
 

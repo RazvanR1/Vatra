@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.7.2 – Fixes from issues #3 and #5
+- EN: OpenAI-compatible servers that answer 502/500 when the model writes prose instead of JSON (Strata, vLLM with guided decoding) are retried once without `response_format`, so Jarvis answers instead of "can't reach the AI model". Thanks @anilv26 (#3)
+- EN: New option `assistant.extra_body`: extra JSON fields for every request, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}` so a thinking model answers about 10 s faster
+- EN: Jarvis sends the changing house state with the question, after the fixed system prompt and the history, so servers can reuse their prompt cache
+- EN: Code review fixes, thanks @bek00letz (#5): a dead sensor no longer clears its own "silent" alert after a day and a half; "Seen" now removes a finding from the panel and the evening digest for 24 h; a failed database write is rolled back instead of blocking every later write, and the data is kept; important devices are also recognised by their friendly name (a fridge on `switch.plug_01`), and `cover.toggle` / `cover.set_cover_position` need approval like `open_cover`; changes with both a person and a parent context count as the person's; radiator valves get a value they can hold (no command loop with 0.5 °C steps); the boiler comes back after an AC heated even if Vatra restarted in between; the panel escapes single quotes; the Assist code is compared in constant time; Hungarian for the Assist integration
+- RO: Serverele compatibile OpenAI care răspund 502/500 când modelul scrie text în loc de JSON (Strata, vLLM cu guided decoding) primesc o a doua încercare fără `response_format`, așa că Jarvis răspunde în loc de „nu pot ajunge la modelul AI”. Mulțumiri @anilv26 (#3)
+- RO: Opțiune nouă `assistant.extra_body`: câmpuri JSON în plus la fiecare cerere, ex. `{"chat_template_kwargs": {"enable_thinking": false}}` ca un model care „gândește” să răspundă cu ~10 s mai repede
+- RO: Jarvis trimite starea casei (care se schimbă) împreună cu întrebarea, după promptul fix și istoric, ca serverul să-și poată refolosi cache-ul
+- RO: Corecturi din code review, mulțumiri @bek00letz (#5): un senzor mort nu-și mai șterge singur alerta „tace” după o zi și jumătate; „Văzut” scoate constatarea din panou și din rezumatul de seară pentru 24 h; o scriere eșuată în baza de date e anulată în loc să blocheze toate scrierile următoare, iar datele se păstrează; dispozitivele importante sunt recunoscute și după nume (un frigider pe `switch.plug_01`), iar `cover.toggle` / `cover.set_cover_position` cer aprobare ca `open_cover`; schimbările cu persoană și context-părinte contează ca ale persoanei; robinetele termostatate primesc o valoare pe care o pot ține (fără bucla de comenzi la pași de 0,5 °C); centrala revine după ce a încălzit AC-ul chiar dacă Vatra a repornit între timp; panoul escapează apostroful; codul Assist e comparat în timp constant; maghiară pentru integrarea Assist
+
 ## 2.7.1 – Magyar
 - EN: Hungarian translation – notifications, AI prompts, panel and settings form. Thanks to @Zsoltey!
 - RO: Traducere în maghiară – notificări, prompturi AI, panou și formularul de setări. Mulțumiri lui @Zsoltey!
