@@ -1,13 +1,13 @@
 {
- "date": "2026-11-18",
- "installs": 65,
+ "date": "2026-11-19",
+ "installs": 66,
  "versions": {
   "0.5.1": 2,
   "2.0.0": 1,
-  "2.2.0": 8,
-  "2.7.0": 6,
-  "2.7.1": 48
+  "2.2.0": 6,
+  "2.7.0": 3,
+  "2.7.1": 54
  },
- "clones_uniques_sum": 504,
- "views_uniques_sum": 1221
+ "clones_uniques_sum": 518,
+ "views_uniques_sum": 1259
 }
