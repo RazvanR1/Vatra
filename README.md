@@ -37,7 +37,7 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 | 🧹 **Clean up** | Finds devices that have had no value for over a week (sold devices, deleted containers, abandoned integrations) — checked against your history — and offers to disable their entities. Nothing is deleted; Undo enables them again. |
 | 📡 **Vatra entities in HA** | Through your MQTT broker (e.g. Mosquitto): `sensor.vatra_active_alerts`, `sensor.vatra_pending_approvals`, `binary_sensor.vatra_problem`, `sensor.vatra_last_alert`, `sensor.vatra_cleanup`… for dashboards and automations. |
 | 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis, Log (with Undo) and a **Setup guide**: it finds your phones, people and AI server by itself – no YAML needed. |
-| 🌍 **Multilingual** | English, Romanian and Hungarian. Follows your Home Assistant language automatically; the panel has a language switch. A new language is one file – see [TRANSLATING.md](TRANSLATING.md). |
+| 🌍 **Multilingual** | English, Romanian, Hungarian and Spanish. Follows your Home Assistant language automatically; the panel has a language switch. A new language is one file – see [TRANSLATING.md](TRANSLATING.md). |
 
 ### Screenshots
 
@@ -118,7 +118,7 @@ Vatra panel → **Setup → Voice (Assist)**.
 
 | Option | Default | What it does |
 |---|---|---|
-| `language` | `auto` | `auto` follows Home Assistant when Vatra has that language (English otherwise), or force `en` / `ro` / `hu`. |
+| `language` | `auto` | `auto` follows Home Assistant when Vatra has that language (English otherwise), or force `en` / `ro` / `hu` / `es`. |
 | `site_context` | — | A few sentences about your home (who lives there, schedule, heating…). Given to the AI agents and Jarvis. |
 | `notify_services` | `[]` | Where alerts and approval requests go. Buttons work with `mobile_app_*`. |
 | `learning.persons` | `[]` | Used for "only when someone is home" conditions and presence-aware checks. |
@@ -147,7 +147,7 @@ The full list with explanations is in the add-on's **Documentation** tab ([DOCS.
 
 ## Current limitations
 
-- Languages: English, Romanian and Hungarian. Want another one? It's one file per
+- Languages: English, Romanian, Hungarian and Spanish. Want another one? It's one file per
   language — see [TRANSLATING.md](TRANSLATING.md). PRs welcome.
 - Small local models can misread data. That is why agents only make observations by default and
   everything that touches a device goes through approval.
