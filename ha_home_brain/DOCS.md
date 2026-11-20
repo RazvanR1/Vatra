@@ -49,6 +49,14 @@ The panel starts in the same language and has a language switch, remembered per 
 - Strong habits are sent to your phone (at most `max_proposals_per_day`) with **Create** /
   **Not a habit**. The rest are in the *Habits* tab.
 - Created automations have the id `home_brain_…` and can be undone from the *Log*.
+- **Not a habit:** something that changes at exactly the same time every day (a device schedule,
+  Node-RED, another system) or after exactly the same delay – a person never does that. Changes made by
+  Home Assistant system users are ignored too; add the user an AI agent or a script logs in with to
+  `learning.ignore_users`.
+- **Never for this device** removes a device from habit learning (you can include it again from the
+  *Habits* tab).
+- **Habit suggestions** (Setup, or `learning.proposals`): `notify` (default), `panel` – only in the
+  *Habits* tab, no notifications – or `off` if you write your own automations.
 
 ## Unusual (no device lists)
 

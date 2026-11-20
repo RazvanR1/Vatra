@@ -18,6 +18,19 @@ from .ha import ORIGIN_DEVICE, ORIGIN_USER
 from .i18n import t as tr
 
 HUMAN = {ORIGIN_USER, ORIGIN_DEVICE}
+# A human never repeats an action at the same second: if a "habit" has a spread under this many
+# minutes, something programmed does it (a device schedule, Node-RED, an agent through the API).
+MACHINE_SPREAD_MIN = 1.0
+
+
+def origin_kind(origin: str | None) -> str:
+    """'user:abc123' -> 'user'."""
+    return (origin or "").split(":", 1)[0]
+
+
+def origin_user(origin: str | None) -> str | None:
+    kind, _, uid = (origin or "").partition(":")
+    return uid or None if kind == ORIGIN_USER else None
 NON_STATES = {"unavailable", "unknown", "", "none", None}
 TRIGGER_DOMAINS = {"binary_sensor", "person", "light", "switch", "input_boolean", "device_tracker"}
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri"]
@@ -180,12 +193,16 @@ class HabitMiner:
         self.min_conf = min_confidence
         self.window = seq_window_s
         self.min_precision = min_precision
+        self.ignore_users: set[str] = set()     # HA users that are agents/scripts, not people
+        self.ignore_entities: set[str] = set()  # "never propose for this device"
+        self.machine_skipped: list[str] = []    # entities left out because they run like clockwork
 
-    @staticmethod
-    def is_habit_transition(t: tuple) -> bool:
+    def is_habit_transition(self, t: tuple) -> bool:
         ts, eid, old, new, origin = t
         domain = eid.split(".", 1)[0]
-        return (origin in HUMAN and new not in NON_STATES and old not in NON_STATES
+        if eid in self.ignore_entities or origin_user(origin) in self.ignore_users:
+            return False
+        return (origin_kind(origin) in HUMAN and new not in NON_STATES and old not in NON_STATES
                 and old != new and service_for(domain, new) is not None
                 and domain not in ("lock", "alarm_control_panel"))
 
@@ -202,6 +219,7 @@ class HabitMiner:
             if not transitions:
                 return []
         tl = Timeline(transitions)
+        self.machine_skipped = []
         human = [t for t in transitions if self.is_habit_transition(t)]
         habits = self._time_habits(human, days, tl, names) + self._sequence_habits(
             transitions, human, days, tl, names)
@@ -242,6 +260,10 @@ class HabitMiner:
                 mins = [m for _, m in cluster]
                 center = circ_mean(mins)
                 spread = statistics.pstdev([circ_dist(m, center) for m in mins]) if len(mins) > 1 else 0
+                if len(mins) >= 3 and spread < MACHINE_SPREAD_MIN:
+                    if eid not in self.machine_skipped:
+                        self.machine_skipped.append(eid)
+                    continue
                 hit_ts = [ts for d, m, ts in pts if d in obs_set and circ_dist(m, center) <= self.tol]
                 home = [self._someone_home(tl, t) for t in hit_ts]
                 require_home = bool(self.persons) and eid.split(".")[0] in ("light", "media_player") \
@@ -321,6 +343,11 @@ class HabitMiner:
             if p_b_given_a < self.min_conf * 0.75 or p_a_given_b < 0.5:
                 continue
             lag = statistics.median(l for l, _ in occ)
+            if len(occ) >= 3 and statistics.pstdev([l for l, _ in occ]) < 1.0:
+                # Always exactly the same delay: a device or a script links them, not a person.
+                if be not in self.machine_skipped:
+                    self.machine_skipped.append(be)
+                continue
             h = Habit(id=_hid("seq", ae, as_, be, bs), kind="sequence", entity_id=be, to_state=bs,
                       day_class="all", support_days=support, observed_days=len(days["all"]),
                       confidence=round(p_b_given_a, 2), trigger_entity=ae, trigger_state=as_,

@@ -126,7 +126,7 @@ class Approvals:
         handler = self.handlers.get(item["kind"])
         msg = await handler(item, decision) if handler else t("ap.nothing")
         status = {"ok": "done", "always": "done", "no": "rejected", "undo": "undone",
-                  "seen": "done", "mute": "rejected"}.get(decision, "done")
+                  "seen": "done", "mute": "rejected", "never": "rejected"}.get(decision, "done")
         self.store.set_status("approval", rid, status)
         self.store.log("decizie", f"{item['title']}: {decision} – {msg}")
         return msg

@@ -55,7 +55,7 @@ def test_classify_keeps_people_with_a_parent_context():
 
     ha = _HA({})
     classify = HAClient.classify.__get__(ha)
-    assert classify({"id": "x", "parent_id": "p", "user_id": "u"}) == ORIGIN_USER
+    assert classify({"id": "x", "parent_id": "p", "user_id": "u"}) == f"{ORIGIN_USER}:u"
     assert classify({"id": "x", "parent_id": "auto1", "user_id": None}) == ORIGIN_AUTOMATION
     assert classify({"id": "x", "parent_id": "p"}) == ORIGIN_AUTOMATION
     assert classify({"id": "x"}) == ORIGIN_DEVICE

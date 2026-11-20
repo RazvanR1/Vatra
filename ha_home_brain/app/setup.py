@@ -21,7 +21,8 @@ log = logging.getLogger("home_brain.setup")
 # Porturile implicite ale serverelor AI locale cele mai folosite.
 AI_PORTS = {11434: "ollama", 1234: "openai", 8080: "openai"}
 EDITABLE = ("language", "notify_services", "site_context")
-EDITABLE_LEARNING = ("persons",)
+EDITABLE_LEARNING = ("persons", "proposals")
+HABIT_MODES = ("notify", "panel", "off")
 EDITABLE_AI = ("backend", "ollama_url", "openai_url", "api_key", "model", "num_ctx")
 
 
@@ -79,6 +80,8 @@ def merge(current: dict, patch: dict) -> dict:
             opts[k] = patch[k]
     if "persons" in patch:
         opts.setdefault("learning", {})["persons"] = patch["persons"]
+    if "habits" in patch:
+        opts.setdefault("learning", {})["proposals"] = patch["habits"]
     ai = patch.get("assistant") or {}
     if ai:
         a = opts.setdefault("assistant", {})
@@ -99,6 +102,8 @@ def clean(patch: dict) -> dict:
     if isinstance(patch.get("persons"), list):
         out["persons"] = [p.strip() for p in patch["persons"]
                           if isinstance(p, str) and p.strip().startswith("person.")]
+    if patch.get("habits") in HABIT_MODES:
+        out["habits"] = patch["habits"]
     if isinstance(patch.get("site_context"), str):
         out["site_context"] = patch["site_context"].strip()[:2000]
     ai = patch.get("assistant")

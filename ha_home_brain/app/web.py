@@ -92,6 +92,9 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             "findings": list(getattr(brain, "findings", {}).values()),
             "language": i18n.lang(),
             "languages": i18n.languages(),
+            "habits": {"mode": getattr(brain, "habit_mode", "notify"),
+                       "machine": [ha.name(e) for e in getattr(getattr(brain, "miner", None), "machine_skipped", [])][:20],
+                       "ignored": len(brain.store.get("habit_ignore", [])) if store else 0},
             "explained": getattr(getattr(brain, "guard", None), "explained", {}),
             "notifications": {
                 "mode": brain.notifier.mode, "quiet_hours": brain.notifier.quiet,
@@ -137,6 +140,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             "options": {"language": opts.get("language", "auto"),
                         "notify_services": opts.get("notify_services", []),
                         "persons": (opts.get("learning") or {}).get("persons", []),
+                        "habits": brain.habit_mode,
                         "site_context": opts.get("site_context", ""),
                         "assistant": {**ai, "has_key": has_key}},
             "detected": await setup_mod.detect(brain.ha),
@@ -260,6 +264,16 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     async def habits(_req):
         return J(brain.store.items("habit", limit=200))
 
+    async def habits_ignored(_req):
+        return J([{"entity_id": e, "name": brain.ha.name(e)} for e in brain.store.get("habit_ignore", [])])
+
+    async def habits_unignore(req):
+        eid = req.match_info["entity_id"]
+        left = [e for e in brain.store.get("habit_ignore", []) if e != eid]
+        brain.store.set("habit_ignore", left)
+        brain.miner.ignore_entities = set(left)
+        return J({"message": t("web.restored")})
+
     async def habit_action(req):
         hid, act = req.match_info["id"], req.match_info["action"]
         if act == "propose":
@@ -269,6 +283,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
             return J({"message": await brain.create_automation(hid)})
         if act == "reject":
             return J({"message": await brain.reject_habit(hid)})
+        if act == "never":
+            return J({"message": await brain.never_for_entity(hid)})
         if act == "restore":
             brain.store.set_status("habit", hid, "new")
             return J({"message": t("web.restored")})
@@ -329,6 +345,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_post("/api/weekly/send", weekly_send)
     if hasattr(brain, "store"):
         r.add_get("/api/habits", habits)
+        r.add_get("/api/habits/ignored", habits_ignored)
+        r.add_post("/api/habits/ignored/{entity_id}/remove", habits_unignore)
         r.add_post("/api/habits/{id}/{action}", habit_action)
         r.add_post("/api/learn", relearn)
         r.add_get("/api/approvals", approvals)

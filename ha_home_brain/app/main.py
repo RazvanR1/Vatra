@@ -60,6 +60,10 @@ class Brain:
         self.persons = [p for p in learn.get("persons", []) if p]
         self.learning_enabled = bool(learn.get("enabled", True))
         self.auto_propose = bool(learn.get("propose_automations", True))
+        # notify = proposals reach the phone; panel = only in the Habits tab; off = no habit learning
+        mode = (learn.get("proposals") or "").lower()
+        self.habit_mode = mode if mode in ("notify", "panel", "off") else ("notify" if self.auto_propose else "panel")
+        self.ignore_users_opt = [u.strip() for u in learn.get("ignore_users", []) if isinstance(u, str) and u.strip()]
         self.max_proposals_per_day = int(learn.get("max_proposals_per_day", 2))
         self.miner = HabitMiner(self.tz, self.persons,
                                 min_support=int(learn.get("min_support_days", 4)),
@@ -120,7 +124,17 @@ class Brain:
         await self.context.refresh()
         self.guard.learn_patterns(transitions)
         self.miner.skip_days = self.vacation.days()
-        habits = self.miner.mine(transitions, self.names())
+        self.miner.ignore_users = await self._ignored_users()
+        self.miner.ignore_entities = set(self.store.get("habit_ignore", []))
+        if self.habit_mode == "off":
+            self._withdraw_habit_proposals()
+            habits = []
+        else:
+            habits = self.miner.mine(transitions, self.names())
+            if self.miner.machine_skipped:
+                log.info("Habits: %d entities skipped (changed at the exact same time every day – "
+                         "a schedule, not a person): %s", len(self.miner.machine_skipped),
+                         ", ".join(self.miner.machine_skipped[:10]))
         try:
             index = automation_index(await self.ha.automation_configs())
         except Exception as err:  # noqa: BLE001
@@ -138,9 +152,49 @@ class Brain:
         self.last_learning = time.time()
         self.store.log("învățare", t("main.learned", n=len(habits),
                                      covered=sum(1 for h in habits if h.covered_by), tr=len(transitions)))
-        if self.auto_propose:
+        if self.habit_mode == "notify":
             await self._propose_strong(habits)
         return habits
+
+    async def _ignored_users(self) -> set[str]:
+        """HA users whose actions are not human habits: system users (Supervisor, cloud…) and the
+        names/IDs from `learning.ignore_users` (e.g. the user an AI agent or a script logs in with)."""
+        wanted = {u.lower() for u in self.ignore_users_opt}
+        out = set(self.ignore_users_opt)
+        try:
+            users = await self.ha.ws({"type": "config/auth/list"}) or []
+        except Exception as err:  # noqa: BLE001 – not admin / older HA: use the IDs as written
+            log.debug("Users list not available: %s", err)
+            return out
+        for u in users:
+            names = {str(u.get(k) or "").lower() for k in ("name", "username", "id")} - {""}
+            if u.get("system_generated") or names & wanted:
+                out.add(u.get("id"))
+        return out - {None}
+
+    def _withdraw_habit_proposals(self) -> None:
+        for a in self.approvals.pending():
+            if a.get("kind") == "automation":
+                self.store.set_status("approval", a["id"], "resolved")
+        for h in self.store.items("habit", ("new", "proposed"), 500):
+            self.store.set_status("habit", h["id"], "rejected")
+
+    async def never_for_entity(self, habit_id: str) -> str:
+        """'Don't propose this device again': all its habits go away, now and in the future."""
+        item = self.store.item("habit", habit_id)
+        if not item:
+            return t("main.habit_gone")
+        eid = item["entity_id"]
+        ignored = set(self.store.get("habit_ignore", [])) | {eid}
+        self.store.set("habit_ignore", sorted(ignored))
+        self.miner.ignore_entities = ignored
+        for h in self.store.items("habit", ("new", "proposed"), 500):
+            if h.get("entity_id") == eid:
+                self.store.set_status("habit", h["id"], "rejected")
+        for a in self.approvals.pending():
+            if a.get("kind") == "automation" and (self.store.item("habit", a["payload"].get("habit_id")) or {}).get("entity_id") == eid:
+                self.store.set_status("approval", a["id"], "resolved")
+        return t("main.never_entity", name=self.ha.name(eid))
 
     def _strong(self, h: Habit) -> bool:
         return (not h.covered_by and h.confidence >= 0.75 and h.support_days >= 5
@@ -167,7 +221,8 @@ class Brain:
             "automation", habit_id, t("main.habit_title"),
             t("main.habit_msg", desc=item['description'], hits=bt.get('hits'), fired=bt.get('fired')),
             {"habit_id": habit_id},
-            buttons=[("ok", t("btn.create")), ("no", t("btn.not_habit"))], notify=notify)
+            buttons=[("ok", t("btn.create")), ("no", t("btn.not_habit")), ("never", t("btn.never_entity"))],
+            notify=notify)
         self.store.set_status("habit", habit_id, "proposed")
         return rid
 
@@ -196,6 +251,8 @@ class Brain:
             return await self.create_automation(hid)
         if decision == "no":
             return await self.reject_habit(hid)
+        if decision == "never":
+            return await self.never_for_entity(hid)
         return "—"
 
     # ---------- neobișnuit ----------

@@ -210,7 +210,9 @@
     "jarvis.asked": "Chatben kérdezve",
     "jarvis.pending": "{eid}: jóváhagyási kérés elküldve a telefonodra",
     "jarvis.done": "Kész.",
-    "jarvis.unexpected": "(váratlan válasz a modelltől: {raw})"
+    "jarvis.unexpected": "(váratlan válasz a modelltől: {raw})",
+    "btn.never_entity": "Ennél az eszköznél soha",
+    "main.never_entity": "Rendben – {name} eszközre nem javaslok több szokást."
   },
   "panel": {
     "nav.home": "Kezdőlap",
@@ -351,6 +353,16 @@
     "su.voice_1": "A HACS-ben → ⋮ → Egyéni tárolók (Custom repositories) add hozzá a https://github.com/RazvanR1/Vatra címet Integration kategóriával, és töltsd le a „Vatra (voice / Assist)” elemet. Indítsd újra a Home Assistantot.",
     "su.voice_2": "Beállítások → Eszközök és szolgáltatások: a „Vatra” magától felbukkan – nyomd meg a Konfigurálás gombot.",
     "su.voice_3": "Beállítások → Hangasszisztensek: válaszd a „Vatra Jarvis” beszélgetési ágenst.",
-    "su.voice_manual": "Ha nem találja meg magától, add hozzá a Vatra integrációt kézzel ezzel a címmel, a 8099-es porttal és kóddal:"
+    "su.voice_manual": "Ha nem találja meg magától, add hozzá a Vatra integrációt kézzel ezzel a címmel, a 8099-es porttal és kóddal:",
+    "b.never_entity": "Ennél az eszköznél soha",
+    "h.habits_ignored": "Kizárt eszközök",
+    "b.include": "Újra bevon",
+    "habits_off": "A szokástanulás ki van kapcsolva (Beállítás → Szokásjavaslatok).",
+    "habits_panel": "A javaslatok csak itt jelennek meg – értesítés nélkül.",
+    "habits_machine": "Kihagyva, mert minden nap pontosan ugyanakkor változnak (ütemezés vagy más rendszer, nem ember): {list}",
+    "su.habits": "Szokásjavaslatok",
+    "su.habits_notify": "Értesíts (ajánlott, ha nem írsz saját automatizmusokat)",
+    "su.habits_panel": "Csak a panelen, értesítés nélkül",
+    "su.habits_off": "Ki – magam írom az automatizmusaimat"
   }
 }

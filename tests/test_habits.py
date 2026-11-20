@@ -25,7 +25,7 @@ def build_history():
             tr.append((ts(d, 23, 50), "light.lamp", "on", "off", "device"))
         # Ușa se deschide la 17:00, lumina de la intrare se aprinde după ~20 s (manual)
         tr.append((ts(d, 17, 0), "binary_sensor.door", "off", "on", "device"))
-        tr.append((ts(d, 17, 0, 20), "light.entrance", "off", "on", "user"))
+        tr.append((ts(d, 17, 0, 12 + (d * 7) % 25), "light.entrance", "off", "on", "user:razvan"))
         tr.append((ts(d, 17, 2), "binary_sensor.door", "on", "off", "device"))
         tr.append((ts(d, 17, 30), "light.entrance", "on", "off", "user"))
         # Ceva comandat de o automatizare existentă nu e obicei
@@ -65,3 +65,30 @@ def test_covered_and_automation_yaml():
     assert auto["actions"][0] == {"action": "light.turn_on", "target": {"entity_id": "light.lamp"}}
     assert auto["conditions"][0]["weekday"] == ["mon", "tue", "wed", "thu", "fri"]
     assert auto["id"].startswith("home_brain_")
+
+
+# --- 2.8: schedules, agents and "never for this device" are not habits ----------------------
+def _clockwork(origin="device", jitter=False):
+    tr = []
+    for d in range(14):
+        sec = (d * 37) % 600 if jitter else 3          # 20:40:03 every day vs. a human spread
+        tr.append((ts(d, 20, 40, sec), "light.carport", "on", "off", origin))
+        tr.append((ts(d, 19, 0), "light.carport", "off", "on", "automation"))
+    return sorted(tr)
+
+
+def test_same_second_every_day_is_a_schedule_not_a_habit():
+    m = HabitMiner(TZ)
+    assert not [h for h in m.mine(_clockwork()) if h.entity_id == "light.carport"]
+    assert m.machine_skipped == ["light.carport"]
+    human = [h for h in HabitMiner(TZ).mine(_clockwork(jitter=True)) if h.entity_id == "light.carport"]
+    assert human and human[0].to_state == "off"
+
+
+def test_ignored_user_and_ignored_entity():
+    m = HabitMiner(TZ)
+    m.ignore_users = {"agent"}
+    assert not [h for h in m.mine(_clockwork("user:agent", jitter=True)) if h.entity_id == "light.carport"]
+    assert [h for h in m.mine(_clockwork("user:razvan", jitter=True)) if h.entity_id == "light.carport"]
+    m.ignore_entities = {"light.carport"}
+    assert not [h for h in m.mine(_clockwork("user:razvan", jitter=True)) if h.entity_id == "light.carport"]

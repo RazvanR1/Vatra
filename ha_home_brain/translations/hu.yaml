@@ -76,8 +76,14 @@ configuration:
       min_confidence:
         name: Minimális megbízhatóság
         description: A napok hányadán kell megjelennie a szokásnak (0.6 = 60 %).
+      proposals:
+        name: Szokásjavaslatok
+        description: "notify = az erős szokások automatizmus-javaslatként érkeznek a telefonodra; panel = csak a Szokások fülön jelennek meg; off = nincs szokástanulás (annak, aki maga írja az automatizmusait)."
+      ignore_users:
+        name: Figyelmen kívül hagyott felhasználók
+        description: Home Assistant felhasználók (név vagy azonosító), akiknek a műveletei nem szokások – pl. amivel egy AI-ügynök, a Node-RED vagy egy szkript bejelentkezik. A rendszerfelhasználókat mindig figyelmen kívül hagyja.
       propose_automations:
-        name: Automatizmusok javaslata
+        name: Automatizmusok javaslata (régi)
         description: Az erős szokásokat automatizmus-javaslatként elküldi a telefonodra.
       max_proposals_per_day:
         name: Javaslatok naponta

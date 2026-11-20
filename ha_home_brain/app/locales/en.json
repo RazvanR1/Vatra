@@ -210,7 +210,9 @@
     "jarvis.asked": "Asked in chat",
     "jarvis.pending": "{eid}: approval request sent to your phone",
     "jarvis.done": "Done.",
-    "jarvis.unexpected": "(unexpected answer from the model: {raw})"
+    "jarvis.unexpected": "(unexpected answer from the model: {raw})",
+    "btn.never_entity": "Never for this device",
+    "main.never_entity": "OK – I won't propose habits for {name} again."
   },
   "panel": {
     "nav.home": "Home",
@@ -351,6 +353,16 @@
     "su.voice_1": "In HACS → ⋮ → Custom repositories, add https://github.com/RazvanR1/Vatra as an Integration and download “Vatra (voice / Assist)”. Restart Home Assistant.",
     "su.voice_2": "Settings → Devices & services: “Vatra” is discovered by itself – press Configure.",
     "su.voice_3": "Settings → Voice assistants: pick “Vatra Jarvis” as the conversation agent.",
-    "su.voice_manual": "If it isn't discovered, add the Vatra integration by hand with this address, port 8099 and code:"
+    "su.voice_manual": "If it isn't discovered, add the Vatra integration by hand with this address, port 8099 and code:",
+    "b.never_entity": "Never for this device",
+    "h.habits_ignored": "Devices left out",
+    "b.include": "Include again",
+    "habits_off": "Habit learning is off (Setup → Habit suggestions).",
+    "habits_panel": "Suggestions only appear here – no notifications.",
+    "habits_machine": "Left out because they change at exactly the same time every day (a schedule or another system, not a person): {list}",
+    "su.habits": "Habit suggestions",
+    "su.habits_notify": "Notify me (recommended if you don't write automations)",
+    "su.habits_panel": "Only in the panel, no notifications",
+    "su.habits_off": "Off – I write my own automations"
   }
 }

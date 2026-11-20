@@ -104,8 +104,10 @@
   <div class="tab" id="t-habits">
     <section><h2><span data-i18n="h.habits"></span> <button class="ghost sp" onclick="post('api/learn').then(loadHabits)" data-i18n="b.relearn"></button></h2>
       <p class="muted" style="margin-top:0" data-i18n="p.habits"></p>
-      <div id="habits"></div></section>
+      <p class="muted" id="habits-mode" hidden></p>
+      <div id="habits"></div><small class="muted" id="habits-machine" hidden></small></section>
     <section><h2 data-i18n="h.habits_other"></h2><div id="habits-other"></div></section>
+    <section id="habits-ign-s" hidden><h2 data-i18n="h.habits_ignored"></h2><div id="habits-ign"></div></section>
   </div>
 
   <div class="tab" id="t-unusual">
@@ -156,6 +158,9 @@
     <section><h2>4 · <span data-i18n="su.home"></span></h2>
       <label class="field"><span data-i18n="su.home_p"></span><textarea id="su-site"></textarea></label>
       <label class="field"><span data-i18n="su.lang"></span><select id="su-lang"></select></label>
+      <label class="field"><span data-i18n="su.habits"></span><select id="su-habits">
+        <option value="notify" data-i18n="su.habits_notify"></option><option value="panel" data-i18n="su.habits_panel"></option>
+        <option value="off" data-i18n="su.habits_off"></option></select></label>
     </section>
     <section><h2>5 · <span data-i18n="su.voice"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.voice_p"></p>
       <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li data-i18n="su.voice_1"></li><li data-i18n="su.voice_2"></li><li data-i18n="su.voice_3"></li></ol>
@@ -280,11 +285,22 @@ async function loadHabits() {
     ${h.covered_by ? " · " + esc(T("covered_by", {n: h.covered_by})) : ""}${h.require_home ? " · " + T("home_only") : ""}</small>
     <div class="row">${["new","proposed"].includes(h.status) ? `<button onclick="habit('${h.id}','create')">${T("b.create")}</button>
       <button class="ghost" onclick="habit('${h.id}','propose')">${T("b.propose")}</button>
-      <button class="no" onclick="habit('${h.id}','reject')">${T("b.not_habit")}</button>`
+      <button class="no" onclick="habit('${h.id}','reject')">${T("b.not_habit")}</button>
+      <button class="ghost" onclick="habit('${h.id}','never')">${T("b.never_entity")}</button>`
       : h.status === "rejected" ? `<button class="ghost" onclick="habit('${h.id}','restore')">${T("b.restore")}</button>` : ""}</div></div>`;
   $("habits").innerHTML = act.length ? act.map(row).join("") : empty(S.memory?.last_learning ? T("no_habits") : T("habits_learning"));
   $("habits-other").innerHTML = oth.length ? oth.map(row).join("") : empty("—");
+  const hm = S.habits || {};
+  $("habits-mode").hidden = !["off", "panel"].includes(hm.mode);
+  $("habits-mode").textContent = hm.mode === "off" ? T("habits_off") : T("habits_panel");
+  $("habits-machine").hidden = !(hm.machine || []).length;
+  $("habits-machine").textContent = T("habits_machine", {list: (hm.machine || []).join(", ")});
+  const ign = await get("api/habits/ignored");
+  $("habits-ign-s").hidden = !ign.length;
+  $("habits-ign").innerHTML = ign.map(i => `<div class="item">${esc(i.name)} <small>· ${esc(i.entity_id)}</small>
+    <div class="row"><button class="ghost" onclick="unignore('${esc(i.entity_id)}')">${T("b.include")}</button></div></div>`).join("");
 }
+window.unignore = eid => post(`api/habits/ignored/${encodeURIComponent(eid)}/remove`).then(loadHabits);
 window.habit = (id, a) => post(`api/habits/${id}/${a}`).then(loadHabits);
 
 const skipped = s => s.startsWith("AI:") ? s : T("sk." + s);
@@ -344,7 +360,7 @@ async function loadSetup() {
   $("su-key").value = ""; $("su-key").placeholder = a.has_key ? T("su.key_saved") : "";
   $("su-model").value = a.model || ""; $("su-ctx").value = a.num_ctx || 8192;
   $("su-site").value = o.site_context || "";
-  $("su-voice-host").value = (SU.assist || {}).host || "—"; $("su-voice-token").value = (SU.assist || {}).token || ""; $("su-lang").value = o.language || "auto";
+  $("su-voice-host").value = (SU.assist || {}).host || "—"; $("su-voice-token").value = (SU.assist || {}).token || ""; $("su-lang").value = o.language || "auto"; $("su-habits").value = o.habits || "notify";
   aiBackend(true);
 }
 window.aiBackend = keep => {
@@ -388,7 +404,7 @@ window.saveSetup = async () => {
   ai[ol ? "ollama_url" : "openai_url"] = $("su-url").value.trim();
   if ($("su-key").value) ai.api_key = $("su-key").value;
   const r = await post("api/setup/save", {options: {notify_services: collect("su-notify"), persons: collect("su-persons"),
-    site_context: $("su-site").value, language: $("su-lang").value, assistant: ai}});
+    site_context: $("su-site").value, language: $("su-lang").value, habits: $("su-habits").value, assistant: ai}});
   if (!r.ok) return;
   $("overlay").style.display = "flex";
   let down = false; const t0 = Date.now();

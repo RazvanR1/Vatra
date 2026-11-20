@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.7.2"
+version: "2.8.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -47,6 +47,8 @@ options:
     history_import_days: 10
     min_support_days: 4
     min_confidence: 0.6
+    proposals: notify
+    ignore_users: []
     propose_automations: true
     max_proposals_per_day: 2
   unusual:
@@ -143,6 +145,9 @@ schema:
     history_import_days: int(1,60)
     min_support_days: int(2,30)
     min_confidence: float(0.3,1)
+    proposals: list(notify|panel|off)?
+    ignore_users:
+      - str?
     propose_automations: bool
     max_proposals_per_day: int(0,20)
   unusual:

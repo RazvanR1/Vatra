@@ -20,7 +20,7 @@ EventListener = Callable[[dict], Awaitable[None]]
 # De unde vine o schimbare de stare.
 ORIGIN_BRAIN = "brain"            # Vatra însuși
 ORIGIN_AUTOMATION = "automation"  # o automatizare / un script din HA
-ORIGIN_USER = "user"              # un om din aplicație / dashboard
+ORIGIN_USER = "user"              # un om din aplicație / dashboard ("user:<user_id>")
 ORIGIN_DEVICE = "device"          # fizic (întrerupător, telecomandă) sau integrare
 
 EXTRA_EVENTS = ("automation_triggered", "script_started", "mobile_app_notification_action")
@@ -92,7 +92,7 @@ class HAClient:
         if cid in self.automation_contexts or context.get("parent_id") in self.automation_contexts:
             return ORIGIN_AUTOMATION
         if context.get("user_id"):
-            return ORIGIN_USER
+            return f"{ORIGIN_USER}:{context['user_id']}"  # who did it (agents/scripts can be ignored)
         if context.get("parent_id"):
             return ORIGIN_AUTOMATION  # caused by something else in HA (an automation we did not see start)
         return ORIGIN_DEVICE

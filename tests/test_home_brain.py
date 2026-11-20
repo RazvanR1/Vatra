@@ -337,13 +337,33 @@ async def test_habit_approved_from_phone_creates_automation_and_undo(setup):
     rid = await brain.propose(h.id)
     push = [c for c in fake.calls if c["domain"] == "notify"][-1]
     actions = push["service_data"]["data"]["actions"]
-    assert [a["title"] for a in actions] == ["Creează", "Nu e obicei"]
+    assert [a["title"] for a in actions][:2] == ["Creează", "Nu e obicei"]
     await fake.fire("mobile_app_notification_action", {"action": actions[0]["action"]})
     await wait_for(lambda: "home_brain_abc123" in fake.saved_automations)
     auto = fake.saved_automations["home_brain_abc123"]
     assert auto["triggers"] == [{"trigger": "time", "at": "18:30:00"}]
     await wait_for(lambda: brain.store.item("habit", "abc123")["status"] == "created")
     assert brain.store.item("approval", rid)["status"] == "done"
+
+
+async def test_never_for_this_device_and_habits_off(setup):
+    fake, brain = setup
+    from app.habits import Habit
+    for hid, eid in (("h1", "light.living"), ("h2", "light.living"), ("h3", "light.hall")):
+        h = Habit(id=hid, kind="time", entity_id=eid, to_state="on", day_class="weekday", support_days=8,
+                  observed_days=10, confidence=0.8, minute=1110.0, spread=5.0,
+                  backtest={"hits": 8, "fired": 8, "precision": 1.0}, description=hid)
+        brain.store.put_item("habit", hid, h.to_dict(), status="new")
+    rid = await brain.propose("h1")
+    msg = await brain.approvals.decide(rid, "never")
+    assert "nu mai propun" in msg
+    assert brain.store.get("habit_ignore") == ["light.living"]
+    assert {brain.store.item("habit", x)["status"] for x in ("h1", "h2")} == {"rejected"}
+    assert brain.store.item("habit", "h3")["status"] == "new"
+    brain.habit_mode = "off"
+    await brain.learn()
+    assert brain.store.item("habit", "h3")["status"] == "rejected"
+    assert not [a for a in brain.approvals.pending() if a["kind"] == "automation"]
 
 
 async def test_agent_proposes_action_needs_approval_and_guardrails_block(setup):
@@ -384,7 +404,7 @@ async def test_recorder_tags_origin(setup):
     await asyncio.sleep(0.1)
     brain.recorder.flush_pending(force=True)
     origins = [t[4] for t in brain.store.transitions(0, ["light.living"])]
-    assert origins == ["brain", "user"]
+    assert origins == ["brain", "user:razvan"]
 
 
 async def test_guard_survives_ha_restart_and_own_restart(setup):

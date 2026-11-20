@@ -47,6 +47,14 @@ pornește în aceeași limbă și are un selector de limbă, ținut minte pe fie
 - Obiceiurile puternice ți le trimite pe telefon (cel mult `max_proposals_per_day` pe zi) cu
   **Creează** / **Nu e obicei**. Restul le găsești în tab-ul *Obiceiuri*.
 - Automatizările create au id-ul `home_brain_…` și se pot anula din *Jurnal*.
+- **Nu e obicei:** ce se schimbă la exact aceeași oră în fiecare zi (un program din dispozitiv,
+  Node-RED, alt sistem) sau după exact aceeași întârziere – un om nu face asta niciodată. Schimbările
+  făcute de utilizatorii de sistem ai Home Assistant sunt ignorate și ele; utilizatorul cu care se
+  conectează un agent AI sau un script îl treci în `learning.ignore_users`.
+- **Niciodată pentru dispozitivul ăsta** scoate un dispozitiv din învățarea obiceiurilor (îl poți
+  include din nou din tabul *Obiceiuri*).
+- **Sugestii de obiceiuri** (Configurare sau `learning.proposals`): `notify` (implicit), `panel` – doar
+  în tabul *Obiceiuri*, fără notificări – sau `off` dacă îți scrii singur automatizările.
 
 ## Neobișnuit (fără listă de dispozitive)
 

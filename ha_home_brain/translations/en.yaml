@@ -76,9 +76,15 @@ configuration:
       min_confidence:
         name: Minimum confidence
         description: Share of days on which the habit must appear (0.6 = 60 %).
+      proposals:
+        name: Habit suggestions
+        description: "notify = strong habits are sent to your phone as automation proposals; panel = they only appear in the Habits tab; off = no habit learning (for people who write their own automations)."
+      ignore_users:
+        name: Ignore users
+        description: Home Assistant users (name or ID) whose actions are not habits – e.g. the user an AI agent, Node-RED or a script logs in with. System users are always ignored.
       propose_automations:
-        name: Propose automations
-        description: Send strong habits to your phone as automation proposals.
+        name: Propose automations (old)
+        description: Replaced by "Habit suggestions"; only used if that is not set.
       max_proposals_per_day:
         name: Proposals per day
   unusual:

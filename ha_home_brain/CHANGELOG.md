@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0 – Habits for advanced users
+- EN: Things that change at exactly the same time every day (a device schedule, Node-RED, another system) or after exactly the same delay are no longer proposed as habits – a person never does that. Actions of Home Assistant system users are ignored, and `learning.ignore_users` leaves out the user an AI agent or a script logs in with. New **Never for this device** button (in notifications and the panel). **Habit suggestions** in Setup: notify (default), only in the panel, or off – for people who write their own automations. Thanks for the feedback from the community!
+- RO: Ce se schimbă la exact aceeași oră în fiecare zi (un program din dispozitiv, Node-RED, alt sistem) sau după exact aceeași întârziere nu mai e propus ca obicei – un om nu face asta niciodată. Acțiunile utilizatorilor de sistem ai Home Assistant sunt ignorate, iar `learning.ignore_users` exclude utilizatorul cu care se conectează un agent AI sau un script. Buton nou **Niciodată pentru dispozitivul ăsta** (în notificări și în panou). **Sugestii de obiceiuri** în Configurare: cu notificare (implicit), doar în panou sau oprit – pentru cine își scrie singur automatizările. Mulțumiri pentru feedback-ul din comunitate!
+
 ## 2.7.2 – Fixes from issues #3 and #5
 - EN: OpenAI-compatible servers that answer 502/500 when the model writes prose instead of JSON (Strata, vLLM with guided decoding) are retried once without `response_format`, so Jarvis answers instead of "can't reach the AI model". Thanks @anilv26 (#3)
 - EN: New option `assistant.extra_body`: extra JSON fields for every request, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}` so a thinking model answers about 10 s faster

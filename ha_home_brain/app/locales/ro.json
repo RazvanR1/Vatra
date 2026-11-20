@@ -210,7 +210,9 @@
     "jarvis.asked": "Cerut în chat",
     "jarvis.pending": "{eid}: am trimis cerere de aprobare pe telefon",
     "jarvis.done": "Gata.",
-    "jarvis.unexpected": "(răspuns neașteptat de la model: {raw})"
+    "jarvis.unexpected": "(răspuns neașteptat de la model: {raw})",
+    "btn.never_entity": "Niciodată pentru dispozitivul ăsta",
+    "main.never_entity": "Bine – nu mai propun obiceiuri pentru {name}."
   },
   "panel": {
     "nav.home": "Acasă",
@@ -351,6 +353,16 @@
     "su.voice_1": "În HACS → ⋮ → Custom repositories, adaugă https://github.com/RazvanR1/Vatra ca Integration și descarcă „Vatra (voice / Assist)”. Repornește Home Assistant.",
     "su.voice_2": "Setări → Dispozitive și servicii: „Vatra” apare singur ca descoperit – apasă Configurează.",
     "su.voice_3": "Setări → Asistenți vocali: alege „Vatra Jarvis” ca agent de conversație.",
-    "su.voice_manual": "Dacă nu apare singur, adaugă integrarea Vatra manual cu adresa aceasta, portul 8099 și codul:"
+    "su.voice_manual": "Dacă nu apare singur, adaugă integrarea Vatra manual cu adresa aceasta, portul 8099 și codul:",
+    "b.never_entity": "Niciodată pentru dispozitivul ăsta",
+    "h.habits_ignored": "Dispozitive excluse",
+    "b.include": "Include din nou",
+    "habits_off": "Învățarea obiceiurilor e oprită (Configurare → Sugestii de obiceiuri).",
+    "habits_panel": "Sugestiile apar doar aici – fără notificări.",
+    "habits_machine": "Excluse pentru că se schimbă la exact aceeași oră în fiecare zi (un program sau alt sistem, nu un om): {list}",
+    "su.habits": "Sugestii de obiceiuri",
+    "su.habits_notify": "Anunță-mă (recomandat dacă nu-ți scrii singur automatizările)",
+    "su.habits_panel": "Doar în panou, fără notificări",
+    "su.habits_off": "Oprit – îmi scriu singur automatizările"
   }
 }

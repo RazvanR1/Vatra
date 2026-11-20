@@ -76,9 +76,15 @@ configuration:
       min_confidence:
         name: Încredere minimă
         description: Partea din zile în care trebuie să apară obiceiul (0.6 = 60 %).
+      proposals:
+        name: Sugestii de obiceiuri
+        description: "notify = obiceiurile puternice îți vin pe telefon ca propuneri de automatizare; panel = apar doar în tabul Obiceiuri; off = fără învățarea obiceiurilor (pentru cine își scrie singur automatizările)."
+      ignore_users:
+        name: Utilizatori ignorați
+        description: Utilizatori Home Assistant (nume sau ID) ale căror acțiuni nu sunt obiceiuri – de ex. utilizatorul cu care se conectează un agent AI, Node-RED sau un script. Utilizatorii de sistem sunt ignorați mereu.
       propose_automations:
-        name: Propune automatizări
-        description: Trimite obiceiurile puternice pe telefon ca propuneri de automatizare.
+        name: Propune automatizări (vechi)
+        description: Înlocuit de „Sugestii de obiceiuri”; folosit doar dacă aceea nu e setată.
       max_proposals_per_day:
         name: Propuneri pe zi
   unusual:

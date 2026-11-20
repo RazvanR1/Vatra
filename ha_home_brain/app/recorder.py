@@ -67,7 +67,7 @@ def logbook_origin(entry: dict) -> str:
     if entry.get("context_entity_id") and entry.get("context_entity_id") != entry.get("entity_id"):
         return ORIGIN_AUTOMATION  # schimbat ca efect al altei entități (grupuri, oglinzi)
     if entry.get("context_user_id"):
-        return ORIGIN_USER
+        return f"{ORIGIN_USER}:{entry['context_user_id']}"
     return ORIGIN_DEVICE
 
 
