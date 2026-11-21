@@ -119,6 +119,11 @@
    "timestamp": "2026-11-19T00:00:00Z",
    "count": 46,
    "uniques": 30
+  },
+  {
+   "timestamp": "2026-11-20T00:00:00Z",
+   "count": 20,
+   "uniques": 11
   }
  ],
  "views": [
@@ -241,27 +246,32 @@
    "timestamp": "2026-11-19T00:00:00Z",
    "count": 31,
    "uniques": 22
+  },
+  {
+   "timestamp": "2026-11-20T00:00:00Z",
+   "count": 20,
+   "uniques": 11
   }
  ],
  "referrers": [
   {
    "referrer": "lm.facebook.com",
-   "count": 451,
-   "uniques": 387
+   "count": 453,
+   "uniques": 390
   },
   {
    "referrer": "facebook.com",
-   "count": 388,
-   "uniques": 326
+   "count": 389,
+   "uniques": 327
   },
   {
    "referrer": "l.facebook.com",
-   "count": 211,
-   "uniques": 163
+   "count": 213,
+   "uniques": 164
   },
   {
    "referrer": "github.com",
-   "count": 40,
+   "count": 41,
    "uniques": 27
   },
   {
@@ -295,5 +305,5 @@
    "uniques": 1
   }
  ],
- "updated": "2026-11-20"
+ "updated": "2026-11-21"
 }
