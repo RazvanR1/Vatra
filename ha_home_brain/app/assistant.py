@@ -56,27 +56,31 @@ class Assistant:
         order = {"person": 0, "climate": 1, "light": 2, "binary_sensor": 3, "sensor": 4}
         items = sorted(((e, s) for e, s in self.ha.states.items() if self._relevant(e, s)),
                        key=lambda x: (order.get(x[0].split(".")[0], 5), x[0]))
-        lines, size = [], 0
+        picked, size = [], 0
         for eid, st in items[: self.max_entities]:
             a = st.get("attributes", {})
             extra = f" {a['unit_of_measurement']}" if "unit_of_measurement" in a else ""
             if eid.startswith("climate."):
-                extra = f" (setat {a.get('temperature')}, actual {a.get('current_temperature')})"
+                extra = f" (target {a.get('temperature')}, current {a.get('current_temperature')})"
             line = f"{eid} | {a.get('friendly_name', eid)} | {st.get('state')}{extra}"
             if size + len(line) > budget:
                 break
-            lines.append(line)
+            picked.append((st.get("last_updated") or "", eid, line))
             size += len(line) + 1
+        # Oldest change first: between two questions only the tail of the list differs, so the AI
+        # server can reuse its prompt cache for almost everything (answers in seconds, not 8+ s).
+        lines = [line for _, _, line in sorted(picked)]
         return "\n".join(lines)
 
     async def ask(self, question: str, history: list[dict] | None = None, voice: bool = False) -> dict:
         if not self.enabled:
             return {"reply": t("jarvis.off"), "actions": []}
-        ctx = t("jarvis.state") + "\n" + self.house_context()
-        if self.extra_context:
+        ctx = ""
+        if self.extra_context:  # changes rarely: before the house state, to stay in the cached prefix
             more = self.extra_context()
             if more:
-                ctx += "\n\n" + t("jarvis.observed") + "\n" + more[:1500]
+                ctx = t("jarvis.observed") + "\n" + more[:1500] + "\n\n"
+        ctx += t("jarvis.state") + "\n" + self.house_context()
         system = t("jarvis.prompt", site=self.site or t("agent.default_site"))
         if voice:
             system += "\n\n" + t("jarvis.voice")

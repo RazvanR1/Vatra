@@ -208,7 +208,11 @@
     "jarvis.asked": "Pedido en el chat",
     "jarvis.pending": "{eid}: solicitud de aprobación enviada a tu teléfono",
     "jarvis.done": "Hecho.",
-    "jarvis.unexpected": "(respuesta inesperada del modelo: {raw})"
+    "jarvis.unexpected": "(respuesta inesperada del modelo: {raw})",
+    "btn.never_entity": "Nunca para este dispositivo",
+    "main.never_entity": "De acuerdo – no volveré a proponer hábitos para {name}.",
+    "jarvis.question": "Pregunta:",
+    "safe.important": "dispositivo importante: siempre requiere aprobación"
   },
   "panel": {
     "nav.home": "Inicio",
@@ -349,6 +353,16 @@
     "su.voice_1": "En HACS → ⋮ → Repositorios personalizados, añade https://github.com/RazvanR1/Vatra como Integración y descarga “Vatra (voice / Assist)”. Reinicia Home Assistant.",
     "su.voice_2": "Ajustes → Dispositivos y servicios: “Vatra” se descubre solo – pulsa Configurar.",
     "su.voice_3": "Ajustes → Asistentes de voz: elige “Vatra Jarvis” como agente de conversación.",
-    "su.voice_manual": "Si no se descubre, añade la integración Vatra a mano con esta dirección, el puerto 8099 y este código:"
+    "su.voice_manual": "Si no se descubre, añade la integración Vatra a mano con esta dirección, el puerto 8099 y este código:",
+    "b.never_entity": "Nunca para este dispositivo",
+    "h.habits_ignored": "Dispositivos excluidos",
+    "b.include": "Incluir de nuevo",
+    "habits_off": "El aprendizaje de hábitos está desactivado (Configuración → Sugerencias de hábitos).",
+    "habits_panel": "Las sugerencias solo aparecen aquí – sin notificaciones.",
+    "habits_machine": "Excluidos porque cambian exactamente a la misma hora cada día (una programación u otro sistema, no una persona): {list}",
+    "su.habits": "Sugerencias de hábitos",
+    "su.habits_notify": "Avisarme (recomendado si no escribes tus propias automatizaciones)",
+    "su.habits_panel": "Solo en el panel, sin notificaciones",
+    "su.habits_off": "Desactivado – escribo mis propias automatizaciones"
   }
 }

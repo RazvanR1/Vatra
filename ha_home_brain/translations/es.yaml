@@ -76,8 +76,14 @@ configuration:
       min_confidence:
         name: Confianza mínima
         description: Proporción de días en los que debe aparecer el hábito (0.6 = 60 %).
+      proposals:
+        name: Sugerencias de hábitos
+        description: "notify = los hábitos sólidos llegan a tu teléfono como propuestas de automatización; panel = solo aparecen en la pestaña Hábitos; off = sin aprendizaje de hábitos (para quien escribe sus propias automatizaciones)."
+      ignore_users:
+        name: Usuarios ignorados
+        description: Usuarios de Home Assistant (nombre o ID) cuyas acciones no son hábitos – p. ej. el usuario con el que se conecta un agente de IA, Node-RED o un script. Los usuarios del sistema se ignoran siempre.
       propose_automations:
-        name: Proponer automatizaciones
+        name: Proponer automatizaciones (antiguo)
         description: Envía los hábitos sólidos a tu teléfono como propuestas de automatización.
       max_proposals_per_day:
         name: Propuestas al día
