@@ -21,7 +21,7 @@ add-on-ul. Opțiunile avansate rămân în tab-ul Configuration.
 ## Limba
 
 `language: auto` (implicit) urmează Home Assistant dacă Vatra are limba respectivă, altfel engleză.
-Poți forța `en`, `ro` sau `hu`.
+Poți forța `en`, `ro`, `hu` sau `es`.
 De ea depind notificările, rezumatul de seară, butoanele de aprobare și limba agenților AI. Panoul
 pornește în aceeași limbă și are un selector de limbă, ținut minte pe fiecare browser/telefon. Jarvis răspunde în limba în care îi scrii.
 

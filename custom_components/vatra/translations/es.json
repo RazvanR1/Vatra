@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "hassio_confirm": {
+        "title": "Vatra",
+        "description": "¿Añadir a Jarvis desde la aplicación Vatra como agente de conversación? Después elige **Vatra Jarvis** en Ajustes → Asistentes de voz."
+      },
+      "user": {
+        "title": "Vatra",
+        "description": "Normalmente Vatra se encuentra solo. Si no, copia la dirección y el código desde el panel de Vatra → Configuración → Voz (Assist).",
+        "data": {"host": "Dirección", "port": "Puerto", "token": "Código"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Vatra no responde. ¿Está en marcha la aplicación Vatra?",
+      "invalid_auth": "El código no es correcto. Vuelve a copiarlo desde el panel de Vatra."
+    },
+    "abort": {"already_configured": "Vatra ya está configurado."}
+  }
+}
