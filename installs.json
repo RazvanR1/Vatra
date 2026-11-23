@@ -199,5 +199,24 @@
    "0bf38c22_ha_home_brain": 1,
    "6cf1ca0d_ha_home_brain": 1
   }
+ },
+ {
+  "date": "2026-11-23",
+  "installs": 66,
+  "versions": {
+   "0.5.1": 2,
+   "2.0.0": 1,
+   "2.2.0": 3,
+   "2.7.0": 1,
+   "2.7.1": 6,
+   "2.7.2": 2,
+   "2.8.0": 41,
+   "2.8.1": 10
+  },
+  "keys": {
+   "b7481d91_ha_home_brain": 64,
+   "0bf38c22_ha_home_brain": 1,
+   "6cf1ca0d_ha_home_brain": 1
+  }
  }
 ]

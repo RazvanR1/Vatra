@@ -129,6 +129,11 @@
    "timestamp": "2026-11-21T00:00:00Z",
    "count": 33,
    "uniques": 20
+  },
+  {
+   "timestamp": "2026-11-22T00:00:00Z",
+   "count": 52,
+   "uniques": 23
   }
  ],
  "views": [
@@ -261,38 +266,43 @@
    "timestamp": "2026-11-21T00:00:00Z",
    "count": 16,
    "uniques": 9
+  },
+  {
+   "timestamp": "2026-11-22T00:00:00Z",
+   "count": 14,
+   "uniques": 13
   }
  ],
  "referrers": [
   {
-   "referrer": "lm.facebook.com",
-   "count": 364,
-   "uniques": 312
+   "referrer": "facebook.com",
+   "count": 272,
+   "uniques": 227
   },
   {
-   "referrer": "facebook.com",
-   "count": 327,
-   "uniques": 277
+   "referrer": "lm.facebook.com",
+   "count": 269,
+   "uniques": 232
   },
   {
    "referrer": "l.facebook.com",
-   "count": 197,
-   "uniques": 151
+   "count": 171,
+   "uniques": 133
   },
   {
    "referrer": "github.com",
-   "count": 42,
-   "uniques": 28
-  },
-  {
-   "referrer": "m.facebook.com",
-   "count": 21,
-   "uniques": 14
+   "count": 35,
+   "uniques": 26
   },
   {
    "referrer": "Google",
    "count": 19,
    "uniques": 12
+  },
+  {
+   "referrer": "m.facebook.com",
+   "count": 14,
+   "uniques": 7
   },
   {
    "referrer": "teams.public.onecdn.static.microsoft",
@@ -315,5 +325,5 @@
    "uniques": 1
   }
  ],
- "updated": "2026-11-22"
+ "updated": "2026-11-23"
 }
