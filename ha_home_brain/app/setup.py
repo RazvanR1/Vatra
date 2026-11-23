@@ -24,7 +24,8 @@ EDITABLE = ("language", "notify_services", "site_context")
 EDITABLE_LEARNING = ("persons", "proposals")
 HABIT_MODES = ("notify", "panel", "off")
 MODE_DOMAINS = ("input_select", "select", "climate", "water_heater", "alarm_control_panel", "sensor")
-MODE_WORDS = ("mode", "mod", "regim", "modus", "üzem", "modo", "preset", "state", "stare")
+MODE_WORDS = ("mode", "mod", "regim", "modus", "üzem", "modo", "preset")
+NOT_MODES = ("power_on_behavior", "initial_state", "start_time", "sensitivity", "_assistant", "speaking")
 EDITABLE_AI = ("backend", "ollama_url", "openai_url", "api_key", "model", "num_ctx")
 
 
@@ -199,7 +200,8 @@ async def detect(ha) -> dict:
     # Mode entities you may want watched: input_select / select, the ones named like a "mode" first.
     modes = []
     for e, s in ha.states.items():
-        if e.split(".", 1)[0] not in ("input_select", "select") or s.get("state") in ("unavailable", "unknown"):
+        if e.split(".", 1)[0] not in ("input_select", "select") or s.get("state") in ("unavailable", "unknown") \
+                or any(x in e for x in NOT_MODES):
             continue
         name = s.get("attributes", {}).get("friendly_name", e)
         hit = any(w in f"{e} {name}".lower() for w in MODE_WORDS)
