@@ -212,7 +212,13 @@
     "btn.never_entity": "Nunca para este dispositivo",
     "main.never_entity": "De acuerdo – no volveré a proponer hábitos para {name}.",
     "jarvis.question": "Pregunta:",
-    "safe.important": "dispositivo importante: siempre requiere aprobación"
+    "safe.important": "dispositivo importante: siempre requiere aprobación",
+    "mode.flap_title": "{name}: cambia a menudo",
+    "mode.flap_msg": "{name} cambió de modo {n} veces en la última hora (normalmente como máximo {usual}). ¿Oscila un umbral o un sensor?",
+    "mode.stuck_title": "{name}: {state} durante demasiado tiempo",
+    "mode.stuck_msg": "{name} lleva {dur} en \"{state}\" – lo más largo en las últimas dos semanas fue {longest}.",
+    "mode.line": "{name}: {parts} ({n} cambios)",
+    "mode.ctx": "{name}: ahora {state} desde las {since}; hoy: {today}"
   },
   "panel": {
     "nav.home": "Inicio",
@@ -363,6 +369,14 @@
     "su.habits": "Sugerencias de hábitos",
     "su.habits_notify": "Avisarme (recomendado si no escribes tus propias automatizaciones)",
     "su.habits_panel": "Solo en el panel, sin notificaciones",
-    "su.habits_off": "Desactivado – escribo mis propias automatizaciones"
+    "su.habits_off": "Desactivado – escribo mis propias automatizaciones",
+    "su.modes": "Modos a vigilar (opcional)",
+    "su.modes_p": "¿Tienes tu propio sistema con modos (calefacción eco / híbrido / gas, el modo de una bomba de calor, de la alarma…)? Vatra solo los vigila: el tiempo en cada modo y un aviso cuando un modo cambia mucho más a menudo o dura mucho más de lo habitual. Nunca los cambia.",
+    "su.none_mode": "No se encontraron entidades input_select o select.",
+    "h.modes": "Modos",
+    "m.since": "desde",
+    "m.changes": "{today} cambios hoy, {week} esta semana",
+    "m.today": "Hoy",
+    "m.week": "Últimos 7 días"
   }
 }

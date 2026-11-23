@@ -1,7 +1,7 @@
 # 🔥 Vatra – the local brain for Home Assistant
 
 [![Open your Home Assistant instance and show the add app repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FRazvanR1%2FVatra)
-![Version](https://img.shields.io/badge/version-2.8.1-blue)
+![Version](https://img.shields.io/badge/version-2.9.0-blue)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green)
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green)
 ![Local only](https://img.shields.io/badge/cloud-none-success)
@@ -37,6 +37,7 @@ Everything runs on your hardware. The AI part (Ollama) is optional and only used
 | 🧹 **Clean up** | Finds devices that have had no value for over a week (sold devices, deleted containers, abandoned integrations) — checked against your history — and offers to disable their entities. Nothing is deleted; Undo enables them again. |
 | 📡 **Vatra entities in HA** | Through your MQTT broker (e.g. Mosquitto): `sensor.vatra_active_alerts`, `sensor.vatra_pending_approvals`, `binary_sensor.vatra_problem`, `sensor.vatra_last_alert`, `sensor.vatra_cleanup`… for dashboards and automations. |
 | 🖥️ **Sidebar panel** | Home, Approvals, Habits, Unusual, Agents, Jarvis, Log (with Undo) and a **Setup guide**: it finds your phones, people and AI server by itself – no YAML needed. |
+| 🎛 **Mode monitor** | Watches the modes of systems you built yourself (heating eco / hybrid / gas, a heat pump, the alarm) without touching them: time in each mode, and an alert when a mode flaps or gets stuck. |
 | 🌍 **Multilingual** | English, Romanian, Hungarian and Spanish. Follows your Home Assistant language automatically; the panel has a language switch. A new language is one file – see [TRANSLATING.md](TRANSLATING.md). |
 
 ### Screenshots

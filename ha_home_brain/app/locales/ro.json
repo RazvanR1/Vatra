@@ -212,7 +212,13 @@
     "jarvis.done": "Gata.",
     "jarvis.unexpected": "(răspuns neașteptat de la model: {raw})",
     "btn.never_entity": "Niciodată pentru dispozitivul ăsta",
-    "main.never_entity": "Bine – nu mai propun obiceiuri pentru {name}."
+    "main.never_entity": "Bine – nu mai propun obiceiuri pentru {name}.",
+    "mode.flap_title": "{name}: comută des",
+    "mode.flap_msg": "{name} și-a schimbat modul de {n} ori în ultima oră (de obicei cel mult {usual}). Oscilează un prag sau un senzor?",
+    "mode.stuck_title": "{name}: {state} neobișnuit de mult",
+    "mode.stuck_msg": "{name} stă în „{state}” de {dur} – cel mai lung din ultimele două săptămâni a fost {longest}.",
+    "mode.line": "{name}: {parts} ({n} schimbări)",
+    "mode.ctx": "{name}: acum {state} de la {since}; azi: {today}"
   },
   "panel": {
     "nav.home": "Acasă",
@@ -363,6 +369,14 @@
     "su.habits": "Sugestii de obiceiuri",
     "su.habits_notify": "Anunță-mă (recomandat dacă nu-ți scrii singur automatizările)",
     "su.habits_panel": "Doar în panou, fără notificări",
-    "su.habits_off": "Oprit – îmi scriu singur automatizările"
+    "su.habits_off": "Oprit – îmi scriu singur automatizările",
+    "su.modes": "Moduri de urmărit (opțional)",
+    "su.modes_p": "Ai propriul sistem cu moduri (încălzire eco / hybrid / gaz, modul unei pompe de căldură, al alarmei…)? Vatra doar le urmărește: cât timp a stat în fiecare mod și o alertă când un mod comută mult mai des sau durează mult mai mult decât de obicei. Nu le schimbă niciodată.",
+    "su.none_mode": "N-am găsit entități input_select sau select.",
+    "h.modes": "Moduri",
+    "m.since": "de la",
+    "m.changes": "{today} schimbări azi, {week} în ultima săptămână",
+    "m.today": "Azi",
+    "m.week": "Ultimele 7 zile"
   }
 }

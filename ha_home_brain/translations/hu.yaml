@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: ntfy téma URL
     description: Opcionális. A riasztásokat erre az ntfy témára is elküldi.
+  modes:
+    name: "Figyelt módok"
+    description: "Saját mód-entitásaid (input_select / select…), amelyeket a Vatra változtatás nélkül figyel: az egyes módokban töltött idő, jelzés szokatlanul gyakori váltáskor vagy szokatlanul hosszú módnál. A panelen könnyebb kiválasztani (Beállítás → 6)."
+    fields:
+      entities:
+        name: "Figyelt módok"
+        description: "Saját mód-entitásaid (input_select / select…), amelyeket a Vatra változtatás nélkül figyel: az egyes módokban töltött idő, jelzés szokatlanul gyakori váltáskor vagy szokatlanul hosszú módnál. A panelen könnyebb kiválasztani (Beállítás → 6)."
+      alerts:
+        name: "Mód-riasztások"
+        description: "Riasztás, ha egy mód ingadozik vagy beragad."
   notifications:
     name: Értesítések
     description: Mennyit ír a Vatra a telefonodra. A panelben mindig minden látható.

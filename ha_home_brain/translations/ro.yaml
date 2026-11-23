@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: URL topic ntfy
     description: Opțional. Trimite alertele și pe acest topic ntfy.
+  modes:
+    name: "Moduri de urmărit"
+    description: "Entitățile tale de mod (input_select / select…) pe care Vatra le urmărește fără să le schimbe: timpul în fiecare mod, alerte când un mod comută neobișnuit de des sau durează neobișnuit de mult. Mai ușor de ales din panou (Configurare → 6)."
+    fields:
+      entities:
+        name: "Moduri de urmărit"
+        description: "Entitățile tale de mod (input_select / select…) pe care Vatra le urmărește fără să le schimbe: timpul în fiecare mod, alerte când un mod comută neobișnuit de des sau durează neobișnuit de mult. Mai ușor de ales din panou (Configurare → 6)."
+      alerts:
+        name: "Alerte pentru moduri"
+        description: "Trimite o alertă când un mod oscilează sau rămâne blocat."
   notifications:
     name: Notificări
     description: Cât scrie Vatra pe telefon. Totul se vede oricum în panou.

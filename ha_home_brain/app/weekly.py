@@ -64,6 +64,9 @@ class WeeklyReport:
             lines.append(t("week.vacation", days=f"{stats['vacation_days']:.0f}"))
         if insights:
             lines.append(t("week.top", title=insights[0].get("title", "")))
+        modes = getattr(b, "modes", None)
+        if modes is not None and modes.entities:
+            lines += [modes.line(item) for item in modes.summary(now)]
         return {"ts": now, "stats": stats, "lines": lines}
 
     async def send(self) -> dict:

@@ -92,6 +92,7 @@
       <section><h2 data-i18n="h.alerts"></h2><div id="alerts"></div></section>
       <section><h2 data-i18n="h.recent"></h2><div id="recent-ins"></div></section>
     </div>
+    <section id="modes-s" hidden><h2 data-i18n="h.modes"></h2><div id="modes"></div></section>
     <section><h2 data-i18n="h.weekly"></h2><div id="weekly"></div>
       <div class="row"><button class="ghost" onclick="post('api/weekly/send').then(loadWeekly)" data-i18n="w.send"></button></div></section>
     <section><h2 data-i18n="h.rules"></h2><div id="rules"></div></section>
@@ -166,6 +167,8 @@
       <ol class="muted" style="margin:0 0 8px 18px;padding:0"><li data-i18n="su.voice_1"></li><li data-i18n="su.voice_2"></li><li data-i18n="su.voice_3"></li></ol>
       <small class="muted" data-i18n="su.voice_manual"></small>
       <div class="row"><input id="su-voice-host" readonly><input id="su-voice-token" readonly></div></section>
+    <section><h2>6 · <span data-i18n="su.modes"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.modes_p"></p>
+      <div id="su-modes"></div></section>
     <section><div class="row" style="margin:0"><button id="su-save" onclick="saveSetup()" data-i18n="su.save"></button>
       <button class="ghost" onclick="post('api/setup/dismiss').then(()=>{S.needs_setup=false;render();document.querySelector('[data-t=home]').click()})" data-i18n="su.later"></button></div>
       <small class="muted" style="display:block;margin-top:8px" data-i18n="su.advanced"></small></section>
@@ -334,6 +337,26 @@ $("chat").onsubmit = async e => {
 };
 
 // ---------- raport săptămânal ----------
+const PALETTE = ["#e8892b", "#3d8fd6", "#59a85b", "#b05fc4", "#d24d57", "#8a8f98", "#c9a227", "#2bb3a6"];
+const dur = s => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m} min`; };
+function modeBar(data) {
+  const tot = Object.values(data).reduce((a, b) => a + b, 0);
+  if (!tot) return `<small class="muted">—</small>`;
+  const ent = Object.entries(data).sort((a, b) => b[1] - a[1]);
+  return `<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0 4px">${ent.map(([st, v], i) =>
+    `<span title="${esc(st)} ${dur(v)}" style="width:${100 * v / tot}%;background:${PALETTE[i % PALETTE.length]}"></span>`).join("")}</div>
+    <small>${ent.map(([st, v], i) => `<span style="color:${PALETTE[i % PALETTE.length]}">●</span> ${esc(st)} ${dur(v)}`).join(" · ")}</small>`;
+}
+async function loadModes() {
+  const r = await get("api/modes");
+  $("modes-s").hidden = !(r.entities || []).length;
+  $("modes").innerHTML = (r.items || []).map(m => `<div class="item"><b>${esc(m.name)}</b>: ${esc(m.state ?? "?")}
+    <small class="muted">· ${T("m.since")} ${m.since ? new Date(m.since * 1000).toLocaleTimeString(LOCALE(), {hour: "2-digit", minute: "2-digit"}) : "?"}
+    · ${T("m.changes", {today: m.changes_today, week: m.changes_week})}</small>
+    <div><small class="muted">${T("m.today")}</small>${modeBar(m.today)}</div>
+    <div><small class="muted">${T("m.week")}</small>${modeBar(m.week)}</div></div>`).join("");
+}
+
 async function loadWeekly() {
   const r = await get("api/weekly");
   const rep = r.preview || {};
@@ -354,6 +377,9 @@ async function loadSetup() {
   const fresh = !o.notify_services.length && !o.persons.length;
   checks("su-notify", notify, fresh ? d.notify.filter(n => n.service !== "notify.persistent_notification").map(n => n.service) : o.notify_services, "service", "name", "su.none_phone");
   const persons = [...d.persons]; o.persons.forEach(p => persons.some(x => x.entity_id === p) || persons.push({entity_id: p, name: p}));
+  const modes = [...(d.modes || [])]; (o.modes || []).forEach(m => modes.some(x => x.entity_id === m) || modes.push({entity_id: m, name: m}));
+  checks("su-modes", modes.map(m => ({...m, name: m.name + (m.options && m.options.length ? ` (${m.options.join(" / ")})` : "")})),
+    o.modes || [], "entity_id", "name", "su.none_mode");
   checks("su-persons", persons, fresh ? d.persons.map(p => p.entity_id) : o.persons, "entity_id", "name", "su.none_person");
   $("su-backend").value = a.backend || "ollama";
   $("su-url").value = (a.backend === "openai" ? a.openai_url : a.ollama_url) || "";
@@ -403,7 +429,7 @@ window.saveSetup = async () => {
   const ai = {backend: $("su-backend").value, model: $("su-model").value.trim(), num_ctx: $("su-ctx").value};
   ai[ol ? "ollama_url" : "openai_url"] = $("su-url").value.trim();
   if ($("su-key").value) ai.api_key = $("su-key").value;
-  const r = await post("api/setup/save", {options: {notify_services: collect("su-notify"), persons: collect("su-persons"),
+  const r = await post("api/setup/save", {options: {notify_services: collect("su-notify"), persons: collect("su-persons"), modes: collect("su-modes"),
     site_context: $("su-site").value, language: $("su-lang").value, habits: $("su-habits").value, assistant: ai}});
   if (!r.ok) return;
   $("overlay").style.display = "flex";
@@ -413,7 +439,7 @@ window.saveSetup = async () => {
     catch (e) { down = true; }
   }, 2000);
 };
-refresh(); loadWeekly(); setInterval(refresh, 15000);
+refresh().finally(() => { loadWeekly(); loadModes(); }); setInterval(refresh, 15000); setInterval(loadModes, 120000);
 </script>
 </body>
 </html>

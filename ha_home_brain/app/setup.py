@@ -23,6 +23,8 @@ AI_PORTS = {11434: "ollama", 1234: "openai", 8080: "openai"}
 EDITABLE = ("language", "notify_services", "site_context")
 EDITABLE_LEARNING = ("persons", "proposals")
 HABIT_MODES = ("notify", "panel", "off")
+MODE_DOMAINS = ("input_select", "select", "climate", "water_heater", "alarm_control_panel", "sensor")
+MODE_WORDS = ("mode", "mod", "regim", "modus", "üzem", "modo", "preset", "state", "stare")
 EDITABLE_AI = ("backend", "ollama_url", "openai_url", "api_key", "model", "num_ctx")
 
 
@@ -82,6 +84,8 @@ def merge(current: dict, patch: dict) -> dict:
         opts.setdefault("learning", {})["persons"] = patch["persons"]
     if "habits" in patch:
         opts.setdefault("learning", {})["proposals"] = patch["habits"]
+    if "modes" in patch:
+        opts.setdefault("modes", {})["entities"] = patch["modes"]
     ai = patch.get("assistant") or {}
     if ai:
         a = opts.setdefault("assistant", {})
@@ -102,6 +106,8 @@ def clean(patch: dict) -> dict:
     if isinstance(patch.get("persons"), list):
         out["persons"] = [p.strip() for p in patch["persons"]
                           if isinstance(p, str) and p.strip().startswith("person.")]
+    if isinstance(patch.get("modes"), list):
+        out["modes"] = [e for e in patch["modes"] if isinstance(e, str) and e.split(".", 1)[0] in MODE_DOMAINS][:10]
     if patch.get("habits") in HABIT_MODES:
         out["habits"] = patch["habits"]
     if isinstance(patch.get("site_context"), str):
@@ -190,4 +196,14 @@ async def detect(ha) -> dict:
         log.debug("Could not list notify services: %s", err)
     persons = [{"entity_id": e, "name": s.get("attributes", {}).get("friendly_name", e)}
                for e, s in sorted(ha.states.items()) if e.startswith("person.")]
-    return {"notify": notify, "persons": persons}
+    # Mode entities you may want watched: input_select / select, the ones named like a "mode" first.
+    modes = []
+    for e, s in ha.states.items():
+        if e.split(".", 1)[0] not in ("input_select", "select") or s.get("state") in ("unavailable", "unknown"):
+            continue
+        name = s.get("attributes", {}).get("friendly_name", e)
+        hit = any(w in f"{e} {name}".lower() for w in MODE_WORDS)
+        modes.append((not hit, name.lower(), {"entity_id": e, "name": name,
+                                               "options": s.get("attributes", {}).get("options", [])[:8]}))
+    modes = [m[2] for m in sorted(modes, key=lambda x: x[:2])][:40]
+    return {"notify": notify, "persons": persons, "modes": modes}

@@ -212,7 +212,13 @@
     "jarvis.done": "Kész.",
     "jarvis.unexpected": "(váratlan válasz a modelltől: {raw})",
     "btn.never_entity": "Ennél az eszköznél soha",
-    "main.never_entity": "Rendben – {name} eszközre nem javaslok több szokást."
+    "main.never_entity": "Rendben – {name} eszközre nem javaslok több szokást.",
+    "mode.flap_title": "{name}: gyakran vált",
+    "mode.flap_msg": "{name} az elmúlt órában {n}-szor váltott módot (általában legfeljebb {usual}). Ingadozik egy küszöb vagy egy érzékelő?",
+    "mode.stuck_title": "{name}: szokatlanul régóta {state}",
+    "mode.stuck_msg": "{name} {dur} óta \"{state}\" módban van – az elmúlt két hét leghosszabb ideje {longest} volt.",
+    "mode.line": "{name}: {parts} ({n} váltás)",
+    "mode.ctx": "{name}: most {state}, {since} óta; ma: {today}"
   },
   "panel": {
     "nav.home": "Kezdőlap",
@@ -363,6 +369,14 @@
     "su.habits": "Szokásjavaslatok",
     "su.habits_notify": "Értesíts (ajánlott, ha nem írsz saját automatizmusokat)",
     "su.habits_panel": "Csak a panelen, értesítés nélkül",
-    "su.habits_off": "Ki – magam írom az automatizmusaimat"
+    "su.habits_off": "Ki – magam írom az automatizmusaimat",
+    "su.modes": "Figyelt módok (opcionális)",
+    "su.modes_p": "Van saját, módokkal működő rendszered (fűtés eco / hibrid / gáz, hőszivattyú mód, riasztó mód…)? A Vatra csak figyeli őket: mennyi időt töltött az egyes módokban, és jelez, ha egy mód a szokásosnál sokkal gyakrabban vált vagy sokkal tovább tart. Soha nem változtat rajtuk.",
+    "su.none_mode": "Nem találtam input_select vagy select entitást.",
+    "h.modes": "Módok",
+    "m.since": "óta",
+    "m.changes": "ma {today} váltás, a héten {week}",
+    "m.today": "Ma",
+    "m.week": "Elmúlt 7 nap"
   }
 }

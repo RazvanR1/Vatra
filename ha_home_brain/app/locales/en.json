@@ -212,7 +212,13 @@
     "jarvis.done": "Done.",
     "jarvis.unexpected": "(unexpected answer from the model: {raw})",
     "btn.never_entity": "Never for this device",
-    "main.never_entity": "OK – I won't propose habits for {name} again."
+    "main.never_entity": "OK – I won't propose habits for {name} again.",
+    "mode.flap_title": "{name}: switching often",
+    "mode.flap_msg": "{name} changed mode {n} times in the last hour (usually at most {usual}). Is a threshold or a sensor bouncing?",
+    "mode.stuck_title": "{name}: {state} for unusually long",
+    "mode.stuck_msg": "{name} has been in \"{state}\" for {dur} – the longest in the last two weeks was {longest}.",
+    "mode.line": "{name}: {parts} ({n} changes)",
+    "mode.ctx": "{name}: now {state} since {since}; today: {today}"
   },
   "panel": {
     "nav.home": "Home",
@@ -363,6 +369,14 @@
     "su.habits": "Habit suggestions",
     "su.habits_notify": "Notify me (recommended if you don't write automations)",
     "su.habits_panel": "Only in the panel, no notifications",
-    "su.habits_off": "Off – I write my own automations"
+    "su.habits_off": "Off – I write my own automations",
+    "su.modes": "Modes to watch (optional)",
+    "su.modes_p": "Do you have your own system with modes (heating eco / hybrid / gas, a heat pump mode, an alarm mode…)? Vatra only watches them: time spent in each mode, and an alert when a mode switches much more often or lasts much longer than usual. It never changes them.",
+    "su.none_mode": "No input_select or select entities found.",
+    "h.modes": "Modes",
+    "m.since": "since",
+    "m.changes": "{today} changes today, {week} this week",
+    "m.today": "Today",
+    "m.week": "Last 7 days"
   }
 }

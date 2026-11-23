@@ -114,6 +114,17 @@ ore (implicit 24) sau când apeși **Pornește modul vacanță** în tab-ul Acas
 **M-am întors** îl oprește; revine la automat imediat ce ajunge cineva acasă. Există și ca
 `binary_sensor.vatra_vacation` (MQTT).
 
+## Monitor de moduri
+Pentru sistemele făcute de tine – încălzire cu moduri eco / hybrid / gaz / boost, modul unei pompe de
+căldură, al alarmei. Alegi entitățile din **Configurare → 6** (sau `modes.entities`). Vatra doar le
+**urmărește**, nu le schimbă niciodată:
+- cât timp a stat în fiecare mod azi și în ultimele 7 zile (tabul *Acasă*, raportul săptămânal, Jarvis);
+- o alertă când un mod comută mult mai des decât de obicei în ultima oră (un prag sau un senzor care
+  oscilează) sau când un mod durează de 1,5× mai mult decât cea mai lungă perioadă din ultimele două săptămâni.
+
+Statisticile vin din istoricul Home Assistant, deci sunt acolo de la prima pornire; alertele încep
+după 3 zile de istoric. `modes.alerts: false` păstrează doar statisticile.
+
 ## Raport săptămânal
 
 Duminică, la ora rezumatului (`agents.digest_hour`), un singur mesaj: obiceiuri și automatizări noi, acțiuni (și

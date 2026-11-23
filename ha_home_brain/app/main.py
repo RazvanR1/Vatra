@@ -30,6 +30,7 @@ from .assist import AssistDiscovery
 from .cleanup import Cleanup
 from .mqtt import MQTTBridge
 from .vacation import QUIET_KINDS, Vacation
+from .modes import ModeWatch
 from .weekly import WeeklyReport
 from .setup import Supervisor
 from .store import Store
@@ -90,6 +91,8 @@ class Brain:
         self.approvals.on("cleanup", self.cleanup.handle)
         self.approvals.undo_handlers["cleanup"] = self.cleanup.undo
         self.weekly = WeeklyReport(self, opts)
+        self.modes = ModeWatch(self.ha, self.store, self.notifier, self.tz, opts.get("modes", {}))
+        self.ha.on_state_change(self._mode_change)
         self.assist = AssistDiscovery(self, self.supervisor)
         self.mqtt = MQTTBridge(self, self.supervisor, os.environ.get("VATRA_VERSION", ""),
                                enabled=bool(opts.get("mqtt_entities", True)))
@@ -362,6 +365,8 @@ class Brain:
         lines += [f"- {f['message']}" for f in list(self.findings.values())[:5]]
         lines += [f"- {i['agent_name']}: {i['title']}" for i in self.agents.insights(5)]
         lines += [f"- {t('main.habit')}: {h['description']}" for h in self.store.items("habit", ("new", "proposed", "created"), 5)]
+        if self.modes.entities:
+            lines += [f"- {x}" for x in self.modes.context().splitlines()]
         return "\n".join(lines)
 
     # ---------- bucle ----------
@@ -383,9 +388,18 @@ class Brain:
                 log.exception("Cleanup scan failed")
             await asyncio.sleep(6 * 3600)
 
+    async def _mode_change(self, entity_id, _old, new, _origin) -> None:
+        if new is not None and entity_id in self.modes.entities:
+            self.modes.on_change(entity_id, new.get("state"))
+
     async def unusual_loop(self) -> None:
         while True:
             await asyncio.sleep(300)
+            if self.modes.entities and self.ha.connected.is_set():
+                try:
+                    await self.modes.check()
+                except Exception:  # noqa: BLE001
+                    log.exception("Mode monitor failed")
             if self.detector.base is not None and self.ha.connected.is_set():
                 try:
                     await self.check_unusual()

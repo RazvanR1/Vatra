@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: URL del tema de ntfy
     description: Opcional. Envía también las alertas a este tema de ntfy.
+  modes:
+    name: "Modos a vigilar"
+    description: "Tus propias entidades de modo (input_select / select…) que Vatra vigila sin cambiarlas: tiempo en cada modo, avisos cuando un modo cambia o dura de forma inusual. Más fácil de elegir en el panel (Configuración → 6)."
+    fields:
+      entities:
+        name: "Modos a vigilar"
+        description: "Tus propias entidades de modo (input_select / select…) que Vatra vigila sin cambiarlas: tiempo en cada modo, avisos cuando un modo cambia o dura de forma inusual. Más fácil de elegir en el panel (Configuración → 6)."
+      alerts:
+        name: "Avisos de modos"
+        description: "Enviar un aviso cuando un modo oscila o se queda atascado."
   notifications:
     name: Notificaciones
     description: Cuánto te escribe Vatra al teléfono. Todo se ve siempre en el panel.

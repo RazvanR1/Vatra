@@ -117,6 +117,17 @@ Vacation mode turns on by itself when **all people** (`learning.persons`) have b
 **I'm back** turns it off; it goes back to automatic as soon as someone is home. Also available as
 `binary_sensor.vatra_vacation` (MQTT).
 
+## Mode monitor
+For systems you built yourself – heating with eco / hybrid / gas / boost modes, a heat pump mode, an
+alarm mode. Pick the entities in **Setup → 6** (or `modes.entities`). Vatra only **watches** them, it
+never changes them:
+- time spent in each mode today and in the last 7 days (*Home* tab, weekly report, Jarvis);
+- an alert when a mode switches much more often than usual in the last hour (a threshold or a sensor
+  bouncing), or when a mode lasts 1.5× longer than its longest run in the last two weeks.
+
+Statistics come from Home Assistant's history, so they are there from the first start; alerts start
+after 3 days of history. `modes.alerts: false` keeps only the statistics.
+
 ## Weekly report
 
 On Sunday at the digest hour (`agents.digest_hour`), one message: new habits and automations, actions (and undos),

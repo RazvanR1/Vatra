@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.8.1"
+version: "2.9.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -26,6 +26,9 @@ options:
   site_context: ""
   notify_services: []
   ntfy_url: ""
+  modes:
+    entities: []
+    alerts: true
   notifications:
     mode: smart
     quiet_hours: "22-7"
@@ -122,6 +125,10 @@ schema:
   notify_services:
     - str
   ntfy_url: str?
+  modes:
+    entities:
+      - str?
+    alerts: bool?
   notifications:
     mode: list(smart|all|critical_only)
     quiet_hours: str

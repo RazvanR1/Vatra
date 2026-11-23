@@ -141,6 +141,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
                         "notify_services": opts.get("notify_services", []),
                         "persons": (opts.get("learning") or {}).get("persons", []),
                         "habits": brain.habit_mode,
+                        "modes": (opts.get("modes") or {}).get("entities", []),
                         "site_context": opts.get("site_context", ""),
                         "assistant": {**ai, "has_key": has_key}},
             "detected": await setup_mod.detect(brain.ha),
@@ -261,6 +262,10 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         return J({"ok": True})
 
     # ---------- obiceiuri ----------
+    async def modes(_req):
+        await brain.modes.refresh()
+        return J({"entities": brain.modes.entities, "items": brain.modes.summary()})
+
     async def habits(_req):
         return J(brain.store.items("habit", limit=200))
 
@@ -344,6 +349,7 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_get("/api/weekly", weekly_get)
     r.add_post("/api/weekly/send", weekly_send)
     if hasattr(brain, "store"):
+        r.add_get("/api/modes", modes)
         r.add_get("/api/habits", habits)
         r.add_get("/api/habits/ignored", habits_ignored)
         r.add_post("/api/habits/ignored/{entity_id}/remove", habits_unignore)

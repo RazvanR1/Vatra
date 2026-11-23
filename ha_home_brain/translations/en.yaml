@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: ntfy topic URL
     description: Optional. Also send alerts to this ntfy topic.
+  modes:
+    name: "Modes to watch"
+    description: "Your own mode entities (input_select / select…) Vatra watches without changing them: time in each mode, alerts when a mode switches unusually often or lasts unusually long. Easier to pick in the panel (Setup → 6)."
+    fields:
+      entities:
+        name: "Modes to watch"
+        description: "Your own mode entities (input_select / select…) Vatra watches without changing them: time in each mode, alerts when a mode switches unusually often or lasts unusually long. Easier to pick in the panel (Setup → 6)."
+      alerts:
+        name: "Mode alerts"
+        description: "Send an alert when a mode flaps or gets stuck."
   notifications:
     name: Notifications
     description: How much Vatra writes to your phone. Everything is always visible in the panel.
