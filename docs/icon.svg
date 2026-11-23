@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2416"/><stop offset="1" stop-color="#1c120c"/>
+    </linearGradient>
+    <linearGradient id="fl" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#e8431f"/><stop offset="0.55" stop-color="#f58a1f"/><stop offset="1" stop-color="#ffd25a"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- hearth arch -->
+  <path d="M52 204 V122 A76 76 0 0 1 204 122 V204" fill="none" stroke="#c9a27a" stroke-width="14" stroke-linecap="round"/>
+  <!-- flame -->
+  <path d="M128 64 C150 96 176 116 172 152 C169 182 150 200 128 200 C106 200 87 182 84 154 C81 128 98 116 106 96 C110 114 118 122 126 124 C122 104 120 86 128 64 Z" fill="url(#fl)"/>
+  <path d="M128 132 C140 148 150 158 148 174 C146 188 138 196 128 196 C118 196 110 188 108 176 C107 164 116 156 120 146 C123 154 127 158 131 158 C129 150 127 142 128 132 Z" fill="#ffe7a3"/>
+  <!-- hearth base -->
+  <rect x="40" y="200" width="176" height="14" rx="7" fill="#c9a27a"/>
+</svg>
