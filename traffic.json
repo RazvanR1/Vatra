@@ -144,6 +144,11 @@
    "timestamp": "2026-11-24T00:00:00Z",
    "count": 22,
    "uniques": 18
+  },
+  {
+   "timestamp": "2026-11-25T00:00:00Z",
+   "count": 20,
+   "uniques": 15
   }
  ],
  "views": [
@@ -291,28 +296,33 @@
    "timestamp": "2026-11-24T00:00:00Z",
    "count": 19,
    "uniques": 12
+  },
+  {
+   "timestamp": "2026-11-25T00:00:00Z",
+   "count": 10,
+   "uniques": 9
   }
  ],
  "referrers": [
   {
    "referrer": "facebook.com",
-   "count": 153,
-   "uniques": 127
+   "count": 128,
+   "uniques": 110
   },
   {
    "referrer": "lm.facebook.com",
-   "count": 147,
-   "uniques": 127
+   "count": 114,
+   "uniques": 98
   },
   {
    "referrer": "l.facebook.com",
-   "count": 106,
-   "uniques": 79
+   "count": 91,
+   "uniques": 70
   },
   {
    "referrer": "github.com",
-   "count": 32,
-   "uniques": 24
+   "count": 26,
+   "uniques": 18
   },
   {
    "referrer": "Google",
@@ -321,8 +331,8 @@
   },
   {
    "referrer": "m.facebook.com",
-   "count": 7,
-   "uniques": 5
+   "count": 5,
+   "uniques": 3
   },
   {
    "referrer": "Bing",
@@ -333,12 +343,7 @@
    "referrer": "com.facebook.katana",
    "count": 1,
    "uniques": 1
-  },
-  {
-   "referrer": "search.brave.com",
-   "count": 1,
-   "uniques": 1
   }
  ],
- "updated": "2026-11-25"
+ "updated": "2026-11-26"
 }
