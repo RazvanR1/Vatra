@@ -143,7 +143,7 @@ class Costs:
         self._last_sync = time.time()
         known = self.store.get("invoices", {})
         new = 0
-        params = {"content__icontains": "perioad", "ordering": "-created", "page_size": "40",
+        params = {"content__icontains": "perioad", "ordering": "-created", "page_size": "100",
                   "fields": "id,title,created,correspondent,content"}
         try:
             async with aiohttp.ClientSession(headers={"Authorization": f"Token {self.token}"}) as s:
