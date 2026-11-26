@@ -218,7 +218,10 @@
     "mode.stuck_title": "{name}: {state} durante demasiado tiempo",
     "mode.stuck_msg": "{name} lleva {dur} en \"{state}\" – lo más largo en las últimas dos semanas fue {longest}.",
     "mode.line": "{name}: {parts} ({n} cambios)",
-    "mode.ctx": "{name}: ahora {state} desde las {since}; hoy: {today}"
+    "mode.ctx": "{name}: ahora {state} desde las {since}; hoy: {today}",
+    "costs.synced": "{n} facturas nuevas leídas de Paperless.",
+    "costs.ctx_el": "precio de la luz {price} lei/kWh (factura {supplier}, {start} – {end})",
+    "costs.ctx_gas": "gas unos {price} lei/m³ (media de 12 meses)"
   },
   "panel": {
     "nav.home": "Inicio",
@@ -377,6 +380,32 @@
     "m.since": "desde",
     "m.changes": "{today} cambios hoy, {week} esta semana",
     "m.today": "Hoy",
-    "m.week": "Últimos 7 días"
+    "m.week": "Últimos 7 días",
+    "nav.costs": "Costes",
+    "h.costs": "Costes",
+    "c.from": "Desde",
+    "c.to": "Hasta",
+    "c.show": "Mostrar",
+    "c.this_month": "Este mes",
+    "c.last_month": "Mes pasado",
+    "c.last_30": "Últimos 30 días",
+    "c.el_measured": "luz – dispositivos medidos, {kwh} kWh",
+    "c.gas_est": "gas – {m3} m³ (datos mensuales de E·ON)",
+    "c.price_from": "Precio {price} lei/kWh de la factura de {supplier} del {a} al {b}",
+    "c.open": "abrir en Paperless",
+    "c.no_invoice": "Aún no hay ninguna factura de luz en Paperless.",
+    "c.no_paperless": "Conecta Paperless en Configuración → 7 para usar el precio real de tus facturas.",
+    "c.covered": "La factura tiene {inv} kWh; tus dispositivos medidos explican {kwh} kWh ({pct}%). Los ~{rest} kWh restantes son dispositivos sin medidor.",
+    "h.c_devices": "Por dispositivo",
+    "h.c_gas": "Gas",
+    "h.c_invoices": "Facturas",
+    "c.sync": "Leer facturas ahora",
+    "c.no_devices": "Ningún dispositivo con estadísticas de energía en este periodo (panel Energía → dispositivos).",
+    "c.gas_price": "Media {price} lei/m³ – últimas 12 facturas / consumo ({supplier}). Con un acuerdo de consumo, cada mes por separado es una estimación.",
+    "c.month": "Mes",
+    "c.invoiced": "Facturado",
+    "su.costs": "Facturas y costes (opcional)",
+    "su.costs_p": "Vatra lee tus facturas de suministros de Paperless-ngx (periodo, kWh, importe) y muestra cuánto costó cada dispositivo en cualquier periodo, a tu precio real. El gas viene de la integración E·ON România, si la tienes.",
+    "c.covered_over": "Tus dispositivos medidos suman {kwh} kWh, más que los {inv} kWh de la factura (~{rest} kWh): algunos son estimaciones o un medidor incluye a otro."
   }
 }

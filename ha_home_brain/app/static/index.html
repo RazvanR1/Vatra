@@ -38,6 +38,7 @@
   .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; }
   .chip { display:inline-block; background:var(--chip); border-radius:6px; padding:1px 7px; font-size:12px; color:var(--muted); }
   .empty { color:var(--muted); }
+  a { color:var(--accent); }
   button { padding:7px 12px; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit;
            font-size:14px; cursor:pointer; }
   button.ghost { background:transparent; border:1px solid var(--line); color:var(--text); }
@@ -78,6 +79,7 @@
     <button data-t="unusual" data-i18n="nav.unusual"></button>
     <button data-t="agents" data-i18n="nav.agents"></button>
     <button data-t="jarvis">Jarvis</button>
+    <button data-t="costs" data-i18n="nav.costs"></button>
     <button data-t="log" data-i18n="nav.log"></button>
     <button data-t="setup" data-i18n="nav.setup"></button>
   </nav>
@@ -130,6 +132,20 @@
     </section>
   </div>
 
+  <div class="tab" id="t-costs">
+    <section><h2 data-i18n="h.costs"></h2>
+      <div class="row" style="flex-wrap:wrap;gap:8px;align-items:end">
+        <label class="field" style="margin:0"><span data-i18n="c.from"></span><input type="date" id="c-from"></label>
+        <label class="field" style="margin:0"><span data-i18n="c.to"></span><input type="date" id="c-to"></label>
+        <button onclick="loadCosts()" data-i18n="c.show"></button>
+      </div>
+      <div class="row" id="c-presets" style="flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      <div id="c-sum" style="margin-top:12px"></div></section>
+    <section><h2 data-i18n="h.c_devices"></h2><div id="c-devices"></div></section>
+    <section id="c-gas-s" hidden><h2 data-i18n="h.c_gas"></h2><div id="c-gas"></div></section>
+    <section><h2 data-i18n="h.c_invoices"></h2><div id="c-invoices"></div>
+      <div class="row"><button class="ghost" onclick="post('api/costs/sync').then(loadCosts)" data-i18n="c.sync"></button></div></section>
+  </div>
   <div class="tab" id="t-log">
     <section><h2 data-i18n="h.done"></h2><div id="done"></div></section>
     <section><h2 data-i18n="nav.log"></h2><div id="activity"></div></section>
@@ -169,6 +185,9 @@
       <div class="row"><input id="su-voice-host" readonly><input id="su-voice-token" readonly></div></section>
     <section><h2>6 · <span data-i18n="su.modes"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.modes_p"></p>
       <div id="su-modes"></div></section>
+    <section><h2>7 · <span data-i18n="su.costs"></span></h2><p class="muted" style="margin-top:0" data-i18n="su.costs_p"></p>
+      <label class="field"><span>Paperless URL</span><input id="su-pl-url" placeholder="http://192.168.1.200:8010"></label>
+      <label class="field"><span>Paperless token</span><input id="su-pl-token" type="password" autocomplete="off"></label></section>
     <section><div class="row" style="margin:0"><button id="su-save" onclick="saveSetup()" data-i18n="su.save"></button>
       <button class="ghost" onclick="post('api/setup/dismiss').then(()=>{S.needs_setup=false;render();document.querySelector('[data-t=home]').click()})" data-i18n="su.later"></button></div>
       <small class="muted" style="display:block;margin-top:8px" data-i18n="su.advanced"></small></section>
@@ -212,7 +231,7 @@ $("lang").onchange = async () => { await setLang($("lang").value, true); render(
 document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "t-" + b.dataset.t));
-  ({approvals: loadApprovals, habits: loadHabits, agents: loadAgents, log: loadLog, setup: loadSetup})[b.dataset.t]?.();
+  ({approvals: loadApprovals, habits: loadHabits, agents: loadAgents, log: loadLog, setup: loadSetup, costs: () => loadCosts(true)})[b.dataset.t]?.();
 });
 
 let S = {};
@@ -357,6 +376,48 @@ async function loadModes() {
     <div><small class="muted">${T("m.week")}</small>${modeBar(m.week)}</div></div>`).join("");
 }
 
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const num = (v, n) => v.toLocaleString(LOCALE(), {minimumFractionDigits: n, maximumFractionDigits: n});
+const lei = v => v == null ? "—" : `${v.toLocaleString(LOCALE(), {minimumFractionDigits: 2, maximumFractionDigits: 2})} lei`;
+const fmtD = s => new Date(s + "T12:00:00").toLocaleDateString(LOCALE(), {day: "numeric", month: "short", year: "numeric"});
+function setPeriod(a, b) { $("c-from").value = a; $("c-to").value = b; loadCosts(); }
+window.setPeriod = setPeriod;
+async function loadCosts(first) {
+  const now = new Date();
+  if (first && !$("c-from").value) { $("c-from").value = iso(new Date(now.getFullYear(), now.getMonth(), 1)); $("c-to").value = iso(now); }
+  const r = await get(`api/costs?start=${$("c-from").value}&end=${$("c-to").value}`);
+  const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1), pe = new Date(now.getFullYear(), now.getMonth(), 0);
+  const presets = [[T("c.this_month"), iso(new Date(now.getFullYear(), now.getMonth(), 1)), iso(now)],
+    [T("c.last_month"), iso(pm), iso(pe)], [T("c.last_30"), iso(new Date(now - 29 * 864e5)), iso(now)]];
+  (r.invoices || []).slice(0, 3).forEach(i => presets.push([`🧾 ${i.supplier}: ${fmtD(i.period_start)} – ${fmtD(i.period_end)}`, i.period_start, i.period_end]));
+  $("c-presets").innerHTML = presets.map(([l, a, b]) => `<button class="ghost" onclick="setPeriod('${a}','${b}')">${esc(l)}</button>`).join("");
+  const p = r.price;
+  let sum = `<div class="stats"><div><div class="stat">${lei(r.lei)}</div><small>${T("c.el_measured", {kwh: r.kwh.toLocaleString(LOCALE())})}</small></div>`;
+  if (r.gas) sum += `<div><div class="stat">${lei(r.gas.lei)}</div><small>${T("c.gas_est", {m3: r.gas.m3.toLocaleString(LOCALE())})}</small></div>`;
+  sum += `</div>`;
+  sum += p ? `<small class="muted">${T("c.price_from", {price: num(p.price, 3), supplier: esc(p.supplier), a: fmtD(p.period_start), b: fmtD(p.period_end)})}
+      ${p.url ? ` · <a href="${esc(p.url)}" target="_blank">${T("c.open")}</a>` : ""}</small>`
+    : `<small class="muted">${T(r.paperless ? "c.no_invoice" : "c.no_paperless")}</small>`;
+  if (r.invoice_kwh) sum += `<p>${T(r.kwh <= r.invoice_kwh ? "c.covered" : "c.covered_over", {kwh: r.kwh.toLocaleString(LOCALE()),
+      inv: r.invoice_kwh.toLocaleString(LOCALE()), pct: r.covered, rest: Math.abs(r.invoice_kwh - r.kwh).toFixed(0)})}</p>`;
+  $("c-sum").innerHTML = sum;
+  const max = Math.max(...(r.devices || []).map(d => d.kwh), 1);
+  $("c-devices").innerHTML = (r.devices || []).length ? (r.devices || []).map(d => `<div class="item"><div class="row" style="justify-content:space-between">
+      <span>${esc(d.name)}</span><span><b>${lei(d.lei)}</b> <small class="muted">${d.kwh.toLocaleString(LOCALE())} kWh</small></span></div>
+      <div style="height:6px;border-radius:3px;background:var(--accent);opacity:.7;width:${100 * d.kwh / max}%"></div></div>`).join("") : empty(T("c.no_devices"));
+  $("c-gas-s").hidden = !r.gas;
+  if (r.gas) {
+    const inv = Object.fromEntries((r.gas.invoices || []).map(i => [i.month, i.lei]));
+    $("c-gas").innerHTML = `<small class="muted">${T("c.gas_price", {price: num(r.gas.price, 2), supplier: esc(r.gas.supplier)})}</small>
+      <div style="display:grid;grid-template-columns:auto auto auto;gap:4px 16px;margin-top:8px">
+      <b>${T("c.month")}</b><b>m³</b><b>${T("c.invoiced")}</b>
+      ${r.gas.months.slice().reverse().map(m => `<span>${m.month}</span><span>${m.m3.toLocaleString(LOCALE())}</span><span>${lei(inv[m.month])}</span>`).join("")}</div>`;
+  }
+  $("c-invoices").innerHTML = (r.invoices || []).length ? r.invoices.map(i => `<div class="item"><b>${esc(i.supplier)}</b> · ${fmtD(i.period_start)} – ${fmtD(i.period_end)}
+      <small class="muted">· ${i.quantity.toLocaleString(LOCALE())} ${esc(i.unit)} · ${lei(i.total)} · ${i.price ? num(i.price, 3) : "—"} lei/${esc(i.unit)}${i.parsed_by === "ai" ? " · AI" : ""}</small>
+      ${i.url ? ` <a href="${esc(i.url)}" target="_blank">${T("c.open")}</a>` : ""}</div>`).join("") : empty(T(r.paperless ? "c.no_invoice" : "c.no_paperless"));
+}
+
 async function loadWeekly() {
   const r = await get("api/weekly");
   const rep = r.preview || {};
@@ -387,6 +448,7 @@ async function loadSetup() {
   $("su-model").value = a.model || ""; $("su-ctx").value = a.num_ctx || 8192;
   $("su-site").value = o.site_context || "";
   $("su-voice-host").value = (SU.assist || {}).host || "—"; $("su-voice-token").value = (SU.assist || {}).token || ""; $("su-lang").value = o.language || "auto"; $("su-habits").value = o.habits || "notify";
+  $("su-pl-url").value = o.paperless_url || ""; $("su-pl-token").value = ""; $("su-pl-token").placeholder = o.paperless_token_set ? T("su.key_saved") : "";
   aiBackend(true);
 }
 window.aiBackend = keep => {
@@ -430,7 +492,8 @@ window.saveSetup = async () => {
   ai[ol ? "ollama_url" : "openai_url"] = $("su-url").value.trim();
   if ($("su-key").value) ai.api_key = $("su-key").value;
   const r = await post("api/setup/save", {options: {notify_services: collect("su-notify"), persons: collect("su-persons"), modes: collect("su-modes"),
-    site_context: $("su-site").value, language: $("su-lang").value, habits: $("su-habits").value, assistant: ai}});
+    site_context: $("su-site").value, language: $("su-lang").value, habits: $("su-habits").value, assistant: ai,
+    costs: Object.assign({paperless_url: $("su-pl-url").value.trim()}, $("su-pl-token").value ? {paperless_token: $("su-pl-token").value} : {})}});
   if (!r.ok) return;
   $("overlay").style.display = "flex";
   let down = false; const t0 = Date.now();

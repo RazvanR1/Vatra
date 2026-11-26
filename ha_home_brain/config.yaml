@@ -1,5 +1,5 @@
 name: Vatra
-version: "2.9.0"
+version: "2.10.0"
 slug: ha_home_brain
 description: Vatra – the local brain for Home Assistant
 url: https://github.com/RazvanR1/Vatra
@@ -29,6 +29,9 @@ options:
   modes:
     entities: []
     alerts: true
+  costs:
+    paperless_url: ""
+    paperless_token: ""
   notifications:
     mode: smart
     quiet_hours: "22-7"
@@ -125,6 +128,9 @@ schema:
   notify_services:
     - str
   ntfy_url: str?
+  costs:
+    paperless_url: str?
+    paperless_token: password?
   modes:
     entities:
       - str?

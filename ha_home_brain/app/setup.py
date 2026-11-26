@@ -87,6 +87,8 @@ def merge(current: dict, patch: dict) -> dict:
         opts.setdefault("learning", {})["proposals"] = patch["habits"]
     if "modes" in patch:
         opts.setdefault("modes", {})["entities"] = patch["modes"]
+    if "costs" in patch:
+        opts.setdefault("costs", {}).update(patch["costs"])
     ai = patch.get("assistant") or {}
     if ai:
         a = opts.setdefault("assistant", {})
@@ -107,6 +109,16 @@ def clean(patch: dict) -> dict:
     if isinstance(patch.get("persons"), list):
         out["persons"] = [p.strip() for p in patch["persons"]
                           if isinstance(p, str) and p.strip().startswith("person.")]
+    if isinstance(patch.get("costs"), dict):
+        c = {}
+        url = patch["costs"].get("paperless_url")
+        if isinstance(url, str) and (url == "" or url.startswith(("http://", "https://"))):
+            c["paperless_url"] = url.strip().rstrip("/")
+        tok = patch["costs"].get("paperless_token")
+        if isinstance(tok, str) and tok.strip():
+            c["paperless_token"] = tok.strip()
+        if c:
+            out["costs"] = c
     if isinstance(patch.get("modes"), list):
         out["modes"] = [e for e in patch["modes"] if isinstance(e, str) and e.split(".", 1)[0] in MODE_DOMAINS][:10]
     if patch.get("habits") in HABIT_MODES:

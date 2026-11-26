@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: URL del tema de ntfy
     description: Opcional. Envía también las alertas a este tema de ntfy.
+  costs:
+    name: "Facturas y costes"
+    description: "Conexión a Paperless-ngx para leer tus facturas de suministros (Configuración → 7)."
+    fields:
+      paperless_url:
+        name: "URL de Paperless"
+        description: "p. ej. http://192.168.1.200:8010"
+      paperless_token:
+        name: "Token API de Paperless"
+        description: "Paperless → perfil → token de API."
   modes:
     name: "Modos a vigilar"
     description: "Tus propias entidades de modo (input_select / select…) que Vatra vigila sin cambiarlas: tiempo en cada modo, avisos cuando un modo cambia o dura de forma inusual. Más fácil de elegir en el panel (Configuración → 6)."

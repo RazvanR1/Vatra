@@ -218,7 +218,11 @@
     "mode.stuck_title": "{name}: {state} for unusually long",
     "mode.stuck_msg": "{name} has been in \"{state}\" for {dur} – the longest in the last two weeks was {longest}.",
     "mode.line": "{name}: {parts} ({n} changes)",
-    "mode.ctx": "{name}: now {state} since {since}; today: {today}"
+    "mode.ctx": "{name}: now {state} since {since}; today: {today}",
+    "costs.ai_prompt": "You read the OCR text of a utility invoice. Answer only with JSON: {\"utility\": \"electricity|gas|water|other\", \"period_start\": \"YYYY-MM-DD\", \"period_end\": \"YYYY-MM-DD\", \"quantity\": number (energy or volume billed in the period), \"unit\": \"kWh|m³\", \"total\": number (amount of THIS invoice with VAT, in lei, without old balances or penalties)}. If it is not a utility invoice, answer {}.",
+    "costs.synced": "{n} new invoices read from Paperless.",
+    "costs.ctx_el": "electricity price {price} lei/kWh (invoice {supplier}, {start} – {end})",
+    "costs.ctx_gas": "gas about {price} lei/m³ (12-month average)"
   },
   "panel": {
     "nav.home": "Home",
@@ -377,6 +381,32 @@
     "m.since": "since",
     "m.changes": "{today} changes today, {week} this week",
     "m.today": "Today",
-    "m.week": "Last 7 days"
+    "m.week": "Last 7 days",
+    "nav.costs": "Costs",
+    "h.costs": "Costs",
+    "c.from": "From",
+    "c.to": "To",
+    "c.show": "Show",
+    "c.this_month": "This month",
+    "c.last_month": "Last month",
+    "c.last_30": "Last 30 days",
+    "c.el_measured": "electricity – measured devices, {kwh} kWh",
+    "c.gas_est": "gas – {m3} m³ (from monthly E·ON data)",
+    "c.price_from": "Price {price} lei/kWh from the {supplier} invoice for {a} – {b}",
+    "c.open": "open in Paperless",
+    "c.no_invoice": "No electricity invoice found in Paperless yet.",
+    "c.no_paperless": "Connect Paperless in Setup → 7 to use your real invoice prices.",
+    "c.covered": "The invoice has {inv} kWh; your measured devices explain {kwh} kWh ({pct}%). The other ~{rest} kWh are devices without a meter.",
+    "h.c_devices": "Per device",
+    "h.c_gas": "Gas",
+    "h.c_invoices": "Invoices",
+    "c.sync": "Read invoices now",
+    "c.no_devices": "No devices with energy statistics in this period (Energy dashboard → devices).",
+    "c.gas_price": "Average {price} lei/m³ – last 12 invoices / consumption ({supplier}). With a consumption agreement, single months are estimates.",
+    "c.month": "Month",
+    "c.invoiced": "Invoiced",
+    "su.costs": "Invoices and costs (optional)",
+    "su.costs_p": "Vatra reads your utility invoices from Paperless-ngx (period, kWh, amount) and shows what each device cost in any period, at your real price. Gas comes from the E·ON România integration, if you have it.",
+    "c.covered_over": "Your measured devices add up to {kwh} kWh, more than the {inv} kWh on the invoice (by ~{rest} kWh): some of them are estimates, or one meter includes another."
   }
 }

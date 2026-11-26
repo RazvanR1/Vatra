@@ -142,6 +142,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
                         "persons": (opts.get("learning") or {}).get("persons", []),
                         "habits": brain.habit_mode,
                         "modes": (opts.get("modes") or {}).get("entities", []),
+                        "paperless_url": (opts.get("costs") or {}).get("paperless_url", ""),
+                        "paperless_token_set": bool((opts.get("costs") or {}).get("paperless_token")),
                         "site_context": opts.get("site_context", ""),
                         "assistant": {**ai, "has_key": has_key}},
             "detected": await setup_mod.detect(brain.ha),
@@ -262,6 +264,26 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
         return J({"ok": True})
 
     # ---------- obiceiuri ----------
+    async def costs(req):
+        from datetime import date as _d
+        today = _d.today()
+        try:
+            start = _d.fromisoformat(req.query.get("start") or today.replace(day=1).isoformat())
+            end = _d.fromisoformat(req.query.get("end") or today.isoformat())
+        except ValueError:
+            return J({"error": "bad date"}, status=400)
+        if end < start:
+            start, end = end, start
+        await brain.costs.sync()
+        data = await brain.costs.period(start, end)
+        data["invoices"] = brain.costs.invoices()[:12]
+        data["paperless"] = brain.costs.enabled
+        return J(data)
+
+    async def costs_sync(_req):
+        n = await brain.costs.sync(force=True)
+        return J({"message": t("costs.synced", n=n)})
+
     async def modes(_req):
         await brain.modes.refresh()
         return J({"entities": brain.modes.entities, "items": brain.modes.summary()})
@@ -350,6 +372,8 @@ def build_app(brain, allowed_ips: set[str] | None = INGRESS_IPS) -> web.Applicat
     r.add_post("/api/weekly/send", weekly_send)
     if hasattr(brain, "store"):
         r.add_get("/api/modes", modes)
+        r.add_get("/api/costs", costs)
+        r.add_post("/api/costs/sync", costs_sync)
         r.add_get("/api/habits", habits)
         r.add_get("/api/habits/ignored", habits_ignored)
         r.add_post("/api/habits/ignored/{entity_id}/remove", habits_unignore)

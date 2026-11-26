@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: ntfy topic URL
     description: Optional. Also send alerts to this ntfy topic.
+  costs:
+    name: "Invoices and costs"
+    description: "Paperless-ngx connection used to read your utility invoices (Setup → 7)."
+    fields:
+      paperless_url:
+        name: "Paperless URL"
+        description: "e.g. http://192.168.1.200:8010"
+      paperless_token:
+        name: "Paperless API token"
+        description: "Paperless → profile → API auth token."
   modes:
     name: "Modes to watch"
     description: "Your own mode entities (input_select / select…) Vatra watches without changing them: time in each mode, alerts when a mode switches unusually often or lasts unusually long. Easier to pick in the panel (Setup → 6)."

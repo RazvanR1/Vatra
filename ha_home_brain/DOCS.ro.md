@@ -125,6 +125,17 @@ căldură, al alarmei. Alegi entitățile din **Configurare → 6** (sau `modes.
 Statisticile vin din istoricul Home Assistant, deci sunt acolo de la prima pornire; alertele încep
 după 3 zile de istoric. `modes.alerts: false` păstrează doar statisticile.
 
+## Costuri
+Tabul *Costuri* arată cât a costat fiecare dispozitiv în orice perioadă alegi – luna asta, luna trecută sau
+exact perioada unei facturi – la prețul din **facturile tale reale**:
+- **Curent:** Vatra citește facturile de utilități din **Paperless-ngx** (Configurare → 7: URL și token API).
+  Perioada de facturare, kWh și suma cu TVA (fără solduri vechi sau penalități) sunt citite din textul OCR;
+  facturile românești ca Hidroelectrica după reguli, altele cu AI-ul, dacă ai configurat unul.
+- **Gaz:** din integrarea **E·ON România** – sumele facturate și m³ lunari, medie pe ultimele 12 facturi
+  (cu convenție de consum, lunile luate separat sunt estimări).
+- **Consumul** vine din dispozitivele din panoul Energie al Home Assistant. Când alegi perioada unei facturi,
+  Vatra arată și cât din kWh facturați explică dispozitivele tale măsurate.
+
 ## Raport săptămânal
 
 Duminică, la ora rezumatului (`agents.digest_hour`), un singur mesaj: obiceiuri și automatizări noi, acțiuni (și

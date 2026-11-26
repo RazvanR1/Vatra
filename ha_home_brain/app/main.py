@@ -30,6 +30,7 @@ from .assist import AssistDiscovery
 from .cleanup import Cleanup
 from .mqtt import MQTTBridge
 from .vacation import QUIET_KINDS, Vacation
+from .costs import Costs
 from .modes import ModeWatch
 from .weekly import WeeklyReport
 from .setup import Supervisor
@@ -93,6 +94,7 @@ class Brain:
         self.weekly = WeeklyReport(self, opts)
         self.modes = ModeWatch(self.ha, self.store, self.notifier, self.tz, opts.get("modes", {}))
         self.ha.on_state_change(self._mode_change)
+        self.costs = Costs(self.ha, self.llm, self.store, self.tz, opts.get("costs", {}))
         self.assist = AssistDiscovery(self, self.supervisor)
         self.mqtt = MQTTBridge(self, self.supervisor, os.environ.get("VATRA_VERSION", ""),
                                enabled=bool(opts.get("mqtt_entities", True)))
@@ -367,6 +369,9 @@ class Brain:
         lines += [f"- {t('main.habit')}: {h['description']}" for h in self.store.items("habit", ("new", "proposed", "created"), 5)]
         if self.modes.entities:
             lines += [f"- {x}" for x in self.modes.context().splitlines()]
+        prices = self.costs.summary_line()
+        if prices:
+            lines.append(f"- {prices}")
         return "\n".join(lines)
 
     # ---------- bucle ----------
@@ -395,6 +400,11 @@ class Brain:
     async def unusual_loop(self) -> None:
         while True:
             await asyncio.sleep(300)
+            if self.costs.enabled:
+                try:
+                    await self.costs.sync()
+                except Exception:  # noqa: BLE001
+                    log.exception("Invoice sync failed")
             if self.modes.entities and self.ha.connected.is_set():
                 try:
                     await self.modes.check()

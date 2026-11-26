@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: URL topic ntfy
     description: Opțional. Trimite alertele și pe acest topic ntfy.
+  costs:
+    name: "Facturi și costuri"
+    description: "Conexiunea la Paperless-ngx din care Vatra citește facturile de utilități (Configurare → 7)."
+    fields:
+      paperless_url:
+        name: "URL Paperless"
+        description: "de ex. http://192.168.1.200:8010"
+      paperless_token:
+        name: "Token API Paperless"
+        description: "Paperless → profil → token de autentificare API."
   modes:
     name: "Moduri de urmărit"
     description: "Entitățile tale de mod (input_select / select…) pe care Vatra le urmărește fără să le schimbe: timpul în fiecare mod, alerte când un mod comută neobișnuit de des sau durează neobișnuit de mult. Mai ușor de ales din panou (Configurare → 6)."

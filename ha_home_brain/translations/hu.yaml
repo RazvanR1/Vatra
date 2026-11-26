@@ -16,6 +16,16 @@ configuration:
   ntfy_url:
     name: ntfy téma URL
     description: Opcionális. A riasztásokat erre az ntfy témára is elküldi.
+  costs:
+    name: "Számlák és költségek"
+    description: "Paperless-ngx kapcsolat a közüzemi számlák beolvasásához (Beállítás → 7)."
+    fields:
+      paperless_url:
+        name: "Paperless URL"
+        description: "pl. http://192.168.1.200:8010"
+      paperless_token:
+        name: "Paperless API token"
+        description: "Paperless → profil → API token."
   modes:
     name: "Figyelt módok"
     description: "Saját mód-entitásaid (input_select / select…), amelyeket a Vatra változtatás nélkül figyel: az egyes módokban töltött idő, jelzés szokatlanul gyakori váltáskor vagy szokatlanul hosszú módnál. A panelen könnyebb kiválasztani (Beállítás → 6)."

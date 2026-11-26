@@ -218,7 +218,10 @@
     "mode.stuck_title": "{name}: szokatlanul régóta {state}",
     "mode.stuck_msg": "{name} {dur} óta \"{state}\" módban van – az elmúlt két hét leghosszabb ideje {longest} volt.",
     "mode.line": "{name}: {parts} ({n} váltás)",
-    "mode.ctx": "{name}: most {state}, {since} óta; ma: {today}"
+    "mode.ctx": "{name}: most {state}, {since} óta; ma: {today}",
+    "costs.synced": "{n} új számla beolvasva a Paperlessből.",
+    "costs.ctx_el": "áramár {price} lei/kWh ({supplier} számla, {start} – {end})",
+    "costs.ctx_gas": "gáz kb. {price} lei/m³ (12 havi átlag)"
   },
   "panel": {
     "nav.home": "Kezdőlap",
@@ -377,6 +380,32 @@
     "m.since": "óta",
     "m.changes": "ma {today} váltás, a héten {week}",
     "m.today": "Ma",
-    "m.week": "Elmúlt 7 nap"
+    "m.week": "Elmúlt 7 nap",
+    "nav.costs": "Költségek",
+    "h.costs": "Költségek",
+    "c.from": "Ettől",
+    "c.to": "Eddig",
+    "c.show": "Mutasd",
+    "c.this_month": "Ez a hónap",
+    "c.last_month": "Előző hónap",
+    "c.last_30": "Utolsó 30 nap",
+    "c.el_measured": "áram – mért eszközök, {kwh} kWh",
+    "c.gas_est": "gáz – {m3} m³ (havi E·ON adatokból)",
+    "c.price_from": "Ár {price} lei/kWh a(z) {supplier} számlájából ({a} – {b})",
+    "c.open": "megnyitás a Paperlessben",
+    "c.no_invoice": "Még nincs áramszámla a Paperlessben.",
+    "c.no_paperless": "Kösd össze a Paperlesst a Beállítás → 7 alatt, hogy a valós számlaárakat használd.",
+    "c.covered": "A számlán {inv} kWh szerepel; a mért eszközeid {kwh} kWh-t magyaráznak ({pct}%). A maradék ~{rest} kWh mérő nélküli eszközöké.",
+    "h.c_devices": "Eszközönként",
+    "h.c_gas": "Gáz",
+    "h.c_invoices": "Számlák",
+    "c.sync": "Számlák beolvasása most",
+    "c.no_devices": "Ebben az időszakban nincs energiastatisztikás eszköz (Energia panel → eszközök).",
+    "c.gas_price": "Átlag {price} lei/m³ – az utolsó 12 számla / fogyasztás ({supplier}). Fogyasztási megállapodásnál az egyes hónapok becslések.",
+    "c.month": "Hónap",
+    "c.invoiced": "Számlázva",
+    "su.costs": "Számlák és költségek (opcionális)",
+    "su.costs_p": "A Vatra beolvassa a közüzemi számláidat a Paperless-ngx-ből (időszak, kWh, összeg), és megmutatja, mennyibe került az egyes eszközök működése bármely időszakban, a valós áron. A gáz az E·ON România integrációból jön, ha megvan.",
+    "c.covered_over": "A mért eszközeid összesen {kwh} kWh-t mutatnak, többet a számlán szereplő {inv} kWh-nál (~{rest} kWh-val): némelyik becsült, vagy az egyik mérő tartalmazza a másikat."
   }
 }

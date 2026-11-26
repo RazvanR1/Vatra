@@ -218,7 +218,11 @@
     "mode.stuck_title": "{name}: {state} neobișnuit de mult",
     "mode.stuck_msg": "{name} stă în „{state}” de {dur} – cel mai lung din ultimele două săptămâni a fost {longest}.",
     "mode.line": "{name}: {parts} ({n} schimbări)",
-    "mode.ctx": "{name}: acum {state} de la {since}; azi: {today}"
+    "mode.ctx": "{name}: acum {state} de la {since}; azi: {today}",
+    "costs.ai_prompt": "Citești textul OCR al unei facturi de utilități. Răspunde doar cu JSON: {\"utility\": \"electricity|gas|water|other\", \"period_start\": \"YYYY-MM-DD\", \"period_end\": \"YYYY-MM-DD\", \"quantity\": număr (energia sau volumul facturat în perioadă), \"unit\": \"kWh|m³\", \"total\": număr (valoarea ACESTEI facturi cu TVA, în lei, fără solduri vechi sau penalități)}. Dacă nu e o factură de utilități, răspunde {}.",
+    "costs.synced": "{n} facturi noi citite din Paperless.",
+    "costs.ctx_el": "preț curent {price} lei/kWh (factura {supplier}, {start} – {end})",
+    "costs.ctx_gas": "gaz cam {price} lei/m³ (medie pe 12 luni)"
   },
   "panel": {
     "nav.home": "Acasă",
@@ -377,6 +381,32 @@
     "m.since": "de la",
     "m.changes": "{today} schimbări azi, {week} în ultima săptămână",
     "m.today": "Azi",
-    "m.week": "Ultimele 7 zile"
+    "m.week": "Ultimele 7 zile",
+    "nav.costs": "Costuri",
+    "h.costs": "Costuri",
+    "c.from": "De la",
+    "c.to": "Până la",
+    "c.show": "Arată",
+    "c.this_month": "Luna asta",
+    "c.last_month": "Luna trecută",
+    "c.last_30": "Ultimele 30 de zile",
+    "c.el_measured": "curent – dispozitive măsurate, {kwh} kWh",
+    "c.gas_est": "gaz – {m3} m³ (din datele lunare E·ON)",
+    "c.price_from": "Preț {price} lei/kWh din factura {supplier} pentru {a} – {b}",
+    "c.open": "deschide în Paperless",
+    "c.no_invoice": "N-am găsit încă o factură de curent în Paperless.",
+    "c.no_paperless": "Conectează Paperless în Configurare → 7 ca să folosești prețul real din facturi.",
+    "c.covered": "Factura are {inv} kWh; dispozitivele tale măsurate explică {kwh} kWh ({pct}%). Restul de ~{rest} kWh sunt dispozitive fără contor.",
+    "h.c_devices": "Pe dispozitiv",
+    "h.c_gas": "Gaz",
+    "h.c_invoices": "Facturi",
+    "c.sync": "Citește facturile acum",
+    "c.no_devices": "Niciun dispozitiv cu statistici de energie în perioada asta (Panou Energie → dispozitive).",
+    "c.gas_price": "Medie {price} lei/m³ – ultimele 12 facturi / consum ({supplier}). Cu convenție de consum, lunile luate separat sunt estimări.",
+    "c.month": "Luna",
+    "c.invoiced": "Facturat",
+    "su.costs": "Facturi și costuri (opțional)",
+    "su.costs_p": "Vatra citește facturile de utilități din Paperless-ngx (perioadă, kWh, sumă) și arată cât a costat fiecare dispozitiv în orice perioadă, la prețul tău real. Gazul vine din integrarea E·ON România, dacă o ai.",
+    "c.covered_over": "Dispozitivele măsurate însumează {kwh} kWh, mai mult decât cei {inv} kWh din factură (cu ~{rest} kWh): unele sunt estimate sau un contor îl include pe altul."
   }
 }

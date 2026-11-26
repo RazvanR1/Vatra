@@ -128,6 +128,17 @@ never changes them:
 Statistics come from Home Assistant's history, so they are there from the first start; alerts start
 after 3 days of history. `modes.alerts: false` keeps only the statistics.
 
+## Costs
+The *Costs* tab shows what each device cost in any period you pick – this month, last month, or the exact
+period of an invoice – at the price on your **real invoices**:
+- **Electricity:** Vatra reads your utility invoices from **Paperless-ngx** (Setup → 7: URL and API token).
+  Billing period, kWh and the amount with VAT (without old balances or penalties) are read from the OCR text;
+  Romanian layouts like Hidroelectrica by rules, others by the AI if you configured one.
+- **Gas:** from the **E·ON România** integration – billed amounts and monthly m³, averaged over the last
+  12 invoices (with a consumption agreement single months are estimates).
+- **Consumption** comes from the devices in Home Assistant's Energy dashboard. When you pick an invoice's
+  period, Vatra also shows how much of the invoiced kWh your measured devices explain.
+
 ## Weekly report
 
 On Sunday at the digest hour (`agents.digest_hour`), one message: new habits and automations, actions (and undos),
