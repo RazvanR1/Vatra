@@ -154,6 +154,11 @@
    "timestamp": "2026-11-26T00:00:00Z",
    "count": 39,
    "uniques": 20
+  },
+  {
+   "timestamp": "2026-11-27T00:00:00Z",
+   "count": 16,
+   "uniques": 12
   }
  ],
  "views": [
@@ -311,33 +316,38 @@
    "timestamp": "2026-11-26T00:00:00Z",
    "count": 4,
    "uniques": 4
+  },
+  {
+   "timestamp": "2026-11-27T00:00:00Z",
+   "count": 23,
+   "uniques": 11
   }
  ],
  "referrers": [
   {
    "referrer": "facebook.com",
-   "count": 116,
-   "uniques": 101
+   "count": 107,
+   "uniques": 95
   },
   {
    "referrer": "lm.facebook.com",
    "count": 104,
-   "uniques": 91
+   "uniques": 89
   },
   {
    "referrer": "l.facebook.com",
-   "count": 83,
-   "uniques": 65
+   "count": 79,
+   "uniques": 61
   },
   {
    "referrer": "github.com",
-   "count": 25,
-   "uniques": 17
+   "count": 24,
+   "uniques": 15
   },
   {
    "referrer": "Google",
-   "count": 22,
-   "uniques": 14
+   "count": 20,
+   "uniques": 13
   },
   {
    "referrer": "m.facebook.com",
@@ -355,5 +365,5 @@
    "uniques": 1
   }
  ],
- "updated": "2026-11-27"
+ "updated": "2026-11-28"
 }
